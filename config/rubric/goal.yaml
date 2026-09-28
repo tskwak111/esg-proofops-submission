@@ -1,0 +1,47 @@
+version: proofops-domain-v2.0-impl2
+effective_date: '2026-09-25'
+source_document_sha256: 0f9d7e3495d1bc6330ee4ffd2bb644ce8189c89e91dd5f9ae4c720b9ffaebc6a
+status: draft
+scope: source-derived implementation baseline; clause/legal approval not completed
+track: goal
+source_section: '4.4'
+branches:
+- id: GOAL_NO_YEAR_EXCEPTION
+  when:
+    target_year: false
+    target_metric: true
+    transition_plan: true
+  grade: E1
+  cap: true
+- id: GOAL_NO_YEAR
+  when:
+    target_year: false
+    exception_applies: false
+  grade: E0
+- id: GOAL_E3
+  require_all:
+  - target_year
+  - target_metric
+  - baseline_year
+  - baseline_value
+  - scope
+  - org_boundary
+  - current_progress
+  - transition_plan
+  grade: E3
+- id: GOAL_E2
+  require_all:
+  - target_year
+  - target_metric
+  - baseline_year
+  - baseline_value
+  - scope
+  - org_boundary
+  grade: E2
+- id: GOAL_E1
+  require_all:
+  - target_year
+  - target_metric
+  grade: E1
+unmatched: blocked_rule_gap
+additional_element_policy: report_without_grade_effect

@@ -1,0 +1,256 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "claim_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "packet_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "replicate_id": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3
+    },
+    "track": {
+      "type": "string",
+      "enum": [
+        "goal",
+        "performance",
+        "management"
+      ]
+    },
+    "safe_harbor_category": {
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": [
+            "forward_looking",
+            "emissions_estimate",
+            "third_party_information"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "elements": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Element"
+      }
+    },
+    "superlative_quote": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "claim_id",
+    "packet_sha256",
+    "replicate_id",
+    "track",
+    "safe_harbor_category",
+    "elements",
+    "superlative_quote",
+    "warnings"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:proofops:llm-tags:1",
+  "$defs": {
+    "Element": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "element_id": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "present",
+            "absent",
+            "unknown",
+            "conflict",
+            "not_applicable"
+          ]
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          }
+        },
+        "normalized_value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "credited_from": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "element_id",
+        "state",
+        "evidence_refs",
+        "normalized_value",
+        "credited_from",
+        "reason_code"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "present"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "evidence_refs": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "SourceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "document_version_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "parse_manifest_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "page_num": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "printed_page_label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bbox": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Bbox"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "raw_text_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "quote": {
+          "type": "string"
+        },
+        "char_start": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "char_end": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "location_quality": {
+          "type": "string",
+          "enum": [
+            "located",
+            "unlocated",
+            "unreadable"
+          ]
+        },
+        "verification_state": {
+          "type": "string",
+          "enum": [
+            "verified",
+            "candidate",
+            "rejected"
+          ]
+        }
+      },
+      "required": [
+        "source_id",
+        "document_version_id",
+        "parse_manifest_id",
+        "page_num",
+        "printed_page_label",
+        "bbox",
+        "raw_text_sha256",
+        "quote",
+        "char_start",
+        "char_end",
+        "location_quality",
+        "verification_state"
+      ]
+    },
+    "Bbox": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 4,
+      "maxItems": 4,
+      "description": "Canonical top-left display points, x0,y0,x1,y1; missing geometry is null, not zero."
+    }
+  }
+}

@@ -1,0 +1,2 @@
+﻿case_id,claim_id,document_id,physical_page,quote,provider,standard,level,period_start,period_end,entities,metrics,exclusions,expected_status,reason,annotator,adjudicator
+SYN-AS1,SYN-C1,SYN-SR,3,보증 대상은 온실가스 배출량이며 용수 사용량은 제외한다.,합성 기관,,limited,2024-01-01,2024-12-31,,온실가스,용수 사용량,not_covered,해당 지표 명시 제외,합성 예시,

@@ -1,0 +1,3 @@
+# These immutable reference files are verified byte-for-byte against source_manifest.json.
+/sources/PROJECT_DOMAIN_V2_ORIGINAL.md text eol=lf
+/sources/DEVELOPMENT_PACKAGE_REQUEST_ORIGINAL.md text eol=lf

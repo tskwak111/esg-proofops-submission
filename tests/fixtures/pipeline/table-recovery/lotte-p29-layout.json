@@ -1,0 +1,20 @@
+{
+  "source_sha256": "d8dd4f3e510428fcfd86c4e0003b19f35f2d5a8b30fdf9f55ccee166d0bd5a52",
+  "physical_page": 29,
+  "reviewer": "R13 AI visual review of the rendered page against the reader's own word boxes; silver, not independent gold",
+  "header_rows": 2,
+  "x": [365, 410, 457, 507, 551, 592, 722, 771, 903, 950],
+  "y": [305, 328, 346, 400, 458, 500, 535],
+  "rowspans": [[0, 0, 2]],
+  "colspans": [[0, 2, 4], [0, 6, 2]],
+  "columns": {
+    "metric": 0,
+    "unit_in_metric_cell": true,
+    "years": [2, 3]
+  },
+  "parents": {},
+  "context_boxes": [
+    {"kind": "footnote", "bbox": [360, 546, 470, 558]},
+    {"kind": "footnote", "bbox": [360, 558, 590, 572]}
+  ]
+}

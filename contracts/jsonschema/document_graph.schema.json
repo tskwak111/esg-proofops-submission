@@ -1,0 +1,184 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": [
+        "1"
+      ]
+    },
+    "document_version_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "parse_manifest_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "source_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "blocks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "page_num": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "paragraph",
+              "heading",
+              "table",
+              "table_row",
+              "table_cell",
+              "caption",
+              "footnote",
+              "figure",
+              "unknown"
+            ]
+          },
+          "raw_text": {
+            "type": "string"
+          },
+          "raw_text_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "normalized_text": {
+            "type": "string"
+          },
+          "bbox": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Bbox"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "provenance": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "parser_run_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "source_native_id": {
+                  "type": "string"
+                },
+                "native_bbox": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/Bbox"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "native_coordinate_system": {
+                  "type": "string"
+                },
+                "to_canonical_affine": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 6,
+                  "maxItems": 6
+                }
+              },
+              "required": [
+                "parser_run_id",
+                "source_native_id",
+                "native_bbox",
+                "native_coordinate_system",
+                "to_canonical_affine"
+              ]
+            }
+          }
+        },
+        "required": [
+          "source_id",
+          "page_num",
+          "kind",
+          "raw_text",
+          "raw_text_sha256",
+          "normalized_text",
+          "bbox",
+          "provenance"
+        ]
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "target_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "relation": {
+            "type": "string",
+            "enum": [
+              "derived_from",
+              "table_parent",
+              "caption_of",
+              "footnote_of",
+              "same_statement",
+              "section_parent",
+              "alias_of"
+            ]
+          }
+        },
+        "required": [
+          "source_id",
+          "target_id",
+          "relation"
+        ]
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "document_version_id",
+    "parse_manifest_id",
+    "source_sha256",
+    "blocks",
+    "edges"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:proofops:document-graph:1",
+  "$defs": {
+    "Bbox": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 4,
+      "maxItems": 4,
+      "description": "Canonical top-left display points, x0,y0,x1,y1; missing geometry is null, not zero."
+    }
+  }
+}

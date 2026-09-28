@@ -1,0 +1,10 @@
+version: proofops-domain-v2.0-impl2
+effective_date: '2026-09-25'
+source_document_sha256: 0f9d7e3495d1bc6330ee4ffd2bb644ce8189c89e91dd5f9ae4c720b9ffaebc6a
+status: draft
+scope: source-derived implementation baseline; clause/legal approval not completed
+verification_status: source_provided_unverified
+automatic_legal_applicability_enabled: false
+entries: []
+gap_id: GAP-009
+note: 원문 1.2/13.1의 규제 서술은 원본에 보존. 확인하지 않은 날짜·대상을 시행법으로 복제하지 않는다.

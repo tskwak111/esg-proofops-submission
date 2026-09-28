@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Preliminary literal-source classification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "claim_id",
+    "track",
+    "safe_harbor_category",
+    "track_confidence",
+    "dimensions"
+  ],
+  "properties": {
+    "claim_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "track": {
+      "enum": [
+        null,
+        "goal",
+        "performance",
+        "management"
+      ]
+    },
+    "safe_harbor_category": {
+      "enum": [
+        null,
+        "forward_looking",
+        "emissions_estimate",
+        "third_party_information"
+      ]
+    },
+    "track_confidence": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "dimensions": {
+      "type": "object",
+      "required": [
+        "entity",
+        "metric",
+        "reporting_period"
+      ],
+      "additionalProperties": {
+        "$ref": "#/$defs/source_span"
+      },
+      "properties": {
+        "entity": {
+          "$ref": "#/$defs/source_span"
+        },
+        "metric": {
+          "$ref": "#/$defs/source_span"
+        },
+        "reporting_period": {
+          "$ref": "#/$defs/source_span"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "track": {
+            "type": "null"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "track_confidence": {
+            "type": "null"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "track_confidence": {
+            "type": "number"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "source_span": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source_index",
+            "quote"
+          ],
+          "properties": {
+            "source_index": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "quote": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    }
+  }
+}

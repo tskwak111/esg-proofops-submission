@@ -1,0 +1,18 @@
+[project]
+name = "proofops-agent"
+version = "0.0.0"
+description = "ESG ProofOps tagging agent (TASK-000 baseline)"
+requires-python = ">=3.12"
+dependencies = [
+  "proofops",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/proofops_agent"]
+
+[tool.uv.sources]
+proofops = { workspace = true }

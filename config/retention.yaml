@@ -1,0 +1,9 @@
+version: retention-draft-1
+effective_date: '2026-09-08'
+status: requires_customer_approval
+quarantine_hours: 24
+orphan_hours: 48
+raw_model_days: 7
+accepted_artifact_days: 90
+metadata_only_audit_days: 365
+physical_deletion_requires_manifest_verification: true

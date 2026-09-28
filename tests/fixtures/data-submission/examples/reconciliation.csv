@@ -1,0 +1,2 @@
+﻿case_id,claim_id,financial_document_id,rule_id,case_type,sr_quote,sr_page,financial_quote,financial_locator,comparison_kind,sustainability_value,financial_value,period,boundary,explanation_quote,explanation_document_id,explanation_locator,search_coverage,expected_execution_state,expected_status,reason_code,policy_id,annotator,adjudicator
+SYN-RC3,SYN-C2,SYN-FS,C3,normal_difference,2030년까지 설비에 100억원을 투자할 계획이다.,2,설비취득 지출 10억원,합성 주석 locator,currency_amount,100억원,10억원,FY2024 vs 2030까지,,,,,incomplete,blocked,,c3_policy_unapproved,synthetic-not-approved,합성 예시,

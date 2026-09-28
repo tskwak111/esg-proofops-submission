@@ -1,0 +1,32 @@
+version: parse-profile-1
+effective_date: '2026-09-08'
+primary:
+  name: opendataloader
+  version: 2.5.7
+  format:
+  - json
+  - markdown
+  hybrid: false
+secondary_tables: pdfplumber
+vision_crosscheck: all_detected_tables
+fallback:
+  hybrid_backend: docling-fast
+  enabled: false
+  ocr_only_when: no_reliable_text_layer
+  ocr_language: ko,en
+  ocr_engine: easyocr
+  max_attempts: 1
+geometry:
+  canonical_origin: top_left_display_cropbox
+  unit: pt
+  page_base: 1
+  missing_bbox: null
+  store_native_and_affine: true
+fusion:
+  dedupe_text_only: false
+  require_same_source_region: true
+  numeric_conflict_action: review
+  preserve_alias_and_all_provenance: true
+max_file_bytes: 104857600
+max_pages: 300
+parse_timeout_seconds: 600

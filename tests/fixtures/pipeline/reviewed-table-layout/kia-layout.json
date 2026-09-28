@@ -1,0 +1,65 @@
+{
+  "source_sha256": "d0d814d98c4aeedbbdb2bf8631b8981ae5cde94dec32aa32c57510420274da1f",
+  "physical_page": 106,
+  "reviewer": "coordinator-provided boundaries refined by Codex AI visual review; not independent gold",
+  "x": [
+    42.52,
+    199.643,
+    239.328,
+    296.021,
+    352.714,
+    410
+  ],
+  "y": [
+    167.369,
+    180.665,
+    193.96,
+    207.256,
+    220.551,
+    233.847,
+    247.142,
+    260.437,
+    273.733,
+    287.028,
+    300.324,
+    313.619
+  ],
+  "rowspans": [],
+  "columns": {
+    "metric": 0,
+    "unit": 1,
+    "years": [
+      2,
+      3,
+      4
+    ]
+  },
+  "parents": {
+    "3": 2,
+    "4": 2,
+    "6": 5,
+    "7": 5,
+    "9": 8,
+    "10": 8
+  },
+  "context_boxes": [
+    {
+      "kind": "footnote",
+      "bbox": [
+        42,
+        317,
+        410,
+        327
+      ]
+    },
+    {
+      "kind": "coverage",
+      "bbox": [
+        317,
+        155,
+        411,
+        165
+      ]
+    }
+  ]
+}

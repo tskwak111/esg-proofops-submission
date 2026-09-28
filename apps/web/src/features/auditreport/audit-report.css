@@ -1,0 +1,74 @@
+.audit-page{--audit-ink:#203433;--audit-muted:#60716f;--audit-green:#194f45;--audit-line:#dce5df;background:#edf1ee;color:var(--audit-ink);min-height:100vh;font:14px/1.55 'Noto Sans KR',system-ui,sans-serif}
+.audit-page *{box-sizing:border-box}
+.audit-toolbar{max-width:1120px;margin:auto;padding:19px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;color:var(--audit-muted)}
+.audit-toolbar>a{color:var(--audit-green);font-weight:700;text-decoration:none}
+.audit-toolbar>span{font-size:11px;letter-spacing:.18em;font-weight:800}
+.audit-toolbar>div{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.audit-toolbar button{border:1px solid #b8c8bf;border-radius:6px;background:#fff;color:var(--audit-green);padding:9px 12px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.audit-toolbar button:first-child{background:var(--audit-green);border-color:var(--audit-green);color:#fff}
+.audit-toolbar button:hover{filter:brightness(.93)}
+.audit-toolbar button:focus-visible,.audit-toolbar a:focus-visible{outline:3px solid #8cc7ac;outline-offset:2px}
+.audit-paper{max-width:1120px;margin:0 auto 60px;background:white;box-shadow:0 18px 60px #16392c19}
+.audit-cover{min-height:740px;padding:52px 60px;display:flex;flex-direction:column;justify-content:space-between;background:radial-gradient(circle at 86% 28%,#d8eee1 0,#d8eee100 37%),linear-gradient(145deg,#f9faf5 0%,#eff5ef 74%,#e4eee7 100%);border-top:9px solid var(--audit-green)}
+.audit-brand{display:flex;align-items:center;gap:10px;font-size:12px;letter-spacing:.14em}
+.audit-brand-mark{display:inline-grid;place-items:center;width:35px;height:35px;background:var(--audit-green);color:#fff;border-radius:6px;font-size:17px;letter-spacing:0}
+.audit-brand>span:last-child{margin-left:auto;color:var(--audit-muted);font-size:10px}
+.audit-cover-main{margin-top:30px}
+.audit-kicker,.audit-section-head>span{color:#68836e;font-size:11px;font-weight:800;letter-spacing:.18em}
+.audit-cover h1{font-size:clamp(36px,5vw,64px);line-height:1.18;letter-spacing:-.055em;margin:19px 0 18px;color:#173d37}
+.audit-cover-main>p:last-of-type{font-size:18px;color:var(--audit-muted)}
+.audit-demo{display:inline-block;margin-top:10px;border:1px solid #abc4b5;background:#f6fbf6;color:#315f49;border-radius:3px;padding:3px 8px;font-size:11px;font-weight:700}
+.audit-cover-foot{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 28px;border-top:1px solid #b7cbbd;padding-top:24px}
+.audit-cover-foot>div{display:flex;flex-direction:column;min-width:0}
+.audit-cover-foot span,.audit-trace span{font-size:11px;color:var(--audit-muted)}
+.audit-cover-foot strong{font-size:13px;overflow-wrap:anywhere}
+.audit-section{padding:52px 60px;border-top:1px solid var(--audit-line)}
+.audit-section-head{margin-bottom:26px}
+.audit-section-head h2{font-size:30px;letter-spacing:-.045em;margin:8px 0 5px;line-height:1.3}
+.audit-section-head p{color:var(--audit-muted);margin:0}
+.audit-stat-row{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--audit-line);border-radius:8px;overflow:hidden}
+.audit-stat-row>div{padding:18px 19px;border-right:1px solid var(--audit-line);background:#f8faf7}
+.audit-stat-row>div:last-child{border:0}
+.audit-stat-row span{display:block;color:var(--audit-muted);font-size:12px}
+.audit-stat-row strong{display:block;color:var(--audit-green);font-size:29px;line-height:1.3}
+.audit-stat-row small{font-size:12px;font-weight:500;margin-left:3px}
+.audit-summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:34px;margin-top:34px}
+.audit-summary h3,.audit-appendix h3{font-size:16px;margin:0 0 15px}
+.audit-chart h3 small{color:var(--audit-muted);font-size:11px;font-weight:500;margin-left:6px}
+.audit-chart-row{display:grid;grid-template-columns:32px 1fr 28px;align-items:center;gap:9px;margin:10px 0;font-size:12px}
+.audit-chart-row>span{font-weight:800}
+.audit-chart-row>strong{text-align:right}
+.audit-chart-track{height:14px;background:#edf2ed;border-radius:2px;overflow:hidden}
+.audit-bar{display:block;height:100%;border-radius:2px;background:#bed0c3;min-width:0}
+.audit-bar-e3{background:#1b6754}.audit-bar-e2{background:#69a284}.audit-bar-e1{background:#bbba7c}.audit-bar-e0{background:#c99a82}
+.audit-chart>p,.audit-scope{font-size:11px;color:var(--audit-muted)}
+.audit-findings{border-left:1px solid var(--audit-line);padding-left:28px}
+.audit-findings ol{padding-left:20px;margin:0}
+.audit-findings li{padding:0 0 11px 4px}
+.audit-findings li::marker{color:var(--audit-green);font-weight:800}
+.audit-pipeline{margin-top:28px;padding:22px 24px;background:#f5f8f5;border-radius:8px}
+.audit-pipeline>div{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:10px}
+.audit-pipeline>div>div{border-left:2px solid #8fb29d;padding-left:9px;display:flex;flex-direction:column}
+.audit-pipeline span{font-size:11px;color:var(--audit-muted)}
+.audit-pipeline strong{font-size:15px}
+.audit-scope{margin:15px 0 0}
+.audit-claims table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:12px}
+.audit-claims th{background:#e9f0e9;color:#315447;text-align:left;font-size:11px;padding:10px 8px;border-top:2px solid var(--audit-green);border-bottom:1px solid #cbdacf}
+.audit-claims td{padding:10px 8px;border-bottom:1px solid var(--audit-line);vertical-align:top;overflow-wrap:anywhere}
+.audit-claims tbody tr:nth-child(even){background:#f8faf8}
+.audit-claims th:nth-child(1){width:8%}.audit-claims th:nth-child(2){width:45%}.audit-claims th:nth-child(3){width:11%}.audit-claims th:nth-child(4){width:18%}.audit-claims th:nth-child(5){width:18%}
+.audit-claims td strong{color:var(--audit-green)}
+.audit-claims td span{color:var(--audit-muted)}
+.audit-appendix{padding-bottom:70px}
+.audit-method-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:0 0 32px}
+.audit-method-grid>div{background:#f4f8f4;border:1px solid var(--audit-line);padding:17px}
+.audit-method-grid strong{color:var(--audit-green);font-size:18px}
+.audit-method-grid p{margin:5px 0 0;font-size:12px}
+.audit-appendix>p{max-width:850px;margin:0 0 27px;color:#405550}
+.audit-trace{border-top:1px solid var(--audit-line);padding-top:17px;display:grid;grid-template-columns:100px 1fr;gap:7px 12px}
+.audit-trace code{font-size:11px;overflow-wrap:anywhere}
+.audit-empty{font:16px/1.6 system-ui,sans-serif;max-width:700px;margin:15vh auto;padding:24px}
+.audit-empty a{color:#194f45}
+@media(max-width:700px){.audit-toolbar{align-items:flex-start;flex-wrap:wrap}.audit-toolbar>span{display:none}.audit-toolbar>div{width:100%;justify-content:flex-start}.audit-cover{min-height:620px;padding:32px 24px}.audit-section{padding:34px 24px}.audit-cover-foot,.audit-summary-grid{grid-template-columns:1fr}.audit-stat-row{grid-template-columns:repeat(2,1fr)}.audit-stat-row>div:nth-child(2){border-right:0}.audit-stat-row>div:nth-child(-n+2){border-bottom:1px solid var(--audit-line)}.audit-findings{border-left:0;padding-left:0}.audit-method-grid{grid-template-columns:repeat(2,1fr)}.audit-claims{overflow-x:auto}.audit-claims table{min-width:700px}}
+@page{size:A4;margin:18mm 14mm 17mm;@top-right{content:"PROOFOPS · AUDIT REPORT";color:#59776a;font-size:8pt}@bottom-left{content:"공시 근거 검토 보고서";color:#59776a;font-size:8pt}@bottom-right{content:counter(page);color:#59776a;font-size:8pt}}
+@media print{html,body{background:#fff!important;margin:0}.demo-site>.site-header,.demo-site>.site-footer{display:none}.audit-page{background:#fff;color:#203433;font-size:9pt;min-height:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}.audit-toolbar{display:none}.audit-paper{max-width:none;margin:0;box-shadow:none}.audit-cover{min-height:240mm;padding:24mm 9mm 12mm;border-top:0;break-after:page}.audit-section{padding:8mm 0;border-top:0}.audit-summary{break-after:page}.audit-claims{break-before:page}.audit-appendix{break-before:page}.audit-section-head{margin-bottom:5mm}.audit-section-head h2{font-size:22pt}.audit-stat-row strong{font-size:19pt}.audit-summary-grid{gap:6mm;margin-top:7mm}.audit-pipeline{margin-top:6mm;padding:5mm}.audit-claims table{font-size:8pt}.audit-claims td{padding:2.5mm 1.5mm}.audit-claims th{padding:2.5mm 1.5mm}.audit-claims thead{display:table-header-group}.audit-claims tr,.audit-method-grid>div,.audit-stat-row>div,.audit-pipeline>div>div{break-inside:avoid}.audit-method-grid{gap:3mm}.audit-method-grid>div{padding:4mm}}

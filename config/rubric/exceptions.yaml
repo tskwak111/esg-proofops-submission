@@ -1,0 +1,23 @@
+version: proofops-domain-v2.0-impl2
+effective_date: '2026-09-25'
+source_document_sha256: 0f9d7e3495d1bc6330ee4ffd2bb644ce8189c89e91dd5f9ae4c720b9ffaebc6a
+status: draft
+scope: source-derived implementation baseline; clause/legal approval not completed
+superlative:
+  enabled: true
+  source_section: '4.4'
+  e0_when_all:
+  - has_superlative
+  - comparison_basis_absent
+  - external_verification_absent
+  unknown_is_absent: false
+  with_safe_harbor: GAP-006
+labels:
+  E0: UNSUBSTANTIATED
+  E1: INCOMPLETE
+  E2: INCOMPLETE
+  E3: SUBSTANTIATED
+sublabels:
+  status: partial_source_mapping
+  goal_sample: IMPL
+  unsupported_cases: null_with_GAP-005

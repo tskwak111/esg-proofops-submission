@@ -1,0 +1,268 @@
+version: proofops-domain-v2.0-impl2
+effective_date: '2026-09-25'
+source_document_sha256: 0f9d7e3495d1bc6330ee4ffd2bb644ce8189c89e91dd5f9ae4c720b9ffaebc6a
+status: draft
+scope: source-derived implementation baseline; clause/legal approval not completed
+elements:
+- id: G1
+  name: 목표연도
+  requirement: mandatory
+  trigger: null
+  source_scopes:
+  - local_claim
+  - same_table
+  basis:
+    source_section: '4.5'
+    standard: IFRS S2
+    clause: null
+    verification_status: unverified
+  scope_approval: approved_source_explicit
+- id: G2
+  name: 목표수치·지표
+  requirement: mandatory
+  trigger: null
+  source_scopes:
+  - local_claim
+  - same_table
+  basis:
+    source_section: '4.5'
+    standard: IFRS S2
+    clause: null
+    verification_status: unverified
+  scope_approval: approved_source_explicit
+- id: G3
+  name: 기준연도·기준값
+  requirement: mandatory
+  trigger: null
+  source_scopes:
+  - local_claim
+  - same_table
+  - explicit_link
+  basis:
+    source_section: '4.5'
+    standard: IFRS S2
+    clause: null
+    verification_status: unverified
+  scope_approval: partly_unresolved_GAP-004
+- id: G4
+  name: 적용범위:Scope·조직경계
+  requirement: mandatory
+  trigger: null
+  source_scopes:
+  - local_claim
+  - same_table
+  - global_bound
+  basis:
+    source_section: '4.5'
+    standard: IFRS S2
+    clause: null
+    verification_status: unverified
+  scope_approval: approved_source_explicit
+- id: G5
+  name: 현재 이행률·진척
+  requirement: mandatory
+  trigger: null
+  source_scopes:
+  - local_claim
+  - same_table
+  basis:
+    source_section: '4.5'
+    standard: IFRS S2
+    clause: null
+    verification_status: unverified
+  scope_approval: approved_source_explicit
+- id: G6
+  name: 전환계획·달성수단
+  requirement: mandatory
+  trigger: null
+  source_scopes:
+  - local_claim
+  - explicit_link
+  basis:
+    source_section: '4.5'
+    standard: IFRS S2
+    clause: null
+    verification_status: unverified
+  scope_approval: partly_unresolved_GAP-004
+- id: G7
+  name: 상쇄 사용 계획
+  requirement: conditional
+  trigger: offset_or_carbon_neutral_claim
+  source_scopes:
+  - local_claim
+  - explicit_link
+  basis:
+    source_section: '4.5'
+    standard: IFRS S2
+    clause: null
+    verification_status: unverified
+  scope_approval: partly_unresolved_GAP-004
+- id: G8
+  name: 과학기반 목표 검증
+  requirement: conditional
+  trigger: science_based_claim
+  source_scopes:
+  - local_claim
+  - global_bound
+  basis:
+    source_section: '4.5'
+    standard: IFRS S2
+    clause: null
+    verification_status: unverified
+  scope_approval: approved_source_explicit
+- id: P1
+  name: 정량수치와 단위
+  requirement: mandatory
+  trigger: null
+  source_scopes:
+  - local_claim
+  - same_table
+  basis:
+    source_section: '4.5'
+    standard: IFRS S1
+    clause: null
+    verification_status: unverified
+  scope_approval: approved_source_explicit
+- id: P2
+  name: 비교기준
+  requirement: mandatory
+  trigger: null
+  source_scopes:
+  - local_claim
+  - same_table
+  basis:
+    source_section: '4.5'
+    standard: IFRS S1
+    clause: null
+    verification_status: unverified
+  scope_approval: approved_source_explicit
+- id: P3
+  name: 산정방법론과 경계
+  requirement: mandatory
+  trigger: null
+  source_scopes:
+  - local_claim
+  - same_table
+  - global_bound
+  basis:
+    source_section: '4.5'
+    standard: IFRS S1
+    clause: null
+    verification_status: unverified
+  scope_approval: approved_source_explicit
+- id: P4
+  name: 보증 연결
+  requirement: mandatory
+  trigger: null
+  source_scopes:
+  - global_bound
+  basis:
+    source_section: '4.5'
+    standard: IFRS S1
+    clause: null
+    verification_status: unverified
+  scope_approval: approved_source_explicit
+- id: P5
+  name: 절대량·원단위 구분
+  requirement: conditional
+  trigger: reduction_or_improvement_claim
+  source_scopes:
+  - local_claim
+  - same_table
+  basis:
+    source_section: '4.5'
+    standard: IFRS S1
+    clause: null
+    verification_status: unverified
+  scope_approval: approved_source_explicit
+- id: P6
+  name: 본문 수치와 표 일치
+  requirement: mandatory
+  trigger: null
+  source_scopes:
+  - computed_check
+  basis:
+    source_section: '4.5'
+    standard: IFRS S1
+    clause: null
+    verification_status: unverified
+  scope_approval: approved_source_explicit
+- id: M1
+  name: 이행방법·명명된 표준
+  requirement: mandatory
+  trigger: null
+  source_scopes:
+  - local_claim
+  - same_table
+  basis:
+    source_section: '4.5'
+    standard: 보증·공시 기준 대응 검증 대기
+    clause: null
+    verification_status: unverified
+  scope_approval: approved_source_explicit
+- id: M2
+  name: 적용범위
+  requirement: mandatory
+  trigger: null
+  source_scopes:
+  - local_claim
+  - same_table
+  - global_bound
+  basis:
+    source_section: '4.5'
+    standard: 보증·공시 기준 대응 검증 대기
+    clause: null
+    verification_status: unverified
+  scope_approval: approved_source_explicit
+- id: M3
+  name: 외부검증
+  requirement: mandatory
+  trigger: null
+  source_scopes:
+  - local_claim
+  - global_bound
+  basis:
+    source_section: '4.5'
+    standard: 보증·공시 기준 대응 검증 대기
+    clause: null
+    verification_status: unverified
+  scope_approval: approved_source_explicit
+- id: M4
+  name: 이행 실적의 구체성
+  requirement: mandatory
+  trigger: null
+  source_scopes:
+  - local_claim
+  - same_table
+  basis:
+    source_section: '4.5'
+    standard: 보증·공시 기준 대응 검증 대기
+    clause: null
+    verification_status: unverified
+  scope_approval: approved_source_explicit
+- id: M5
+  name: 담당조직·거버넌스
+  requirement: conditional
+  trigger: governance_claim
+  source_scopes:
+  - local_claim
+  - explicit_link
+  basis:
+    source_section: '4.5'
+    standard: 보증·공시 기준 대응 검증 대기
+    clause: null
+    verification_status: unverified
+  scope_approval: partly_unresolved_GAP-004
+- id: M6
+  name: 보상 연동
+  requirement: conditional
+  trigger: compensation_link_claim
+  source_scopes:
+  - local_claim
+  - explicit_link
+  basis:
+    source_section: '4.5'
+    standard: 보증·공시 기준 대응 검증 대기
+    clause: null
+    verification_status: unverified
+  scope_approval: partly_unresolved_GAP-004

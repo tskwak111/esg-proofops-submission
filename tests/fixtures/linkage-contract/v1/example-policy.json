@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "version": "synthetic-demo-only",
+  "approved": true,
+  "synthetic_only": true,
+  "current_stage": 1,
+  "enabled_items": [
+    "C1"
+  ],
+  "c1_identity_rule": "exact_verified_entity_set",
+  "c3_threshold": null,
+  "c3_account_mapping_approved": false
+}

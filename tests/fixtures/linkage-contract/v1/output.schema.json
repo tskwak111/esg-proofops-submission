@@ -1,0 +1,116 @@
+{
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "claim_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "item": {
+      "enum": [
+        "C1",
+        "C3"
+      ]
+    },
+    "execution_state": {
+      "enum": [
+        "completed",
+        "blocked",
+        "not_run"
+      ]
+    },
+    "status": {
+      "enum": [
+        "matched",
+        "needs_explanation",
+        "not_applicable",
+        null
+      ]
+    },
+    "review_required": {
+      "type": "boolean"
+    },
+    "reason_codes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "source_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "explanation_source_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "sustainability_value": {
+      "type": "string",
+      "minLength": 1
+    },
+    "financial_value": {
+      "type": "string",
+      "minLength": 1
+    },
+    "packet_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "policy_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "required": [
+    "schema_version",
+    "claim_id",
+    "item",
+    "execution_state",
+    "status",
+    "review_required",
+    "reason_codes",
+    "source_ids",
+    "explanation_source_id",
+    "sustainability_value",
+    "financial_value",
+    "packet_sha256",
+    "policy_sha256"
+  ],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "execution_state": {
+            "const": "completed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "status": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

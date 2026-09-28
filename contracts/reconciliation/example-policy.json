@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.1",
+  "version": "synthetic-demo-only",
+  "approved": true,
+  "synthetic_only": true,
+  "current_stage": 1,
+  "enabled_items": [
+    "C1",
+    "C2",
+    "C3",
+    "C4"
+  ],
+  "c1_identity_rule": "exact_verified_entity_set",
+  "c3_threshold": null,
+  "c3_account_mapping_approved": false,
+  "approved_by": "synthetic-fixture-author",
+  "approved_on": "2026-09-18",
+  "source_policy_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "allowed_capex_account_ids": [],
+  "coverage_policy_id": "synthetic-coverage-only",
+  "allowed_difference_types": [
+    "operational_control_vs_control"
+  ],
+  "c2_timing_rule": "same_period_or_verified_explanation",
+  "c4_required_explanations": [
+    "definition",
+    "calculation_basis"
+  ]
+}

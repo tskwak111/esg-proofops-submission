@@ -1,0 +1,348 @@
+{
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "synthetic": {
+      "type": "boolean"
+    },
+    "identity": {
+      "type": "object",
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "company_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "claim_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "package_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "period_start": {
+          "type": "string",
+          "minLength": 1
+        },
+        "period_end": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sustainability_document_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "financial_document_version": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "tenant_id",
+        "company_id",
+        "claim_id",
+        "package_id",
+        "period_start",
+        "period_end",
+        "sustainability_document_version",
+        "financial_document_version"
+      ],
+      "additionalProperties": false
+    },
+    "item": {
+      "enum": [
+        "C1",
+        "C3"
+      ]
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "document_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "artifact_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "locator": {
+            "type": "string",
+            "minLength": 1
+          },
+          "quote": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "source_id",
+          "document_id",
+          "artifact_sha256",
+          "locator",
+          "quote"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "sustainability": {
+      "type": "object",
+      "properties": {
+        "raw": {
+          "type": "string",
+          "minLength": 1
+        },
+        "normalized": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "entity_set",
+            "facility_set",
+            "currency_amount"
+          ]
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "raw",
+        "normalized",
+        "kind",
+        "unit",
+        "source_id"
+      ],
+      "additionalProperties": false
+    },
+    "financial": {
+      "type": "object",
+      "properties": {
+        "raw": {
+          "type": "string",
+          "minLength": 1
+        },
+        "normalized": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "entity_set",
+            "facility_set",
+            "currency_amount"
+          ]
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "raw",
+        "normalized",
+        "kind",
+        "unit",
+        "source_id"
+      ],
+      "additionalProperties": false
+    },
+    "comparability": {
+      "enum": [
+        "comparable",
+        "not_comparable",
+        "unknown"
+      ]
+    },
+    "explanation": {
+      "type": "object",
+      "properties": {
+        "source_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "search_complete": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "source_id",
+        "search_complete"
+      ],
+      "additionalProperties": false
+    },
+    "c3_context": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "currency": {
+              "type": "string",
+              "minLength": 1
+            },
+            "target_period_start": {
+              "type": "string",
+              "minLength": 1
+            },
+            "target_period_end": {
+              "type": "string",
+              "minLength": 1
+            },
+            "capex_period_start": {
+              "type": "string",
+              "minLength": 1
+            },
+            "capex_period_end": {
+              "type": "string",
+              "minLength": 1
+            },
+            "capex_account_ids": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "commitment_source_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "funding_plan_source_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "currency",
+            "target_period_start",
+            "target_period_end",
+            "capex_period_start",
+            "capex_period_end",
+            "capex_account_ids",
+            "commitment_source_id",
+            "funding_plan_source_id"
+          ]
+        }
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "synthetic",
+    "identity",
+    "item",
+    "sources",
+    "sustainability",
+    "financial",
+    "comparability",
+    "explanation",
+    "c3_context"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "item": {
+            "const": "C3"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "c3_context": {
+            "type": "object",
+            "properties": {
+              "currency": {
+                "type": "string",
+                "minLength": 1
+              },
+              "target_period_start": {
+                "type": "string",
+                "minLength": 1
+              },
+              "target_period_end": {
+                "type": "string",
+                "minLength": 1
+              },
+              "capex_period_start": {
+                "type": "string",
+                "minLength": 1
+              },
+              "capex_period_end": {
+                "type": "string",
+                "minLength": 1
+              },
+              "capex_account_ids": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "commitment_source_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "funding_plan_source_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "currency",
+              "target_period_start",
+              "target_period_end",
+              "capex_period_start",
+              "capex_period_end",
+              "capex_account_ids",
+              "commitment_source_id",
+              "funding_plan_source_id"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

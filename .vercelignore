@@ -1,0 +1,16 @@
+/tests/
+/evidence/
+/docs/
+/handoff/
+/outputs/
+/fixtures/
+/sources/
+/contracts/
+/evaluation/
+/scripts/
+/infra/
+/prompts/*
+!/prompts/element_tagging.md
+*.pdf
+.venv/
+node_modules/

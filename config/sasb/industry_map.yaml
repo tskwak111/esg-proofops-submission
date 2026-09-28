@@ -1,0 +1,9 @@
+version: proofops-domain-v2.0-impl2
+effective_date: '2026-09-25'
+source_document_sha256: 0f9d7e3495d1bc6330ee4ffd2bb644ce8189c89e91dd5f9ae4c720b9ffaebc6a
+status: draft
+scope: source-derived implementation baseline; clause/legal approval not completed
+mappings: []
+verification_status: unverified
+unknown_industry_behavior: applicability_undetermined_not_zero_penalty
+gap_id: GAP-010

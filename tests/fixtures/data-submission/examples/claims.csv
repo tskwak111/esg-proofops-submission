@@ -1,0 +1,3 @@
+﻿annotation_id,document_id,claim_id,physical_page,quote,char_start,char_end,bbox_json,statement,track,topic,claim_year,annotation_status,annotator,adjudicator,notes
+SYN-A1,SYN-SR,SYN-C1,1,2024년 국내 사업장의 용수 사용량은 100㎥이다.,,,,2024년 국내 사업장 용수 사용량 100㎥,performance,용수,2024,draft,합성 예시,,gold 아님
+SYN-A2,SYN-SR,SYN-C2,2,2030년까지 설비에 100억원을 투자할 계획이다.,,,,2030년까지 설비 100억원 투자 목표,goal,환경 투자,2030,draft,합성 예시,,gold 아님

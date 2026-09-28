@@ -1,0 +1,44 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+node_modules/
+dist/
+build/
+*.egg-info/
+.local/
+.env
+.env.*
+!.env.example
+config/model_bindings.json
+config/consent_profile.json
+legacy_reference/
+playwright-report/
+test-results/
+coverage/
+.coverage
+.DS_Store
+
+# Team data stays out of source control
+기업보고서/
+outputs/handoff-packages/
+
+# Local dependency directories and worktree symlinks
+**/node_modules
+**/.venv
+
+# Native reader compiler cache
+/scratch/
+
+# Private customer corpus; never publish real report PDFs
+*.pdf
+**/report-pages/
+**/page-images/
+*.sqlite
+*.sqlite3
+*.pem
+*.key
+.vercel
+.env*

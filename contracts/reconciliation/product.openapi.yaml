@@ -1,0 +1,1026 @@
+openapi: 3.1.0
+info:
+  title: ESG ProofOps reconciliation product surface
+  version: '1.1'
+  description: Fragment only. Master merges these paths and schemas into the main OpenAPI document; the
+    security scheme, error envelope and servers are defined there. Every operation runs behind the existing
+    cookie session, tenant authorization, CSRF/origin and rate limiting. C5 is not reachable through this
+    surface.
+paths:
+  /v1/runs/{run_id}/claims/{claim_id}/reconciliation:
+    get:
+      summary: List Cases
+      operationId: reconciliation_list
+      security:
+      - sessionCookie: []
+      parameters:
+      - name: run_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Run Id
+      - name: claim_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Claim Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseList'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden or CSRF failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found or tenant mismatch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Conflict / gate blocked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '412':
+          description: Stale revision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Schema or domain validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate/budget limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      x-minimum-role: viewer
+      x-idempotency-required: false
+      x-rate-limit: 120/min/user
+  /v1/reconciliation/cases/{case_id}:
+    get:
+      summary: Get Case
+      operationId: reconciliation_case_get
+      security:
+      - sessionCookie: []
+      parameters:
+      - name: case_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Case Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseDetail'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden or CSRF failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found or tenant mismatch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Conflict / gate blocked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '412':
+          description: Stale revision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Schema or domain validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate/budget limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      x-minimum-role: viewer
+      x-idempotency-required: false
+      x-rate-limit: 120/min/user
+  /v1/reconciliation/cases/{case_id}/review:
+    post:
+      summary: Review
+      operationId: reconciliation_review
+      security:
+      - sessionCookie: []
+      parameters:
+      - name: case_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Case Id
+      - name: X-CSRF-Token
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 16
+          maxLength: 128
+      - name: If-Match
+        in: header
+        required: true
+        schema:
+          type: string
+          pattern: ^"[1-9][0-9]*"$
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseDetail'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden or CSRF failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found or tenant mismatch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Conflict / gate blocked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '412':
+          description: Stale revision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Schema or domain validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate/budget limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      x-minimum-role: reviewer
+      x-idempotency-required: true
+      x-rate-limit: 10/min/user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              description: A reviewer confirms the stored bindings; it never chooses an outcome.
+              properties:
+                reason:
+                  maxLength: 2000
+                  minLength: 1
+                  title: Reason
+                  type: string
+                confirm_source_bindings:
+                  const: true
+                  title: Confirm Source Bindings
+                  type: boolean
+                confirm_decision_bindings:
+                  const: true
+                  title: Confirm Decision Bindings
+                  type: boolean
+                confirm_search_coverage:
+                  title: Confirm Search Coverage
+                  type: boolean
+              required:
+              - reason
+              - confirm_source_bindings
+              - confirm_decision_bindings
+              - confirm_search_coverage
+              title: ReviewConfirm
+              type: object
+  /v1/reconciliation/cases/{case_id}/policy-approval:
+    post:
+      summary: Approve Policy
+      operationId: reconciliation_policy_approval
+      security:
+      - sessionCookie: []
+      parameters:
+      - name: case_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Case Id
+      - name: X-CSRF-Token
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 16
+          maxLength: 128
+      - name: If-Match
+        in: header
+        required: true
+        schema:
+          type: string
+          pattern: ^"[1-9][0-9]*"$
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseDetail'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden or CSRF failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found or tenant mismatch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Conflict / gate blocked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '412':
+          description: Stale revision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Schema or domain validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate/budget limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      x-minimum-role: admin
+      x-idempotency-required: true
+      x-rate-limit: 10/min/user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                approved:
+                  title: Approved
+                  type: boolean
+                reason:
+                  maxLength: 2000
+                  minLength: 1
+                  title: Reason
+                  type: string
+              required:
+              - approved
+              - reason
+              title: PolicyApproval
+              type: object
+  /v1/reconciliation/cases/{case_id}/evaluate:
+    post:
+      summary: Evaluate
+      operationId: reconciliation_evaluate
+      security:
+      - sessionCookie: []
+      parameters:
+      - name: case_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Case Id
+      - name: X-CSRF-Token
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 16
+          maxLength: 128
+      - name: If-Match
+        in: header
+        required: true
+        schema:
+          type: string
+          pattern: ^"[1-9][0-9]*"$
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseDetail'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden or CSRF failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found or tenant mismatch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Conflict / gate blocked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '412':
+          description: Stale revision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Schema or domain validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate/budget limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      x-minimum-role: editor
+      x-idempotency-required: true
+      x-rate-limit: 10/min/user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              description: 'Evaluation takes no input: the server owns every snapshot it reads.'
+              properties: {}
+              title: Evaluate
+              type: object
+  /v1/reconciliation/cases/{case_id}/revisions/{revision}:
+    get:
+      summary: Get Revision
+      operationId: reconciliation_revision_get
+      security:
+      - sessionCookie: []
+      parameters:
+      - name: case_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Case Id
+      - name: revision
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+          title: Revision
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevisionSnapshot'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden or CSRF failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found or tenant mismatch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Conflict / gate blocked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '412':
+          description: Stale revision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Schema or domain validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate/budget limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      x-minimum-role: viewer
+      x-idempotency-required: false
+      x-rate-limit: 120/min/user
+  /v1/reconciliation/cases/{case_id}/sources/{source_id}/content:
+    get:
+      summary: Source Content
+      operationId: reconciliation_source_content
+      security:
+      - sessionCookie: []
+      parameters:
+      - name: case_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Case Id
+      - name: source_id
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 200
+          title: Source Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/octet-stream: {}
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden or CSRF failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found or tenant mismatch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Conflict / gate blocked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '412':
+          description: Stale revision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Schema or domain validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate/budget limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Dependency unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      x-minimum-role: viewer
+      x-idempotency-required: false
+      x-rate-limit: 60/min/user
+components:
+  schemas:
+    CaseDetail:
+      properties:
+        case_id:
+          type: string
+          pattern: ^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$
+          title: Case Id
+        run_id:
+          type: string
+          pattern: ^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$
+          title: Run Id
+        claim_id:
+          type: string
+          pattern: ^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$
+          title: Claim Id
+        item:
+          type: string
+          enum:
+          - C1
+          - C2
+          - C3
+          - C4
+          title: Item
+        revision:
+          type: integer
+          title: Revision
+        synthetic:
+          type: boolean
+          title: Synthetic
+        review_state:
+          type: string
+          enum:
+          - pending
+          - reviewed
+          title: Review State
+        policy_approved:
+          type: boolean
+          title: Policy Approved
+        packet:
+          additionalProperties: true
+          type: object
+          title: Packet
+        policy:
+          additionalProperties: true
+          type: object
+          title: Policy
+        sources:
+          items:
+            $ref: '#/components/schemas/SourceRef'
+          type: array
+          title: Sources
+        latest_result:
+          anyOf:
+          - $ref: '#/components/schemas/LatestResult'
+          - type: 'null'
+        provenance:
+          additionalProperties: true
+          type: object
+          title: Provenance
+        coverage_confirmed:
+          type: boolean
+          title: Coverage Confirmed
+        policy_approval:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Policy Approval
+      additionalProperties: false
+      type: object
+      required:
+      - case_id
+      - run_id
+      - claim_id
+      - item
+      - revision
+      - synthetic
+      - review_state
+      - policy_approved
+      - packet
+      - policy
+      - sources
+      - latest_result
+      - provenance
+      - coverage_confirmed
+      - policy_approval
+      title: CaseDetail
+    CaseList:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/CaseDetail'
+          type: array
+          title: Items
+      additionalProperties: false
+      type: object
+      required:
+      - items
+      title: CaseList
+    LatestResult:
+      properties:
+        revision:
+          type: integer
+          title: Revision
+        result:
+          $ref: '#/components/schemas/ReconciliationResult'
+        projection:
+          additionalProperties: true
+          type: object
+          title: Projection
+        created_at:
+          type: string
+          title: Created At
+      additionalProperties: false
+      type: object
+      required:
+      - revision
+      - result
+      - projection
+      - created_at
+      title: LatestResult
+    ReconciliationResult:
+      properties:
+        schema_version:
+          type: string
+          const: '1.1'
+          title: Schema Version
+        claim_id:
+          type: string
+          title: Claim Id
+        item:
+          type: string
+          enum:
+          - C1
+          - C2
+          - C3
+          - C4
+          title: Item
+        execution_state:
+          type: string
+          enum:
+          - completed
+          - blocked
+          - not_run
+          title: Execution State
+        status:
+          anyOf:
+          - type: string
+            enum:
+            - matched
+            - needs_explanation
+            - not_applicable
+          - type: 'null'
+          title: Status
+        review_required:
+          type: boolean
+          title: Review Required
+        reason_codes:
+          items:
+            type: string
+          type: array
+          title: Reason Codes
+        source_ids:
+          items:
+            type: string
+          type: array
+          title: Source Ids
+        explanation_source_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Explanation Source Id
+        sustainability_value:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Sustainability Value
+        financial_value:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Financial Value
+        packet_sha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+          title: Packet Sha256
+        policy_sha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+          title: Policy Sha256
+        synthetic:
+          type: boolean
+          title: Synthetic
+        engine_version:
+          type: string
+          title: Engine Version
+      additionalProperties: false
+      type: object
+      required:
+      - schema_version
+      - claim_id
+      - item
+      - execution_state
+      - status
+      - review_required
+      - reason_codes
+      - source_ids
+      - explanation_source_id
+      - sustainability_value
+      - financial_value
+      - packet_sha256
+      - policy_sha256
+      - synthetic
+      - engine_version
+      title: ReconciliationResult
+      description: Strict 1.1 result. `status` is meaningful only once completed.
+    RevisionSnapshot:
+      properties:
+        case_id:
+          type: string
+          pattern: ^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$
+          title: Case Id
+        revision:
+          type: integer
+          title: Revision
+        kind:
+          type: string
+          enum:
+          - registration
+          - review
+          - policy_approval
+          - evaluation
+          title: Kind
+        actor:
+          type: string
+          title: Actor
+        created_at:
+          type: string
+          title: Created At
+        snapshot_sha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+          title: Snapshot Sha256
+        provenance:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Provenance
+        event:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Event
+        result:
+          anyOf:
+          - $ref: '#/components/schemas/ReconciliationResult'
+          - type: 'null'
+        projection:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Projection
+      additionalProperties: false
+      type: object
+      required:
+      - case_id
+      - revision
+      - kind
+      - actor
+      - created_at
+      - snapshot_sha256
+      - provenance
+      - event
+      - result
+      - projection
+      title: RevisionSnapshot
+    SourceRef:
+      properties:
+        source_id:
+          type: string
+          title: Source Id
+        document_id:
+          type: string
+          title: Document Id
+        artifact_sha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+          title: Artifact Sha256
+        locator:
+          type: string
+          title: Locator
+        quote:
+          type: string
+          title: Quote
+        format:
+          type: string
+          enum:
+          - text
+          - xml
+          - html
+          - pdf
+          title: Format
+        byte_size:
+          type: integer
+          title: Byte Size
+        binding_state:
+          type: string
+          enum:
+          - draft
+          - confirmed
+          title: Binding State
+        document_role:
+          anyOf:
+          - type: string
+            enum:
+            - sustainability
+            - financial
+          - type: 'null'
+          title: Document Role
+      additionalProperties: false
+      type: object
+      required:
+      - source_id
+      - document_id
+      - artifact_sha256
+      - locator
+      - quote
+      - format
+      - byte_size
+      - binding_state
+      - document_role
+      title: SourceRef

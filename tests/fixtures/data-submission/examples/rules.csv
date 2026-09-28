@@ -1,0 +1,2 @@
+﻿rule_id,source_section,question,proposal,positive_case_ids,negative_case_ids,boundary_case_ids,official_source_url,clause,verified_on,rights_notes,decision_status,domain_reviewer,product_approver,approved_on,rulepack_before,rulepack_after
+REC-001,C1,법인 수와 사업장 수를 직접 비교해도 되는가?,종류·대응 관계가 다르면 개수 비교를 하지 않음,,,,,,,,proposed,합성 예시,,,,

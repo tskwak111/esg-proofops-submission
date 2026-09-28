@@ -1,0 +1,2 @@
+﻿metric,proposed_threshold,denominator,supported_scope,sample_count,observed_value,interval,domain_reviewer,approval_status
+normal_difference_false_positive_rate,<0.05,독립 gold의 정상 차이 사례 수; 보류율 별도,C1~C4,,,,,proposed

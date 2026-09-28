@@ -1,0 +1,4 @@
+{
+  "prompt_sha256": "19eeb93ef1d1067832f2dd96d5bdd3047d73cb6dbc200cd9b5b5296bbf848263",
+  "evidence_limits": "Minimal offline regression fixture from four stored responses; not human gold or an accuracy evaluation. No credentials, ledger, full reports or operational state included."
+}

@@ -1,0 +1,33 @@
+version: proofops-domain-v2.0-impl2
+effective_date: '2026-09-25'
+source_document_sha256: 0f9d7e3495d1bc6330ee4ffd2bb644ce8189c89e91dd5f9ae4c720b9ffaebc6a
+status: draft
+scope: source-derived implementation baseline; clause/legal approval not completed
+track: management
+source_section: '4.4'
+branches:
+- id: MGMT_E3
+  require_all:
+  - named_means_or_concrete_state
+  - org_boundary
+  - external_verification
+  grade: E3
+- id: MGMT_E2
+  require_all:
+  - named_means_or_concrete_state
+  - org_boundary
+  grade: E2
+- id: MGMT_E1
+  require_all:
+  - named_means_or_concrete_state
+  grade: E1
+- id: MGMT_WILLINGNESS
+  when:
+    willingness_only: true
+  grade: E0
+unmatched: blocked_rule_gap
+additional_element_policy: report_without_grade_effect
+product_variant:
+  specific_names_only_cap: E1
+  e2_plus_requires: direct_product_material_ratio_or_target
+  generic_boundary_interaction: GAP-007

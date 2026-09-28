@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title">
+  <title id="title">ProofOps — 공시 문장에 근거를 연결합니다</title>
+  <rect width="1200" height="630" fill="#f6f7f2"/>
+  <path d="M790 0h410v630H590z" fill="#e9f1df"/>
+  <rect x="72" y="70" width="64" height="64" rx="17" fill="#17483f"/>
+  <path d="M89 118V86h15c9 0 15 5 15 13s-6 13-15 13h-6v6h-9Zm9-15h6c4 0 6-1 6-4s-2-4-6-4h-6v8Z" fill="#fff"/>
+  <circle cx="120" cy="117" r="7" fill="#d7f281"/>
+  <text x="153" y="117" font-family="Arial,sans-serif" font-size="35" font-weight="700" fill="#17483f">ProofOps</text>
+  <text x="72" y="275" font-family="Arial,sans-serif" font-size="60" font-weight="700" fill="#152728">공시 문장 하나마다</text>
+  <text x="72" y="355" font-family="Arial,sans-serif" font-size="60" font-weight="700" fill="#39735a">근거를 연결합니다.</text>
+  <text x="74" y="432" font-family="Arial,sans-serif" font-size="27" fill="#607070">주장 추출 · 원문 검증 · 규칙 판정 · 검토 보고서</text>
+  <rect x="796" y="195" width="288" height="258" rx="18" fill="#17483f"/>
+  <text x="828" y="250" font-family="Arial,sans-serif" font-size="17" font-weight="700" fill="#d7f281">EVIDENCE REVIEW</text>
+  <path d="M830 298h218M830 335h160M830 372h193" stroke="#87af98" stroke-width="11" stroke-linecap="round"/>
+  <circle cx="1037" cy="397" r="21" fill="#d7f281"/>
+</svg>

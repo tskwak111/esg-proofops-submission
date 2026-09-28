@@ -1,0 +1,452 @@
+[
+  {
+    "method": "GET",
+    "path": "/v1/session",
+    "request": null,
+    "response": "Session",
+    "success": 200,
+    "role": "all",
+    "operation": "session_read",
+    "idempotency": false
+  },
+  {
+    "method": "POST",
+    "path": "/v1/session/tenant",
+    "request": "TenantSelect",
+    "response": "Session",
+    "success": 200,
+    "role": "all",
+    "operation": "tenant_switch",
+    "idempotency": false
+  },
+  {
+    "method": "POST",
+    "path": "/v1/auth/logout",
+    "request": null,
+    "response": null,
+    "success": 204,
+    "role": "all",
+    "operation": "logout",
+    "idempotency": false
+  },
+  {
+    "method": "GET",
+    "path": "/v1/documents",
+    "request": null,
+    "response": "DocumentPage",
+    "success": 200,
+    "role": "viewer",
+    "operation": "documents_list",
+    "idempotency": false
+  },
+  {
+    "method": "POST",
+    "path": "/v1/documents",
+    "request": "DocumentCreate",
+    "response": "Document",
+    "success": 201,
+    "role": "editor",
+    "operation": "document_create",
+    "idempotency": true
+  },
+  {
+    "method": "GET",
+    "path": "/v1/documents/{document_id}",
+    "request": null,
+    "response": "Document",
+    "success": 200,
+    "role": "viewer",
+    "operation": "document_get",
+    "idempotency": false
+  },
+  {
+    "method": "POST",
+    "path": "/v1/documents/{document_id}/versions",
+    "request": "VersionCreate",
+    "response": "UploadTicket",
+    "success": 201,
+    "role": "editor",
+    "operation": "version_create",
+    "idempotency": true
+  },
+  {
+    "method": "GET",
+    "path": "/v1/documents/{document_id}/versions",
+    "request": null,
+    "response": "DocumentVersionPage",
+    "success": 200,
+    "role": "viewer",
+    "operation": "versions_list",
+    "idempotency": false
+  },
+  {
+    "method": "POST",
+    "path": "/v1/uploads/{upload_id}/complete",
+    "request": "UploadComplete",
+    "response": "JobAccepted",
+    "success": 202,
+    "role": "editor",
+    "operation": "upload_complete",
+    "idempotency": true
+  },
+  {
+    "method": "GET",
+    "path": "/v1/versions/{version_id}",
+    "request": null,
+    "response": "DocumentVersion",
+    "success": 200,
+    "role": "viewer",
+    "operation": "version_get",
+    "idempotency": false
+  },
+  {
+    "method": "GET",
+    "path": "/v1/runs",
+    "request": null,
+    "response": "RunPage",
+    "success": 200,
+    "role": "viewer",
+    "operation": "runs_list",
+    "idempotency": false
+  },
+  {
+    "method": "POST",
+    "path": "/v1/runs",
+    "request": "RunCreate",
+    "response": "Run",
+    "success": 202,
+    "role": "editor",
+    "operation": "run_create",
+    "idempotency": true
+  },
+  {
+    "method": "GET",
+    "path": "/v1/runs/{run_id}",
+    "request": null,
+    "response": "Run",
+    "success": 200,
+    "role": "viewer",
+    "operation": "run_get",
+    "idempotency": false
+  },
+  {
+    "method": "POST",
+    "path": "/v1/runs/{run_id}/cancel",
+    "request": "ActionReason",
+    "response": "Run",
+    "success": 202,
+    "role": "editor",
+    "operation": "run_cancel",
+    "idempotency": true
+  },
+  {
+    "method": "POST",
+    "path": "/v1/runs/{run_id}/retry",
+    "request": "ActionReason",
+    "response": "Run",
+    "success": 202,
+    "role": "editor",
+    "operation": "run_retry",
+    "idempotency": true
+  },
+  {
+    "method": "POST",
+    "path": "/v1/runs/{run_id}/rescores",
+    "request": "RescoreCreate",
+    "response": "JobAccepted",
+    "success": 202,
+    "role": "reviewer",
+    "operation": "rescore",
+    "idempotency": true
+  },
+  {
+    "method": "GET",
+    "path": "/v1/runs/{run_id}/rescores/{rescore_id}",
+    "request": null,
+    "response": "JobAccepted",
+    "success": 200,
+    "role": "viewer",
+    "operation": "rescore_get",
+    "idempotency": false
+  },
+  {
+    "method": "GET",
+    "path": "/v1/runs/{run_id}/claims",
+    "request": null,
+    "response": "ClaimSummaryPage",
+    "success": 200,
+    "role": "viewer",
+    "operation": "claims_list",
+    "idempotency": false
+  },
+  {
+    "method": "GET",
+    "path": "/v1/runs/{run_id}/claims/{claim_id}",
+    "request": null,
+    "response": "ClaimDetail",
+    "success": 200,
+    "role": "viewer",
+    "operation": "claim_get",
+    "idempotency": false
+  },
+  {
+    "method": "GET",
+    "path": "/v1/runs/{run_id}/sources/{source_id}",
+    "request": null,
+    "response": "SourceRef",
+    "success": 200,
+    "role": "viewer",
+    "operation": "source_get",
+    "idempotency": false
+  },
+  {
+    "method": "POST",
+    "path": "/v1/runs/{run_id}/sources/{source_id}/view",
+    "request": null,
+    "response": "Download",
+    "success": 200,
+    "role": "viewer",
+    "operation": "source_view",
+    "idempotency": false
+  },
+  {
+    "method": "GET",
+    "path": "/v1/runs/{run_id}/quality",
+    "request": null,
+    "response": "QualityIssuePage",
+    "success": 200,
+    "role": "viewer",
+    "operation": "quality_get",
+    "idempotency": false
+  },
+  {
+    "method": "GET",
+    "path": "/v1/runs/{run_id}/observations",
+    "request": null,
+    "response": "ObservationPage",
+    "success": 200,
+    "role": "viewer",
+    "operation": "observations_get",
+    "idempotency": false
+  },
+  {
+    "method": "GET",
+    "path": "/v1/runs/{run_id}/assurance",
+    "request": null,
+    "response": "AssuranceMatchPage",
+    "success": 200,
+    "role": "viewer",
+    "operation": "assurance_get",
+    "idempotency": false
+  },
+  {
+    "method": "GET",
+    "path": "/v1/runs/{run_id}/safe-harbor",
+    "request": null,
+    "response": "SafeHarborRecordPage",
+    "success": 200,
+    "role": "viewer",
+    "operation": "safe_harbor_get",
+    "idempotency": false
+  },
+  {
+    "method": "GET",
+    "path": "/v1/runs/{run_id}/summary",
+    "request": null,
+    "response": "Summary",
+    "success": 200,
+    "role": "viewer",
+    "operation": "summary_get",
+    "idempotency": false
+  },
+  {
+    "method": "GET",
+    "path": "/v1/runs/{run_id}/audit",
+    "request": null,
+    "response": "AuditEventPage",
+    "success": 200,
+    "role": "viewer",
+    "operation": "audit_get",
+    "idempotency": false
+  },
+  {
+    "method": "GET",
+    "path": "/v1/runs/{run_id}/cost",
+    "request": null,
+    "response": "Cost",
+    "success": 200,
+    "role": "viewer",
+    "operation": "cost_get",
+    "idempotency": false
+  },
+  {
+    "method": "GET",
+    "path": "/v1/runs/{run_id}/reviews",
+    "request": null,
+    "response": "ReviewPage",
+    "success": 200,
+    "role": "reviewer",
+    "operation": "reviews_list",
+    "idempotency": false
+  },
+  {
+    "method": "POST",
+    "path": "/v1/reviews/{review_id}/resolve",
+    "request": "ReviewResolve",
+    "response": "ReviewResolution",
+    "success": 200,
+    "role": "reviewer",
+    "operation": "review_resolve",
+    "idempotency": true
+  },
+  {
+    "method": "POST",
+    "path": "/v1/runs/{run_id}/exports",
+    "request": "ExportCreate",
+    "response": "Export",
+    "success": 202,
+    "role": "viewer",
+    "operation": "export_create",
+    "idempotency": true
+  },
+  {
+    "method": "GET",
+    "path": "/v1/exports/{export_id}",
+    "request": null,
+    "response": "Export",
+    "success": 200,
+    "role": "viewer",
+    "operation": "export_get",
+    "idempotency": false
+  },
+  {
+    "method": "POST",
+    "path": "/v1/exports/{export_id}/download",
+    "request": null,
+    "response": "Download",
+    "success": 200,
+    "role": "viewer",
+    "operation": "export_download",
+    "idempotency": false
+  },
+  {
+    "method": "POST",
+    "path": "/v1/runs/{run_id}/comparisons",
+    "request": "ComparisonCreate",
+    "response": "JobAccepted",
+    "success": 202,
+    "role": "editor",
+    "operation": "comparison_create",
+    "idempotency": true
+  },
+  {
+    "method": "GET",
+    "path": "/v1/comparisons/{comparison_id}",
+    "request": null,
+    "response": "Comparison",
+    "success": 200,
+    "role": "viewer",
+    "operation": "comparison_get",
+    "idempotency": false
+  },
+  {
+    "method": "GET",
+    "path": "/v1/rule-packs",
+    "request": null,
+    "response": "RulePackPage",
+    "success": 200,
+    "role": "viewer",
+    "operation": "rulepacks_list",
+    "idempotency": false
+  },
+  {
+    "method": "POST",
+    "path": "/v1/rule-packs/{rule_pack_id}/activate",
+    "request": "ActionReason",
+    "response": "RulePack",
+    "success": 200,
+    "role": "admin",
+    "operation": "rulepack_activate",
+    "idempotency": true
+  },
+  {
+    "method": "POST",
+    "path": "/v1/preflight",
+    "request": "PreflightRequest",
+    "response": "Preflight",
+    "success": 200,
+    "role": "admin",
+    "operation": "preflight",
+    "idempotency": true
+  },
+  {
+    "method": "GET",
+    "path": "/v1/evaluations/{evaluation_id}",
+    "request": null,
+    "response": "Evaluation",
+    "success": 200,
+    "role": "admin",
+    "operation": "evaluation_get",
+    "idempotency": false
+  },
+  {
+    "method": "POST",
+    "path": "/v1/documents/{document_id}/deletion-requests",
+    "request": "ActionReason",
+    "response": "DeletionRequest",
+    "success": 202,
+    "role": "admin",
+    "operation": "document_delete",
+    "idempotency": true
+  },
+  {
+    "method": "GET",
+    "path": "/v1/health/live",
+    "request": null,
+    "response": "Health",
+    "success": 200,
+    "role": "public",
+    "operation": "liveness",
+    "idempotency": false
+  },
+  {
+    "method": "GET",
+    "path": "/v1/health/ready",
+    "request": null,
+    "response": "Health",
+    "success": 200,
+    "role": "internal",
+    "operation": "readiness",
+    "idempotency": false
+  },
+  {
+    "method": "GET",
+    "path": "/v1/companies",
+    "request": null,
+    "response": "CompanyPage",
+    "success": 200,
+    "role": "viewer",
+    "operation": "companies_list",
+    "idempotency": false
+  },
+  {
+    "method": "POST",
+    "path": "/v1/companies",
+    "request": "CompanyCreate",
+    "response": "Company",
+    "success": 201,
+    "role": "editor",
+    "operation": "company_create",
+    "idempotency": true
+  },
+  {
+    "method": "GET",
+    "path": "/v1/runtime-options",
+    "request": null,
+    "response": "RuntimeOptions",
+    "success": 200,
+    "role": "viewer",
+    "operation": "runtime_options",
+    "idempotency": false
+  }
+]

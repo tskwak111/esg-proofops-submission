@@ -1,0 +1,126 @@
+{
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.1"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "approved": {
+      "type": "boolean"
+    },
+    "synthetic_only": {
+      "type": "boolean"
+    },
+    "current_stage": {
+      "const": 1
+    },
+    "enabled_items": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "C1",
+          "C2",
+          "C3",
+          "C4"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "c1_identity_rule": {
+      "const": "exact_verified_entity_set"
+    },
+    "c3_threshold": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9]+(?:\\.[0-9]+)?$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "c3_account_mapping_approved": {
+      "type": "boolean"
+    },
+    "approved_by": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "approved_on": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "source_policy_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "allowed_capex_account_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "coverage_policy_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "allowed_difference_types": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "operational_control_vs_control",
+          "overseas_subsidiary_excluded",
+          "equity_method_excluded",
+          "acquisition_disposal_proration"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "c2_timing_rule": {
+      "const": "same_period_or_verified_explanation"
+    },
+    "c4_required_explanations": {
+      "const": [
+        "definition",
+        "calculation_basis"
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "version",
+    "approved",
+    "synthetic_only",
+    "current_stage",
+    "enabled_items",
+    "c1_identity_rule",
+    "c3_threshold",
+    "c3_account_mapping_approved",
+    "approved_by",
+    "approved_on",
+    "source_policy_sha256",
+    "allowed_capex_account_ids",
+    "coverage_policy_id",
+    "allowed_difference_types",
+    "c2_timing_rule",
+    "c4_required_explanations"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

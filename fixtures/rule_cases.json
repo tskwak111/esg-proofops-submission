@@ -1,0 +1,725 @@
+{
+  "description": "합성 rule 계약 사례. 생략된 ladder Boolean은 absent로 채우는 fixture builder를 구현; null=unknown. runtime 원문 unknown을 자동False로 취급하지 않음.",
+  "cases": [
+    {
+      "id": "FX-RULE-001",
+      "synthetic": true,
+      "track": "goal",
+      "facts": {
+        "target_year": false,
+        "target_metric": false,
+        "transition_plan": false
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "decided",
+        "evidence_grade": "E0",
+        "label": "UNSUBSTANTIATED"
+      },
+      "source_reason": "원문4.4 목표연도 부재"
+    },
+    {
+      "id": "FX-RULE-002",
+      "synthetic": true,
+      "track": "goal",
+      "facts": {
+        "target_year": false,
+        "target_metric": true,
+        "transition_plan": true
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "decided",
+        "evidence_grade": "E1",
+        "label": "INCOMPLETE"
+      },
+      "source_reason": "원문4.4 연도부재 예외 상한"
+    },
+    {
+      "id": "FX-RULE-003",
+      "synthetic": true,
+      "track": "goal",
+      "facts": {
+        "target_year": true,
+        "target_metric": true
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "decided",
+        "evidence_grade": "E1",
+        "label": "INCOMPLETE"
+      },
+      "source_reason": "원문7의2030/40% 예시"
+    },
+    {
+      "id": "FX-RULE-004",
+      "synthetic": true,
+      "track": "goal",
+      "facts": {
+        "target_year": true,
+        "target_metric": true,
+        "baseline_year": true,
+        "baseline_value": true,
+        "scope": true,
+        "org_boundary": true
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "decided",
+        "evidence_grade": "E2",
+        "label": "INCOMPLETE"
+      },
+      "source_reason": "원문4.4 목표형 E2"
+    },
+    {
+      "id": "FX-RULE-005",
+      "synthetic": true,
+      "track": "goal",
+      "facts": {
+        "target_year": true,
+        "target_metric": true,
+        "baseline_year": true,
+        "baseline_value": true,
+        "scope": true,
+        "org_boundary": true,
+        "current_progress": true,
+        "transition_plan": true
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "decided",
+        "evidence_grade": "E3",
+        "label": "SUBSTANTIATED"
+      },
+      "source_reason": "원문4.4 목표형 E3"
+    },
+    {
+      "id": "FX-RULE-006",
+      "synthetic": true,
+      "track": "goal",
+      "facts": {
+        "target_year": true,
+        "target_metric": true,
+        "baseline_year": true,
+        "baseline_value": true,
+        "scope": true,
+        "org_boundary": true,
+        "current_progress": true,
+        "transition_plan": false
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "decided",
+        "evidence_grade": "E2",
+        "label": "INCOMPLETE"
+      },
+      "source_reason": "전환계획이 없으면 E3아님"
+    },
+    {
+      "id": "FX-RULE-007",
+      "synthetic": true,
+      "track": "goal",
+      "facts": {
+        "target_year": true,
+        "target_metric": true,
+        "baseline_year": true,
+        "baseline_value": true,
+        "scope": true,
+        "org_boundary": true,
+        "current_progress": false,
+        "transition_plan": true
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "decided",
+        "evidence_grade": "E2",
+        "label": "INCOMPLETE"
+      },
+      "source_reason": "진척이 없으면 E3아님"
+    },
+    {
+      "id": "FX-RULE-008",
+      "synthetic": true,
+      "track": "goal",
+      "facts": {
+        "target_year": true,
+        "target_metric": false
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "blocked_rule_gap",
+        "evidence_grade": null,
+        "label": null
+      },
+      "source_reason": "원문 경계 미정 GAP-007"
+    },
+    {
+      "id": "FX-RULE-009",
+      "synthetic": true,
+      "track": "performance",
+      "facts": {
+        "quantitative_or_qualified_ordinal": false
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "decided",
+        "evidence_grade": "E0",
+        "label": "UNSUBSTANTIATED"
+      },
+      "source_reason": "원문4.4 정량값없음"
+    },
+    {
+      "id": "FX-RULE-010",
+      "synthetic": true,
+      "track": "performance",
+      "facts": {
+        "quantitative_or_qualified_ordinal": true,
+        "unit_or_qualified_ordinal": true
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "decided",
+        "evidence_grade": "E1",
+        "label": "INCOMPLETE"
+      },
+      "source_reason": "정량값+단위"
+    },
+    {
+      "id": "FX-RULE-011",
+      "synthetic": true,
+      "track": "performance",
+      "facts": {
+        "quantitative_or_qualified_ordinal": true,
+        "unit_or_qualified_ordinal": true,
+        "comparison_baseline": true,
+        "scope": true,
+        "org_boundary": true,
+        "calculation_boundary": true
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "decided",
+        "evidence_grade": "E2",
+        "label": "INCOMPLETE"
+      },
+      "source_reason": "비교기준+범위"
+    },
+    {
+      "id": "FX-RULE-012",
+      "synthetic": true,
+      "track": "performance",
+      "facts": {
+        "quantitative_or_qualified_ordinal": true,
+        "unit_or_qualified_ordinal": true,
+        "comparison_baseline": true,
+        "scope": true,
+        "org_boundary": true,
+        "method": true,
+        "assurance_covered": false,
+        "calculation_boundary": true
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "decided",
+        "evidence_grade": "E2",
+        "label": "INCOMPLETE"
+      },
+      "source_reason": "method만은E3불가"
+    },
+    {
+      "id": "FX-RULE-013",
+      "synthetic": true,
+      "track": "performance",
+      "facts": {
+        "quantitative_or_qualified_ordinal": true,
+        "unit_or_qualified_ordinal": true,
+        "comparison_baseline": true,
+        "scope": true,
+        "org_boundary": true,
+        "method": false,
+        "assurance_covered": true,
+        "calculation_boundary": true
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "decided",
+        "evidence_grade": "E2",
+        "label": "INCOMPLETE"
+      },
+      "source_reason": "assurance만은E3불가"
+    },
+    {
+      "id": "FX-RULE-014",
+      "synthetic": true,
+      "track": "performance",
+      "facts": {
+        "quantitative_or_qualified_ordinal": true,
+        "unit_or_qualified_ordinal": true,
+        "comparison_baseline": true,
+        "scope": true,
+        "org_boundary": true,
+        "method": true,
+        "assurance_covered": true,
+        "calculation_boundary": true
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "decided",
+        "evidence_grade": "E3",
+        "label": "SUBSTANTIATED"
+      },
+      "source_reason": "method AND assurance"
+    },
+    {
+      "id": "FX-RULE-015",
+      "synthetic": true,
+      "track": "performance",
+      "facts": {
+        "quantitative_or_qualified_ordinal": true,
+        "unit_or_qualified_ordinal": false
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "blocked_rule_gap",
+        "evidence_grade": null,
+        "label": null
+      },
+      "source_reason": "단위 없는 경계미정 GAP-007"
+    },
+    {
+      "id": "FX-RULE-016",
+      "synthetic": true,
+      "track": "management",
+      "facts": {
+        "willingness_only": true,
+        "named_means_or_concrete_state": false
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "decided",
+        "evidence_grade": "E0",
+        "label": "UNSUBSTANTIATED"
+      },
+      "source_reason": "의지만존재"
+    },
+    {
+      "id": "FX-RULE-017",
+      "synthetic": true,
+      "track": "management",
+      "facts": {
+        "named_means_or_concrete_state": true
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "decided",
+        "evidence_grade": "E1",
+        "label": "INCOMPLETE"
+      },
+      "source_reason": "명명된수단/구체상태"
+    },
+    {
+      "id": "FX-RULE-018",
+      "synthetic": true,
+      "track": "management",
+      "facts": {
+        "named_means_or_concrete_state": true,
+        "org_boundary": true
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "decided",
+        "evidence_grade": "E2",
+        "label": "INCOMPLETE"
+      },
+      "source_reason": "조직경계추가"
+    },
+    {
+      "id": "FX-RULE-019",
+      "synthetic": true,
+      "track": "management",
+      "facts": {
+        "named_means_or_concrete_state": true,
+        "org_boundary": true,
+        "external_verification": true
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "decided",
+        "evidence_grade": "E3",
+        "label": "SUBSTANTIATED"
+      },
+      "source_reason": "외부검증추가"
+    },
+    {
+      "id": "FX-RULE-020",
+      "synthetic": true,
+      "track": "goal",
+      "facts": {
+        "target_year": true,
+        "target_metric": true,
+        "baseline_year": true,
+        "baseline_value": true,
+        "scope": true,
+        "org_boundary": true,
+        "current_progress": true,
+        "transition_plan": true,
+        "has_superlative": true,
+        "comparison_basis": false,
+        "external_verification": false
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "decided",
+        "evidence_grade": "E0",
+        "label": "UNSUBSTANTIATED"
+      },
+      "source_reason": "모든트랙최상급 우선"
+    },
+    {
+      "id": "FX-RULE-021",
+      "synthetic": true,
+      "track": "goal",
+      "facts": {
+        "target_year": true,
+        "target_metric": true,
+        "baseline_year": true,
+        "baseline_value": true,
+        "scope": true,
+        "org_boundary": true,
+        "current_progress": true,
+        "transition_plan": true,
+        "has_superlative": true,
+        "comparison_basis": true,
+        "external_verification": false
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "decided",
+        "evidence_grade": "E3",
+        "label": "SUBSTANTIATED"
+      },
+      "source_reason": "특칙은둘다부재일때만; 일반 사다리 적용"
+    },
+    {
+      "id": "FX-RULE-022",
+      "synthetic": true,
+      "track": "performance",
+      "facts": {
+        "quantitative_or_qualified_ordinal": true,
+        "unit_or_qualified_ordinal": true,
+        "comparison_baseline": true,
+        "scope": true,
+        "org_boundary": true,
+        "method": null,
+        "assurance_covered": true,
+        "calculation_boundary": true
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "blocked_evidence",
+        "evidence_grade": null,
+        "label": null
+      },
+      "source_reason": "방법 unknown이E2/E3를바꿀수있음"
+    },
+    {
+      "id": "FX-RULE-023",
+      "synthetic": true,
+      "track": "goal",
+      "facts": {
+        "target_year": true,
+        "target_metric": true,
+        "safe_harbor_category": "forward_looking"
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "blocked_rule_gap",
+        "evidence_grade": null,
+        "label": null
+      },
+      "source_reason": "safe harbor등급매핑 미제공"
+    },
+    {
+      "id": "FX-RULE-024",
+      "synthetic": true,
+      "track": "goal",
+      "facts": {
+        "target_year": true,
+        "target_metric": true,
+        "baseline_year": true,
+        "baseline_value": true,
+        "scope": true,
+        "org_boundary": true,
+        "current_progress": true,
+        "transition_plan": true,
+        "safe_harbor_category": "forward_looking",
+        "has_superlative": true,
+        "comparison_basis": false,
+        "external_verification": false
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "blocked_rule_gap",
+        "evidence_grade": null,
+        "label": null
+      },
+      "source_reason": "최상급과별도경로 충돌GAP-006"
+    },
+    {
+      "id": "FX-RULE-025",
+      "synthetic": true,
+      "track": "performance",
+      "facts": {
+        "quantitative_or_qualified_ordinal": true,
+        "unit_or_qualified_ordinal": true,
+        "comparison_baseline": true,
+        "scope": true,
+        "org_boundary": true,
+        "method": true,
+        "assurance_covered": true,
+        "numeric_evidence_location": "other_document",
+        "calculation_boundary": true
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "blocked_evidence",
+        "evidence_grade": null,
+        "label": null
+      },
+      "source_reason": "타문서수치를근거로사용불가"
+    },
+    {
+      "id": "FX-RULE-026",
+      "synthetic": true,
+      "track": "management",
+      "facts": {
+        "product_variant": true,
+        "specific_product_and_material_names": true,
+        "direct_product_ratio_or_target": false,
+        "named_means_or_concrete_state": true
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "decided",
+        "evidence_grade": "E1",
+        "label": "INCOMPLETE"
+      },
+      "source_reason": "제품이름/소재만E1상한"
+    },
+    {
+      "id": "FX-RULE-027",
+      "synthetic": true,
+      "track": "goal",
+      "facts": {
+        "target_year": true,
+        "target_metric": true,
+        "baseline_year": true,
+        "baseline_value": true,
+        "scope": true,
+        "org_boundary": true,
+        "current_progress": true,
+        "transition_plan": true,
+        "additional_conditional_offset_effect": "unresolved"
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "blocked_rule_gap",
+        "evidence_grade": null,
+        "label": null
+      },
+      "source_reason": "G7등급효과GAP-003"
+    },
+    {
+      "id": "FX-RULE-028",
+      "synthetic": true,
+      "track": "performance",
+      "facts": {
+        "quantitative_or_qualified_ordinal": true,
+        "unit_or_qualified_ordinal": true,
+        "comparison_baseline": true,
+        "scope": true,
+        "org_boundary": true,
+        "method": true,
+        "assurance_covered": true,
+        "categorical_ordinal": true,
+        "explicit_external_certifier": true,
+        "calculation_boundary": true
+      },
+      "preconditions": {
+        "sources_verified": true,
+        "bindings_accepted": true,
+        "additional_rubric_effects_resolved": true,
+        "industry_applicable": true,
+        "regulatory_axis": "advisory_unverified"
+      },
+      "expected": {
+        "decision_status": "decided",
+        "evidence_grade": "E3",
+        "label": "SUBSTANTIATED"
+      },
+      "source_reason": "인정ordinal전제 및 나머지요소 충족"
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "claim_id": "00000000-0000-4000-8000-000000000004",
+  "packet_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "replicate_id": 1,
+  "track": "goal",
+  "safe_harbor_category": null,
+  "elements": [
+    {
+      "element_id": "G1",
+      "state": "present",
+      "evidence_refs": [
+        {
+          "source_id": "00000000-0000-4000-8000-000000000001",
+          "document_version_id": "00000000-0000-4000-8000-000000000002",
+          "parse_manifest_id": "00000000-0000-4000-8000-000000000003",
+          "page_num": 28,
+          "printed_page_label": "28",
+          "bbox": [
+            120.0,
+            340.0,
+            180.0,
+            372.0
+          ],
+          "raw_text_sha256": "dbae09a2a1cf927fa4dbade3f24846a2d7d0599f505ad2cf6e129deafd3c6708",
+          "quote": "2030년까지",
+          "char_start": 0,
+          "char_end": 7,
+          "location_quality": "located",
+          "verification_state": "verified"
+        }
+      ],
+      "normalized_value": "2030",
+      "credited_from": null,
+      "reason_code": null
+    }
+  ],
+  "superlative_quote": null,
+  "warnings": []
+}

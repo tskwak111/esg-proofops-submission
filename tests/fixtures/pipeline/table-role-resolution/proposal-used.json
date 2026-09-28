@@ -1,0 +1,333 @@
+{
+  "cases": [
+    {
+      "case_id": "A-kb-p30-investment-amount-real",
+      "packet": {
+        "schema": "preliminary-source-quotes-table-v1",
+        "tenant_id": "2ef8a4a3-a61e-4509-89af-84427934e0ee",
+        "claim_id": "414a5817-5aaf-5ffc-a093-79350cb9a0f0",
+        "claim_sha256": "2b4e2d2724b2869a6a7666461012449d641d5ecc771afe80ac528d64d2025d49",
+        "graph_sha256": "ea4840f5dc9f3217ca98e6ee6b9961d07a8f1aed4c2d9153a5d56534a82c5280",
+        "prompt_sha256": "19eeb93ef1d1067832f2dd96d5bdd3047d73cb6dbc200cd9b5b5296bbf848263",
+        "untrusted_document_data": {
+          "sources": [
+            {
+              "source_index": 0,
+              "text": "9.9억 원"
+            },
+            {
+              "source_index": 1,
+              "text": "ESG 정보공시시스템 및 환경정보관리시스템 고도화 및 유지보수",
+              "table_role": "row_header",
+              "table_association": "row_covered",
+              "table_row_number": 5,
+              "table_column_number": 1
+            },
+            {
+              "source_index": 2,
+              "text": "자체 예산",
+              "table_role": "row_header",
+              "table_association": "row_covered",
+              "table_row_number": 5,
+              "table_column_number": 2
+            },
+            {
+              "source_index": 3,
+              "text": "투자 금액",
+              "table_role": "column_header",
+              "table_association": "column_covered",
+              "table_row_number": 1,
+              "table_column_number": 3
+            },
+            {
+              "source_index": 4,
+              "text": "2025",
+              "table_role": "column_header",
+              "table_association": "column_covered",
+              "table_row_number": 2,
+              "table_column_number": 3
+            }
+          ],
+          "context_blocks": [
+            {
+              "context_index": 0,
+              "role": "nearby",
+              "source_id": "123cbed0-a823-545d-8208-afce072c6758",
+              "page_num": 30,
+              "quality": "verified",
+              "text": "1.6조 원",
+              "source_ref": {
+                "source_id": "123cbed0-a823-545d-8208-afce072c6758",
+                "document_version_id": "9ba72d02-a201-4a1b-b120-8850a5a9a1d1",
+                "parse_manifest_id": "bdd878f0-be6d-57cb-a552-33564d541e6a",
+                "page_num": 30,
+                "printed_page_label": "30",
+                "bbox": [
+                  306.16,
+                  607.418,
+                  328.504,
+                  616.322
+                ],
+                "raw_text_sha256": "1e0e137548cffc2369cb00ebc272365064721c55c22e8a59e96ca324438018cc",
+                "char_start": 0,
+                "char_end": 6,
+                "location_quality": "located",
+                "verification_state": "candidate"
+              }
+            },
+            {
+              "context_index": 1,
+              "role": "nearby",
+              "source_id": "99f11f23-1d30-59d1-8854-28408bebb397",
+              "page_num": 30,
+              "quality": "unverified",
+              "text": "1.6억 원",
+              "source_ref": {
+                "source_id": "99f11f23-1d30-59d1-8854-28408bebb397",
+                "document_version_id": "9ba72d02-a201-4a1b-b120-8850a5a9a1d1",
+                "parse_manifest_id": "bdd878f0-be6d-57cb-a552-33564d541e6a",
+                "page_num": 30,
+                "printed_page_label": "30",
+                "bbox": [
+                  306.153,
+                  586.915,
+                  328.497,
+                  595.819
+                ],
+                "raw_text_sha256": "4e663842874d959e0cbdccf5eae18ada90b1587a88b0dd868aeac846d11cebbf",
+                "char_start": 0,
+                "char_end": 6,
+                "location_quality": "located",
+                "verification_state": "candidate"
+              }
+            }
+          ],
+          "omitted_source_ids": []
+        },
+        "context_policy": {
+          "same_page_or_section_parent_only": true,
+          "excluded_kinds": [
+            "table",
+            "table_cell",
+            "table_row"
+          ],
+          "max_context_chars": 2000,
+          "max_context_blocks": 4,
+          "whole_blocks_only": true
+        },
+        "table_policy": {
+          "policy": "table-structural-sources-v1",
+          "role_basis": "structural_layout_interpretation",
+          "lineage": "resolved",
+          "focal_table_native_id": "82",
+          "focal_row_number": 5,
+          "focal_column_number": 3,
+          "max_table_sources": 8,
+          "max_table_chars": 600,
+          "verified_sources_only": true
+        }
+      }
+    },
+    {
+      "case_id": "B-kia-p35-hev-2024-actual",
+      "packet": {
+        "schema": "preliminary-source-quotes-table-v1",
+        "tenant_id": "910e232c-6d03-570e-800a-55d01deaec73",
+        "claim_id": "7d054ab7-d044-5e81-ad75-cb425c1bf7c2",
+        "claim_sha256": "e5bb84c0f9e41a8ff80fdd9c579e2ebd1c65a004a3ea4847942eac26f4685d9c",
+        "graph_sha256": "1a79882d802bb43aadf83ceb414a8e1dd4a7fc1f8b7e8d17a5edd63f33acc286",
+        "prompt_sha256": "19eeb93ef1d1067832f2dd96d5bdd3047d73cb6dbc200cd9b5b5296bbf848263",
+        "untrusted_document_data": {
+          "sources": [
+            {
+              "source_index": 0,
+              "text": "382,764"
+            },
+            {
+              "source_index": 1,
+              "text": "HEV",
+              "table_role": "row_header",
+              "table_association": "row_covered",
+              "table_row_number": 2,
+              "table_column_number": 0
+            },
+            {
+              "source_index": 2,
+              "text": "대",
+              "table_role": "row_qualifier",
+              "table_association": "row_covered",
+              "table_row_number": 2,
+              "table_column_number": 1
+            },
+            {
+              "source_index": 3,
+              "text": "2024",
+              "table_role": "column_header",
+              "table_association": "column_covered",
+              "table_row_number": 0,
+              "table_column_number": 4
+            }
+          ],
+          "context_blocks": [],
+          "omitted_source_ids": []
+        },
+        "context_policy": {
+          "same_page_or_section_parent_only": true,
+          "excluded_kinds": [
+            "table",
+            "table_cell",
+            "table_row"
+          ],
+          "max_context_chars": 2000,
+          "max_context_blocks": 4,
+          "whole_blocks_only": true
+        },
+        "table_policy": {
+          "policy": "table-structural-sources-v1",
+          "role_basis": "structural_layout_interpretation",
+          "lineage": "resolved",
+          "focal_table_native_id": "kia-p35-eco-vehicle-sales",
+          "focal_row_number": 2,
+          "focal_column_number": 4,
+          "max_table_sources": 8,
+          "max_table_chars": 600,
+          "verified_sources_only": true
+        }
+      }
+    },
+    {
+      "case_id": "C-kia-p35-hev-2025-plan",
+      "packet": {
+        "schema": "preliminary-source-quotes-table-v1",
+        "tenant_id": "bf1855ca-dd79-581f-894b-04c6e24d868d",
+        "claim_id": "10d26277-4beb-5fbc-acad-a3b2a1154b78",
+        "claim_sha256": "31a37d5696ca1110212f6b2c6e510f83380a3da45dec685d7e0422a547643c9b",
+        "graph_sha256": "3dcbf1b91b42ae05107cef173e21151f053f91ac64e52e48a09bb338c2a046b1",
+        "prompt_sha256": "19eeb93ef1d1067832f2dd96d5bdd3047d73cb6dbc200cd9b5b5296bbf848263",
+        "untrusted_document_data": {
+          "sources": [
+            {
+              "source_index": 0,
+              "text": "491,662"
+            },
+            {
+              "source_index": 1,
+              "text": "HEV",
+              "table_role": "row_header",
+              "table_association": "row_covered",
+              "table_row_number": 2,
+              "table_column_number": 0
+            },
+            {
+              "source_index": 2,
+              "text": "대",
+              "table_role": "row_qualifier",
+              "table_association": "row_covered",
+              "table_row_number": 2,
+              "table_column_number": 1
+            },
+            {
+              "source_index": 3,
+              "text": "2025(목표)",
+              "table_role": "column_header",
+              "table_association": "column_covered",
+              "table_row_number": 0,
+              "table_column_number": 5
+            }
+          ],
+          "context_blocks": [],
+          "omitted_source_ids": []
+        },
+        "context_policy": {
+          "same_page_or_section_parent_only": true,
+          "excluded_kinds": [
+            "table",
+            "table_cell",
+            "table_row"
+          ],
+          "max_context_chars": 2000,
+          "max_context_blocks": 4,
+          "whole_blocks_only": true
+        },
+        "table_policy": {
+          "policy": "table-structural-sources-v1",
+          "role_basis": "structural_layout_interpretation",
+          "lineage": "resolved",
+          "focal_table_native_id": "kia-p35-eco-vehicle-sales",
+          "focal_row_number": 2,
+          "focal_column_number": 5,
+          "max_table_sources": 8,
+          "max_table_chars": 600,
+          "verified_sources_only": true
+        }
+      }
+    },
+    {
+      "case_id": "D-synthetic-activity-row-and-plan-column",
+      "packet": {
+        "schema": "preliminary-source-quotes-table-v1",
+        "tenant_id": "244ca625-0902-58b1-8702-d82c28baa01e",
+        "claim_id": "eeb228ee-7edd-536a-9179-6052188d26c5",
+        "claim_sha256": "fd90a67c4d24ef6e90bd5a49b827c2949d2ef3be1fff9efe5c4cb6bc3ebbb0b0",
+        "graph_sha256": "23bf530bf2a131b5545a2e8e0db21c479ba7dacb8ea443e1f0e550f9596ef98c",
+        "prompt_sha256": "19eeb93ef1d1067832f2dd96d5bdd3047d73cb6dbc200cd9b5b5296bbf848263",
+        "untrusted_document_data": {
+          "sources": [
+            {
+              "source_index": 0,
+              "text": "3.5억 원"
+            },
+            {
+              "source_index": 1,
+              "text": "사내 폐기물 분리배출 교육 및 점검 활동",
+              "table_role": "row_header",
+              "table_association": "row_covered",
+              "table_row_number": 4,
+              "table_column_number": 1
+            },
+            {
+              "source_index": 2,
+              "text": "자체 예산",
+              "table_role": "row_qualifier",
+              "table_association": "row_covered",
+              "table_row_number": 4,
+              "table_column_number": 2
+            },
+            {
+              "source_index": 3,
+              "text": "향후 계획",
+              "table_role": "column_header",
+              "table_association": "column_covered",
+              "table_row_number": 1,
+              "table_column_number": 4
+            }
+          ],
+          "context_blocks": [],
+          "omitted_source_ids": []
+        },
+        "context_policy": {
+          "same_page_or_section_parent_only": true,
+          "excluded_kinds": [
+            "table",
+            "table_cell",
+            "table_row"
+          ],
+          "max_context_chars": 2000,
+          "max_context_blocks": 4,
+          "whole_blocks_only": true
+        },
+        "table_policy": {
+          "policy": "table-structural-sources-v1",
+          "role_basis": "structural_layout_interpretation",
+          "lineage": "resolved",
+          "focal_table_native_id": "synthetic-no-measure-column",
+          "focal_row_number": 4,
+          "focal_column_number": 4,
+          "max_table_sources": 8,
+          "max_table_chars": 600,
+          "verified_sources_only": true
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "claim_id": "fixture-claim",
+  "item": "C1",
+  "execution_state": "completed",
+  "status": "matched",
+  "review_required": false,
+  "reason_codes": [
+    "same_verified_entity_set"
+  ],
+  "source_ids": [
+    "sr-scope",
+    "fs-scope"
+  ],
+  "explanation_source_id": null,
+  "sustainability_value": "가상법인 A, B",
+  "financial_value": "가상법인 A, B",
+  "packet_sha256": "2a7459b566693da4f31a334bd11984a4dc7d37767db7983064296a201a8e2a34",
+  "policy_sha256": "12e0eb3c88bb500e0f9802ba033143b302a00795e93ce1a0f8698754842e8922"
+}

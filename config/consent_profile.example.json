@@ -1,0 +1,10 @@
+{
+  "schema_version": "1",
+  "status": "requires_approval",
+  "allowed_document_rights": [],
+  "allowed_processing_regions": [],
+  "allow_customer_data_fewshot": false,
+  "allow_cross_tenant_cache": false,
+  "allow_agentcore_memory": false,
+  "allow_live_model_tests": false
+}

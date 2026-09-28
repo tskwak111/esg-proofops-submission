@@ -1,0 +1,1962 @@
+{
+  "id": "R19-bullet-spacing",
+  "status": "evidence_only_no_production_edit",
+  "paid_calls": 0,
+  "network_calls": 0,
+  "production_files_modified": [],
+  "scope": "pipeline source completeness only; no semantic accuracy, no grade, no plan/performance redefinition",
+  "run": {
+    "run_id": "d5f7908d-4bfb-4b62-a799-729e874a92aa",
+    "state": "local pilot state (not included)",
+    "source_path": "NAVER report PDF (not included)",
+    "source_sha256": "75388f16c13739a671fd158c383502d81968fe587f2372ab0f9306f3d2c1a2c6",
+    "source_sha256_recomputed_matches_pilot": true,
+    "physical_page": 90,
+    "claims": 10,
+    "baseline_source_verified_claims": 2,
+    "baseline_blocked_refs": 8,
+    "pinned_policy_schema": "claim_span_render_resolution_policy_v1",
+    "pinned_policy_mode": "claim_span_deterministic_crop_scale_v1",
+    "wrapper_sha256": "48f24a69ec1061c4329510a993fd5c8a7a363489c74286df1ef4596614eb321b"
+  },
+  "measured_cause": {
+    "summary": "the extra space is INSERTED by the verifier, not present in the document",
+    "detail": [
+      "claim_source_verification.py builds the native reading as ' '.join(word['text'] for word in selected), so every pdfplumber word-token boundary becomes one space.",
+      "pdfplumber extract_words splits the first content token after the bullet into its own token on this page, so the join inserts one space that no ink supports.",
+      "The comparison at claim_source_verification.py:246 (`if not raw or _normalized(raw) != _normalized(block.raw_text)`) then returns early with reason='text_mismatch' and WITHOUT words/rendered/glyph_geometry, so _rendered_text is never called and render_retries stays {} for all 8.",
+      "_normalized collapses runs of whitespace but never removes a single space, so one inserted space is fatal."
+    ],
+    "divergence_index_in_all_8": 3,
+    "reproduced_at_source": true
+  },
+  "ink_separation": {
+    "claim": "the one spurious boundary is separable from every genuine space by the paragraph's own ink, with no threshold constant",
+    "spurious_gaps_pt": [
+      0.9904,
+      0.9525,
+      0.8175,
+      0.9525,
+      1.24,
+      0.008,
+      1.128,
+      0.8175
+    ],
+    "max_spurious_gap_pt": 1.24,
+    "min_genuine_same_line_gap_pt": 1.695,
+    "strictly_separated_in_all_8": true,
+    "note": "the bullet's own boundary is a genuine space (1.95-2.69pt) and is never the tightest"
+  },
+  "proposed_alignment": {
+    "name": "single_inserted_space_tightest_ink_boundary_v1",
+    "no_threshold_constant": true,
+    "no_global_whitespace_normalization": true,
+    "max_edits": 1,
+    "steps": [
+      "1. Re-derive the pinned box's selected word tokens with the SAME frozen readers (pdfplumber extract_words + native_word_ink_geometry) and the SAME containment rule.",
+      "2. SELF-CHECK: the unaligned join must reproduce the base verdict text_mismatch exactly. Any disagreement with the base refuses.",
+      "3. Collect same-ink-line adjacent token boundaries and their real ink gaps.",
+      "4. Require a UNIQUE strict minimum gap. A tie, or fewer than two same-line boundaries, refuses.",
+      "5. Delete exactly ONE inserted space at that boundary. Nothing else is edited.",
+      "6. Require the aligned join to equal the parser's raw_text under the UNCHANGED _normalized. Anything needing a second edit refuses.",
+      "7. Run the EXISTING unchanged render gate: _rendered_text on the same pinned box, then _unique_quote(parser_text, quote) AND _unique_quote(rendered, quote)."
+    ],
+    "refusal_constraints": [
+      "no threshold, no fuzzy match, no edit distance, no number correction, no punctuation folding, no quote-character folding, no case folding",
+      "never removes or adds any space other than the single inserted one at the uniquely tightest boundary",
+      "refuses on a gap tie, on a line break at the candidate boundary, on fewer than two same-line boundaries",
+      "refuses unless exactly one deletion yields exact normalized equality with the parser text",
+      "refuses unless the independent rendered/OCR read of the same pinned box still contains the quote uniquely",
+      "never widens the box, the containment tolerance, or the clipped/rotated refusal",
+      "the ref's source_id, quote, char_start and char_end are preserved byte-for-byte; no source or quality is fabricated",
+      "interpretation of the reading does not grant a grade, a label, a track or a safe-harbour category"
+    ]
+  },
+  "recovery": {
+    "blocked_refs": 8,
+    "would_verify": 7,
+    "not_recovered": [
+      {
+        "source_id": "57b46544-fd9b-5bdf-8997-17cbfa303e43",
+        "reason": "independent OCR reader renders the document's curly quotes U+2018/U+2019 as ASCII apostrophes, so the quote is not literally unique in the render",
+        "in_scope": false,
+        "refused_widening": "quote-character folding is a separate normalization decision and is NOT proposed here"
+      }
+    ],
+    "claim_level": {
+      "source_verified_claims_now": "2/10",
+      "source_verified_claims_if_recovered": "9/10",
+      "effect": "7 claims move from SOURCE_VALIDATION_REQUIRED into the preliminary stage; this grants no tag, no grade and no label"
+    }
+  },
+  "negative_controls": {
+    "all_refused_by_proposed_rule": true,
+    "controls": [
+      {
+        "control": "C1 number digit changed",
+        "source_id": "b80b6685-c935-5688-a1b0-74d72aa28683",
+        "substitution": "'0.2m' -> '0.3m'",
+        "proposed_rule_accepts": false,
+        "naive_global_space_strip_accepts": false
+      },
+      {
+        "control": "C2 number magnitude changed",
+        "source_id": "290f55ba-6c80-5763-bb8d-445c7fa3e01b",
+        "substitution": "'500년' -> '600년'",
+        "proposed_rule_accepts": false,
+        "naive_global_space_strip_accepts": false
+      },
+      {
+        "control": "C3 number unit changed",
+        "source_id": "53059cfd-e155-56e5-ac0e-e2bf8a4bdb56",
+        "substitution": "'90m' -> '90km'",
+        "proposed_rule_accepts": false,
+        "naive_global_space_strip_accepts": false
+      },
+      {
+        "control": "C4 genuine space removed",
+        "source_id": "290f55ba-6c80-5763-bb8d-445c7fa3e01b",
+        "substitution": "'하천 월류' -> '하천월류'",
+        "proposed_rule_accepts": false,
+        "naive_global_space_strip_accepts": true
+      },
+      {
+        "control": "C5 genuine space added",
+        "source_id": "4e3a8644-8e59-5afd-abc1-b4389b918206",
+        "substitution": "'남측 구내' -> '남 측 구내'",
+        "proposed_rule_accepts": false,
+        "naive_global_space_strip_accepts": true
+      },
+      {
+        "control": "C6 word substituted",
+        "source_id": "22012e41-6561-586b-8b50-66b59455db02",
+        "substitution": "'없는' -> '있는'",
+        "proposed_rule_accepts": false,
+        "naive_global_space_strip_accepts": false
+      },
+      {
+        "control": "C7 punctuation removed",
+        "source_id": "4e3a8644-8e59-5afd-abc1-b4389b918206",
+        "substitution": "'수(도시침수):' -> '수 도시침수:'",
+        "proposed_rule_accepts": false,
+        "naive_global_space_strip_accepts": false
+      }
+    ],
+    "naive_global_space_strip_would_wrongly_accept": [
+      "C4 genuine space removed",
+      "C5 genuine space added"
+    ],
+    "synthetic_geometry_refusals": [
+      "two equal tightest gaps -> refused",
+      "single boundary only -> refused"
+    ]
+  },
+  "cases": [
+    {
+      "source_id": "22012e41-6561-586b-8b50-66b59455db02",
+      "page_num": 90,
+      "pinned_box": [
+        615.423,
+        362.336,
+        719.365,
+        383.308
+      ],
+      "baseline": {
+        "status": "unresolved",
+        "reason": "text_mismatch",
+        "stored_reading_keys": [
+          "reason",
+          "status"
+        ],
+        "render_attempted": false
+      },
+      "native_reading": {
+        "selected_tokens": 10,
+        "crossing_tokens": 0,
+        "clipped_or_rotated": false,
+        "unaligned_join": "• 시 설 영향: 직접적 물리적 리스크가 없는 것으로 평가",
+        "parser_raw_text": "• 시설 영향: 직접적 물리적 리스크가 없는 것으로 평가",
+        "first_divergence_index": 3
+      },
+      "ink_geometry": {
+        "spurious_boundary_gap_pt": 0.9904,
+        "other_same_line_gap_min_pt": 1.9731,
+        "other_same_line_gap_max_pt": 2.835,
+        "separated": true
+      },
+      "alignment_transform": {
+        "boundary_token_index": 1,
+        "gap_pt": 0.990417,
+        "left_token": "시",
+        "right_token": "설",
+        "deleted_inserted_spaces": 1
+      },
+      "aligned_join": "• 시설 영향: 직접적 물리적 리스크가 없는 것으로 평가",
+      "aligned_equals_parser_text": true,
+      "independent_render": {
+        "status": "read",
+        "image_sha256": "5abb2806739fe7b167fa681fb69754b1e65321673f1260cdfd6ab8ecc25892e0",
+        "pixel_bbox": [
+          1846,
+          1087,
+          2159,
+          1150
+        ],
+        "scale": 3,
+        "padding_px": 0,
+        "equals_parser_text": true,
+        "quote_unique_in_render": true
+      },
+      "quote_unique_in_parser_text": true,
+      "would_verify": true,
+      "preserved_unchanged": {
+        "quote": "• 시설 영향: 직접적 물리적 리스크가 없는 것으로 평가",
+        "char_start": 0,
+        "char_end": 31,
+        "source_id": "22012e41-6561-586b-8b50-66b59455db02"
+      },
+      "selected_tokens_geometry": [
+        {
+          "text": "•",
+          "bbox": [
+            615.7632,
+            366.5473,
+            617.7136,
+            368.528
+          ]
+        },
+        {
+          "text": "시",
+          "bbox": [
+            619.6642,
+            363.6594,
+            625.251,
+            370.4558
+          ]
+        },
+        {
+          "text": "설",
+          "bbox": [
+            626.2414,
+            363.6594,
+            632.0928,
+            370.5616
+          ]
+        },
+        {
+          "text": "영향:",
+          "bbox": [
+            634.4893,
+            363.6367,
+            648.5434,
+            370.6146
+          ]
+        },
+        {
+          "text": "직접적",
+          "bbox": [
+            650.7358,
+            363.6594,
+            669.4014,
+            370.6221
+          ]
+        },
+        {
+          "text": "물리적",
+          "bbox": [
+            671.8433,
+            363.6594,
+            690.6677,
+            370.607
+          ]
+        },
+        {
+          "text": "리스크가",
+          "bbox": [
+            693.5027,
+            363.6594,
+            719.2747,
+            370.4558
+          ]
+        },
+        {
+          "text": "없는",
+          "bbox": [
+            619.8297,
+            374.6594,
+            632.4322,
+            381.6297
+          ]
+        },
+        {
+          "text": "것으로",
+          "bbox": [
+            634.4507,
+            374.6594,
+            653.6985,
+            381.607
+          ]
+        },
+        {
+          "text": "평가",
+          "bbox": [
+            655.6716,
+            374.6594,
+            668.5615,
+            381.5995
+          ]
+        }
+      ],
+      "parser_raw_text": "• 시설 영향: 직접적 물리적 리스크가 없는 것으로 평가"
+    },
+    {
+      "source_id": "290f55ba-6c80-5763-bb8d-445c7fa3e01b",
+      "page_num": 90,
+      "pinned_box": [
+        614.565,
+        272.963,
+        726.9,
+        306.856
+      ],
+      "baseline": {
+        "status": "unresolved",
+        "reason": "text_mismatch",
+        "stored_reading_keys": [
+          "reason",
+          "status"
+        ],
+        "render_attempted": false
+      },
+      "native_reading": {
+        "selected_tokens": 17,
+        "crossing_tokens": 0,
+        "clipped_or_rotated": false,
+        "unaligned_join": "• 외 수(하천범람): 탄천 인근에 위치하나 500년 빈도 극한 강우 시에도 하천 월류 및 범람 영향 없음",
+        "parser_raw_text": "• 외수(하천범람): 탄천 인근에 위치하나 500년 빈도 극한 강우 시에도 하천 월류 및 범람 영향 없음",
+        "first_divergence_index": 3
+      },
+      "ink_geometry": {
+        "spurious_boundary_gap_pt": 0.9525,
+        "other_same_line_gap_min_pt": 1.7625,
+        "other_same_line_gap_max_pt": 2.5575,
+        "separated": true
+      },
+      "alignment_transform": {
+        "boundary_token_index": 1,
+        "gap_pt": 0.952515,
+        "left_token": "외",
+        "right_token": "수(하천범람):",
+        "deleted_inserted_spaces": 1
+      },
+      "aligned_join": "• 외수(하천범람): 탄천 인근에 위치하나 500년 빈도 극한 강우 시에도 하천 월류 및 범람 영향 없음",
+      "aligned_equals_parser_text": true,
+      "independent_render": {
+        "status": "read",
+        "image_sha256": "d68312dc533c7895c5b2cd77e718d7ed0e437e97f82e13485cc34dc35fe1a0ac",
+        "pixel_bbox": [
+          1843,
+          818,
+          2181,
+          921
+        ],
+        "scale": 3,
+        "padding_px": 0,
+        "equals_parser_text": true,
+        "quote_unique_in_render": true
+      },
+      "quote_unique_in_parser_text": true,
+      "would_verify": true,
+      "preserved_unchanged": {
+        "quote": "• 외수(하천범람): 탄천 인근에 위치하나 500년 빈도 극한 강우 시에도 하천 월류 및 범람 영향 없음",
+        "char_start": 0,
+        "char_end": 58,
+        "source_id": "290f55ba-6c80-5763-bb8d-445c7fa3e01b"
+      },
+      "selected_tokens_geometry": [
+        {
+          "text": "•",
+          "bbox": [
+            614.9025,
+            277.141,
+            616.8375,
+            279.106
+          ]
+        },
+        {
+          "text": "외",
+          "bbox": [
+            618.8175,
+            274.276,
+            624.3675,
+            281.0185
+          ]
+        },
+        {
+          "text": "수(하천범람):",
+          "bbox": [
+            625.32,
+            274.276,
+            663.1875,
+            281.251
+          ]
+        },
+        {
+          "text": "탄천",
+          "bbox": [
+            665.4525,
+            274.2835,
+            677.5275,
+            280.9435
+          ]
+        },
+        {
+          "text": "인근에",
+          "bbox": [
+            680.0025,
+            274.276,
+            698.5724,
+            281.0185
+          ]
+        },
+        {
+          "text": "위치하나",
+          "bbox": [
+            700.8824,
+            274.276,
+            726.8099,
+            281.0185
+          ]
+        },
+        {
+          "text": "500년",
+          "bbox": [
+            618.9075,
+            286.2835,
+            637.4925,
+            292.9435
+          ]
+        },
+        {
+          "text": "빈도",
+          "bbox": [
+            640.05,
+            286.2835,
+            652.3575,
+            292.951
+          ]
+        },
+        {
+          "text": "극한",
+          "bbox": [
+            654.24,
+            286.2835,
+            667.035,
+            293.1385
+          ]
+        },
+        {
+          "text": "강우",
+          "bbox": [
+            668.7975,
+            286.2835,
+            681.4575,
+            293.1385
+          ]
+        },
+        {
+          "text": "시에도",
+          "bbox": [
+            683.34,
+            286.276,
+            702.555,
+            293.0185
+          ]
+        },
+        {
+          "text": "하천",
+          "bbox": [
+            618.72,
+            298.276,
+            631.095,
+            305.0185
+          ]
+        },
+        {
+          "text": "월류",
+          "bbox": [
+            633.315,
+            298.276,
+            645.99,
+            305.236
+          ]
+        },
+        {
+          "text": "및",
+          "bbox": [
+            648.2475,
+            298.276,
+            653.7075,
+            305.191
+          ]
+        },
+        {
+          "text": "범람",
+          "bbox": [
+            656.1975,
+            298.276,
+            668.67,
+            305.0935
+          ]
+        },
+        {
+          "text": "영향",
+          "bbox": [
+            670.5825,
+            298.2535,
+            683.175,
+            305.176
+          ]
+        },
+        {
+          "text": "없음",
+          "bbox": [
+            685.14,
+            298.276,
+            697.6425,
+            305.191
+          ]
+        }
+      ],
+      "parser_raw_text": "• 외수(하천범람): 탄천 인근에 위치하나 500년 빈도 극한 강우 시에도 하천 월류 및 범람 영향 없음"
+    },
+    {
+      "source_id": "4e3a8644-8e59-5afd-abc1-b4389b918206",
+      "page_num": 90,
+      "pinned_box": [
+        880.154,
+        308.963,
+        1001.947,
+        330.856
+      ],
+      "baseline": {
+        "status": "unresolved",
+        "reason": "text_mismatch",
+        "stored_reading_keys": [
+          "reason",
+          "status"
+        ],
+        "render_attempted": false
+      },
+      "native_reading": {
+        "selected_tokens": 14,
+        "crossing_tokens": 0,
+        "clipped_or_rotated": false,
+        "unaligned_join": "• 내 수(도시침수): 남측 구내 식당 저지대 및 숙소동에 국지적 정체 발생 가능성 있음",
+        "parser_raw_text": "• 내수(도시침수): 남측 구내 식당 저지대 및 숙소동에 국지적 정체 발생 가능성 있음",
+        "first_divergence_index": 3
+      },
+      "ink_geometry": {
+        "spurious_boundary_gap_pt": 0.8175,
+        "other_same_line_gap_min_pt": 1.8149,
+        "other_same_line_gap_max_pt": 2.6475,
+        "separated": true
+      },
+      "alignment_transform": {
+        "boundary_token_index": 1,
+        "gap_pt": 0.817505,
+        "left_token": "내",
+        "right_token": "수(도시침수):",
+        "deleted_inserted_spaces": 1
+      },
+      "aligned_join": "• 내수(도시침수): 남측 구내 식당 저지대 및 숙소동에 국지적 정체 발생 가능성 있음",
+      "aligned_equals_parser_text": true,
+      "independent_render": {
+        "status": "read",
+        "image_sha256": "031ea172b232f9da61df29989a22402d21720928fe0f97935757ee6a4702420f",
+        "pixel_bbox": [
+          2640,
+          926,
+          3006,
+          993
+        ],
+        "scale": 3,
+        "padding_px": 0,
+        "equals_parser_text": true,
+        "quote_unique_in_render": true
+      },
+      "quote_unique_in_parser_text": true,
+      "would_verify": true,
+      "preserved_unchanged": {
+        "quote": "• 내수(도시침수): 남측 구내 식당 저지대 및 숙소동에 국지적 정체 발생 가능성 있음",
+        "char_start": 0,
+        "char_end": 48,
+        "source_id": "4e3a8644-8e59-5afd-abc1-b4389b918206"
+      },
+      "selected_tokens_geometry": [
+        {
+          "text": "•",
+          "bbox": [
+            880.4915,
+            313.141,
+            882.4265,
+            315.106
+          ]
+        },
+        {
+          "text": "내",
+          "bbox": [
+            884.6765,
+            310.276,
+            890.0915,
+            317.0185
+          ]
+        },
+        {
+          "text": "수(도시침수):",
+          "bbox": [
+            890.909,
+            310.2685,
+            928.7765,
+            317.251
+          ]
+        },
+        {
+          "text": "남측",
+          "bbox": [
+            931.124,
+            310.2235,
+            943.4615,
+            317.1385
+          ]
+        },
+        {
+          "text": "구내",
+          "bbox": [
+            945.344,
+            310.276,
+            957.6215,
+            317.071
+          ]
+        },
+        {
+          "text": "식당",
+          "bbox": [
+            959.9465,
+            310.276,
+            972.689,
+            317.1835
+          ]
+        },
+        {
+          "text": "저지대",
+          "bbox": [
+            974.5039,
+            310.276,
+            993.2689,
+            317.0185
+          ]
+        },
+        {
+          "text": "및",
+          "bbox": [
+            995.9164,
+            310.276,
+            1001.3764,
+            317.191
+          ]
+        },
+        {
+          "text": "숙소동에",
+          "bbox": [
+            884.3615,
+            322.276,
+            909.7264,
+            329.161
+          ]
+        },
+        {
+          "text": "국지적",
+          "bbox": [
+            912.0065,
+            322.276,
+            930.6815,
+            329.1685
+          ]
+        },
+        {
+          "text": "정체",
+          "bbox": [
+            933.1714,
+            322.276,
+            945.3965,
+            329.1385
+          ]
+        },
+        {
+          "text": "발생",
+          "bbox": [
+            947.8865,
+            322.276,
+            959.9315,
+            329.146
+          ]
+        },
+        {
+          "text": "가능성",
+          "bbox": [
+            962.2565,
+            322.276,
+            980.9164,
+            329.1385
+          ]
+        },
+        {
+          "text": "있음",
+          "bbox": [
+            983.549,
+            322.276,
+            995.9689,
+            329.1985
+          ]
+        }
+      ],
+      "parser_raw_text": "• 내수(도시침수): 남측 구내 식당 저지대 및 숙소동에 국지적 정체 발생 가능성 있음"
+    },
+    {
+      "source_id": "53059cfd-e155-56e5-ac0e-e2bf8a4bdb56",
+      "page_num": 90,
+      "pinned_box": [
+        747.36,
+        272.963,
+        866.243,
+        306.856
+      ],
+      "baseline": {
+        "status": "unresolved",
+        "reason": "text_mismatch",
+        "stored_reading_keys": [
+          "reason",
+          "status"
+        ],
+        "render_attempted": false
+      },
+      "native_reading": {
+        "selected_tokens": 18,
+        "crossing_tokens": 0,
+        "clipped_or_rotated": false,
+        "unaligned_join": "• 외 수(하천범람): 하천 수위보다 지반고가 약 90m 이상 높아 소양강 월류 시에도 침수 위험 원천 차단 가능",
+        "parser_raw_text": "• 외수(하천범람): 하천 수위보다 지반고가 약 90m 이상 높아 소양강 월류 시에도 침수 위험 원천 차단 가능",
+        "first_divergence_index": 3
+      },
+      "ink_geometry": {
+        "spurious_boundary_gap_pt": 0.9525,
+        "other_same_line_gap_min_pt": 1.695,
+        "other_same_line_gap_max_pt": 2.415,
+        "separated": true
+      },
+      "alignment_transform": {
+        "boundary_token_index": 1,
+        "gap_pt": 0.952515,
+        "left_token": "외",
+        "right_token": "수(하천범람):",
+        "deleted_inserted_spaces": 1
+      },
+      "aligned_join": "• 외수(하천범람): 하천 수위보다 지반고가 약 90m 이상 높아 소양강 월류 시에도 침수 위험 원천 차단 가능",
+      "aligned_equals_parser_text": true,
+      "independent_render": {
+        "status": "read",
+        "image_sha256": "aba4820110982061e6ae55f7d8e88fe396ce50074fd862a968a8d7f7e19f9b97",
+        "pixel_bbox": [
+          2242,
+          818,
+          2599,
+          921
+        ],
+        "scale": 3,
+        "padding_px": 0,
+        "equals_parser_text": true,
+        "quote_unique_in_render": true
+      },
+      "quote_unique_in_parser_text": true,
+      "would_verify": true,
+      "preserved_unchanged": {
+        "quote": "• 외수(하천범람): 하천 수위보다 지반고가 약 90m 이상 높아 소양강 월류 시에도 침수 위험 원천 차단 가능",
+        "char_start": 0,
+        "char_end": 62,
+        "source_id": "53059cfd-e155-56e5-ac0e-e2bf8a4bdb56"
+      },
+      "selected_tokens_geometry": [
+        {
+          "text": "•",
+          "bbox": [
+            747.6975,
+            277.141,
+            749.6325,
+            279.106
+          ]
+        },
+        {
+          "text": "외",
+          "bbox": [
+            751.6125,
+            274.276,
+            757.1625,
+            281.0185
+          ]
+        },
+        {
+          "text": "수(하천범람):",
+          "bbox": [
+            758.115,
+            274.276,
+            795.9825,
+            281.251
+          ]
+        },
+        {
+          "text": "하천",
+          "bbox": [
+            797.9474,
+            274.276,
+            810.3224,
+            281.0185
+          ]
+        },
+        {
+          "text": "수위보다",
+          "bbox": [
+            812.55,
+            274.276,
+            838.5074,
+            281.0935
+          ]
+        },
+        {
+          "text": "지반고가",
+          "bbox": [
+            840.3374,
+            274.276,
+            866.1524,
+            281.0185
+          ]
+        },
+        {
+          "text": "약",
+          "bbox": [
+            751.6725,
+            286.276,
+            757.77,
+            293.1685
+          ]
+        },
+        {
+          "text": "90m",
+          "bbox": [
+            759.66,
+            286.906,
+            773.9175,
+            292.321
+          ]
+        },
+        {
+          "text": "이상",
+          "bbox": [
+            776.2875,
+            286.276,
+            788.8575,
+            293.1385
+          ]
+        },
+        {
+          "text": "높아",
+          "bbox": [
+            790.6125,
+            286.276,
+            803.4675,
+            293.0485
+          ]
+        },
+        {
+          "text": "소양강",
+          "bbox": [
+            805.1625,
+            286.276,
+            824.5049,
+            293.1385
+          ]
+        },
+        {
+          "text": "월류",
+          "bbox": [
+            826.2524,
+            286.276,
+            838.9274,
+            293.236
+          ]
+        },
+        {
+          "text": "시에도",
+          "bbox": [
+            840.8099,
+            286.276,
+            860.0249,
+            293.0185
+          ]
+        },
+        {
+          "text": "침수",
+          "bbox": [
+            751.6949,
+            298.2685,
+            764.235,
+            305.0935
+          ]
+        },
+        {
+          "text": "위험",
+          "bbox": [
+            766.1475,
+            298.276,
+            778.245,
+            305.101
+          ]
+        },
+        {
+          "text": "원천",
+          "bbox": [
+            780.66,
+            298.2835,
+            792.99,
+            305.011
+          ]
+        },
+        {
+          "text": "차단",
+          "bbox": [
+            795.18,
+            298.276,
+            808.0125,
+            305.0185
+          ]
+        },
+        {
+          "text": "가능",
+          "bbox": [
+            809.8199,
+            298.276,
+            822.4349,
+            305.1235
+          ]
+        }
+      ],
+      "parser_raw_text": "• 외수(하천범람): 하천 수위보다 지반고가 약 90m 이상 높아 소양강 월류 시에도 침수 위험 원천 차단 가능"
+    },
+    {
+      "source_id": "57b46544-fd9b-5bdf-8997-17cbfa303e43",
+      "page_num": 90,
+      "pinned_box": [
+        177.571,
+        143.648,
+        554.683,
+        168.2
+      ],
+      "baseline": {
+        "status": "unresolved",
+        "reason": "text_mismatch",
+        "stored_reading_keys": [
+          "reason",
+          "status"
+        ],
+        "render_attempted": false
+      },
+      "native_reading": {
+        "selected_tokens": 29,
+        "crossing_tokens": 0,
+        "clipped_or_rotated": false,
+        "unaligned_join": "• 네 이버는 기후변화로 인한 극한기상이 사업장 운영에 미치는 영향을 파악하기 위해 S&P Global Climanomics® 분석을 수행하였으며, 분석 결과 급성 물리적 리스크 중 ‘하천 홍수’ 노출도가 상대적으로 높게 도출",
+        "parser_raw_text": "• 네이버는 기후변화로 인한 극한기상이 사업장 운영에 미치는 영향을 파악하기 위해 S&P Global Climanomics® 분석을 수행하였으며, 분석 결과 급성 물리적 리스크 중 ‘하천 홍수’ 노출도가 상대적으로 높게 도출",
+        "first_divergence_index": 3
+      },
+      "ink_geometry": {
+        "spurious_boundary_gap_pt": 1.24,
+        "other_same_line_gap_min_pt": 1.896,
+        "other_same_line_gap_max_pt": 3.24,
+        "separated": true
+      },
+      "alignment_transform": {
+        "boundary_token_index": 1,
+        "gap_pt": 1.240005,
+        "left_token": "네",
+        "right_token": "이버는",
+        "deleted_inserted_spaces": 1
+      },
+      "aligned_join": "• 네이버는 기후변화로 인한 극한기상이 사업장 운영에 미치는 영향을 파악하기 위해 S&P Global Climanomics® 분석을 수행하였으며, 분석 결과 급성 물리적 리스크 중 ‘하천 홍수’ 노출도가 상대적으로 높게 도출",
+      "aligned_equals_parser_text": true,
+      "independent_render": {
+        "status": "read",
+        "image_sha256": "e42181ab16210bfbbbefe31b793cbc83ab430dc548af2fb2f68bc95223fa1d0e",
+        "pixel_bbox": [
+          532,
+          430,
+          1665,
+          505
+        ],
+        "scale": 3,
+        "padding_px": 0,
+        "equals_parser_text": false,
+        "quote_unique_in_render": false
+      },
+      "quote_unique_in_parser_text": true,
+      "would_verify": false,
+      "preserved_unchanged": {
+        "quote": "• 네이버는 기후변화로 인한 극한기상이 사업장 운영에 미치는 영향을 파악하기 위해 S&P Global Climanomics® 분석을 수행하였으며, 분석 결과 급성 물리적 리스크 중 ‘하천 홍수’ 노출도가 상대적으로 높게 도출",
+        "char_start": 0,
+        "char_end": 125,
+        "source_id": "57b46544-fd9b-5bdf-8997-17cbfa303e43"
+      },
+      "selected_tokens_geometry": [
+        {
+          "text": "•",
+          "bbox": [
+            177.931,
+            148.104,
+            179.995,
+            150.2
+          ]
+        },
+        {
+          "text": "네",
+          "bbox": [
+            182.635,
+            145.048,
+            188.403,
+            152.24
+          ]
+        },
+        {
+          "text": "이버는",
+          "bbox": [
+            189.643,
+            145.048,
+            210.139,
+            152.24
+          ]
+        },
+        {
+          "text": "기후변화로",
+          "bbox": [
+            212.507,
+            144.84,
+            247.331,
+            152.328
+          ]
+        },
+        {
+          "text": "인한",
+          "bbox": [
+            249.843,
+            145.056,
+            263.347,
+            152.184
+          ]
+        },
+        {
+          "text": "극한기상이",
+          "bbox": [
+            265.459,
+            145.048,
+            299.787,
+            152.368
+          ]
+        },
+        {
+          "text": "사업장",
+          "bbox": [
+            302.475,
+            145.048,
+            323.5229,
+            152.368
+          ]
+        },
+        {
+          "text": "운영에",
+          "bbox": [
+            325.635,
+            145.048,
+            345.947,
+            152.376
+          ]
+        },
+        {
+          "text": "미치는",
+          "bbox": [
+            349.043,
+            145.048,
+            369.355,
+            152.24
+          ]
+        },
+        {
+          "text": "영향을",
+          "bbox": [
+            371.771,
+            145.024,
+            392.3391,
+            152.408
+          ]
+        },
+        {
+          "text": "파악하기",
+          "bbox": [
+            394.579,
+            145.048,
+            421.8031,
+            152.4
+          ]
+        },
+        {
+          "text": "위해",
+          "bbox": [
+            424.7071,
+            145.048,
+            437.8911,
+            152.24
+          ]
+        },
+        {
+          "text": "S&P",
+          "bbox": [
+            440.5071,
+            145.592,
+            454.8191,
+            151.512
+          ]
+        },
+        {
+          "text": "Global",
+          "bbox": [
+            457.2351,
+            145.472,
+            479.227,
+            151.512
+          ]
+        },
+        {
+          "text": "Climanomics®",
+          "bbox": [
+            481.899,
+            145.472,
+            531.3309,
+            151.512
+          ]
+        },
+        {
+          "text": "분석을",
+          "bbox": [
+            533.6428,
+            145.048,
+            554.3788,
+            152.4
+          ]
+        },
+        {
+          "text": "수행하였으며,",
+          "bbox": [
+            182.299,
+            159.048,
+            225.939,
+            166.88
+          ]
+        },
+        {
+          "text": "분석",
+          "bbox": [
+            228.387,
+            159.048,
+            241.443,
+            166.4
+          ]
+        },
+        {
+          "text": "결과",
+          "bbox": [
+            244.395,
+            159.048,
+            258.051,
+            166.352
+          ]
+        },
+        {
+          "text": "급성",
+          "bbox": [
+            260.147,
+            159.048,
+            273.243,
+            166.368
+          ]
+        },
+        {
+          "text": "물리적",
+          "bbox": [
+            276.027,
+            159.048,
+            296.187,
+            166.4
+          ]
+        },
+        {
+          "text": "리스크",
+          "bbox": [
+            299.427,
+            159.048,
+            319.7469,
+            166.24
+          ]
+        },
+        {
+          "text": "중",
+          "bbox": [
+            321.995,
+            159.352,
+            328.523,
+            166.392
+          ]
+        },
+        {
+          "text": "‘하천",
+          "bbox": [
+            330.819,
+            158.952,
+            345.827,
+            166.24
+          ]
+        },
+        {
+          "text": "홍수’",
+          "bbox": [
+            348.443,
+            158.792,
+            363.811,
+            166.432
+          ]
+        },
+        {
+          "text": "노출도가",
+          "bbox": [
+            366.1151,
+            158.936,
+            394.1631,
+            166.296
+          ]
+        },
+        {
+          "text": "상대적으로",
+          "bbox": [
+            396.0591,
+            159.048,
+            431.1471,
+            166.4
+          ]
+        },
+        {
+          "text": "높게",
+          "bbox": [
+            433.3951,
+            159.048,
+            446.6031,
+            166.272
+          ]
+        },
+        {
+          "text": "도출",
+          "bbox": [
+            449.2751,
+            158.936,
+            462.9071,
+            166.296
+          ]
+        }
+      ],
+      "parser_raw_text": "• 네이버는 기후변화로 인한 극한기상이 사업장 운영에 미치는 영향을 파악하기 위해 S&P Global Climanomics® 분석을 수행하였으며, 분석 결과 급성 물리적 리스크 중 ‘하천 홍수’ 노출도가 상대적으로 높게 도출"
+    },
+    {
+      "source_id": "9fb5a989-8142-59cb-9dc1-d6c1182a4ae7",
+      "page_num": 90,
+      "pinned_box": [
+        177.571,
+        185.648,
+        519.499,
+        196.2
+      ],
+      "baseline": {
+        "status": "unresolved",
+        "reason": "text_mismatch",
+        "stored_reading_keys": [
+          "reason",
+          "status"
+        ],
+        "render_attempted": false
+      },
+      "native_reading": {
+        "selected_tokens": 18,
+        "crossing_tokens": 0,
+        "clipped_or_rotated": false,
+        "unaligned_join": "• K -water의 수문 분석 전문성과 당사의 디지털 트윈 IT 인프라를 결합하여 실질적인 물 리스크 평가 체계 구축",
+        "parser_raw_text": "• K-water의 수문 분석 전문성과 당사의 디지털 트윈 IT 인프라를 결합하여 실질적인 물 리스크 평가 체계 구축",
+        "first_divergence_index": 3
+      },
+      "ink_geometry": {
+        "spurious_boundary_gap_pt": 0.008,
+        "other_same_line_gap_min_pt": 2.0,
+        "other_same_line_gap_max_pt": 3.336,
+        "separated": true
+      },
+      "alignment_transform": {
+        "boundary_token_index": 1,
+        "gap_pt": 0.007996,
+        "left_token": "K",
+        "right_token": "-water의",
+        "deleted_inserted_spaces": 1
+      },
+      "aligned_join": "• K-water의 수문 분석 전문성과 당사의 디지털 트윈 IT 인프라를 결합하여 실질적인 물 리스크 평가 체계 구축",
+      "aligned_equals_parser_text": true,
+      "independent_render": {
+        "status": "read",
+        "image_sha256": "d28f8e3cf8c69239332606ce35ef583570a15e8b421de2986f694b7ad5b53543",
+        "pixel_bbox": [
+          532,
+          556,
+          1559,
+          589
+        ],
+        "scale": 3,
+        "padding_px": 0,
+        "equals_parser_text": true,
+        "quote_unique_in_render": true
+      },
+      "quote_unique_in_parser_text": true,
+      "would_verify": true,
+      "preserved_unchanged": {
+        "quote": "• K-water의 수문 분석 전문성과 당사의 디지털 트윈 IT 인프라를 결합하여 실질적인 물 리스크 평가 체계 구축",
+        "char_start": 0,
+        "char_end": 65,
+        "source_id": "9fb5a989-8142-59cb-9dc1-d6c1182a4ae7"
+      },
+      "selected_tokens_geometry": [
+        {
+          "text": "•",
+          "bbox": [
+            177.931,
+            190.104,
+            179.995,
+            192.2
+          ]
+        },
+        {
+          "text": "K",
+          "bbox": [
+            182.683,
+            187.72,
+            187.195,
+            193.4
+          ]
+        },
+        {
+          "text": "-water의",
+          "bbox": [
+            187.203,
+            187.048,
+            216.819,
+            194.24
+          ]
+        },
+        {
+          "text": "수문",
+          "bbox": [
+            219.627,
+            187.2,
+            233.259,
+            194.32
+          ]
+        },
+        {
+          "text": "분석",
+          "bbox": [
+            235.507,
+            187.048,
+            248.563,
+            194.4
+          ]
+        },
+        {
+          "text": "전문성과",
+          "bbox": [
+            251.459,
+            187.048,
+            279.379,
+            194.368
+          ]
+        },
+        {
+          "text": "당사의",
+          "bbox": [
+            281.787,
+            187.048,
+            301.651,
+            194.368
+          ]
+        },
+        {
+          "text": "디지털",
+          "bbox": [
+            304.9869,
+            187.048,
+            324.835,
+            194.352
+          ]
+        },
+        {
+          "text": "트윈",
+          "bbox": [
+            327.443,
+            187.056,
+            340.699,
+            194.192
+          ]
+        },
+        {
+          "text": "IT",
+          "bbox": [
+            343.707,
+            187.72,
+            349.691,
+            193.4
+          ]
+        },
+        {
+          "text": "인프라를",
+          "bbox": [
+            352.043,
+            187.048,
+            379.619,
+            194.304
+          ]
+        },
+        {
+          "text": "결합하여",
+          "bbox": [
+            381.9951,
+            187.008,
+            409.1151,
+            194.352
+          ]
+        },
+        {
+          "text": "실질적인",
+          "bbox": [
+            412.0111,
+            187.048,
+            439.4271,
+            194.4
+          ]
+        },
+        {
+          "text": "물",
+          "bbox": [
+            442.0431,
+            187.24,
+            448.5711,
+            194.296
+          ]
+        },
+        {
+          "text": "리스크",
+          "bbox": [
+            451.2351,
+            187.048,
+            471.5551,
+            194.24
+          ]
+        },
+        {
+          "text": "평가",
+          "bbox": [
+            473.8831,
+            187.048,
+            487.6431,
+            194.392
+          ]
+        },
+        {
+          "text": "체계",
+          "bbox": [
+            489.6431,
+            187.048,
+            502.8911,
+            194.24
+          ]
+        },
+        {
+          "text": "구축",
+          "bbox": [
+            505.5631,
+            186.984,
+            519.1951,
+            194.376
+          ]
+        }
+      ],
+      "parser_raw_text": "• K-water의 수문 분석 전문성과 당사의 디지털 트윈 IT 인프라를 결합하여 실질적인 물 리스크 평가 체계 구축"
+    },
+    {
+      "source_id": "ac49142f-49fe-59a7-a9a0-d31f9ba4a371",
+      "page_num": 90,
+      "pinned_box": [
+        177.571,
+        171.648,
+        522.323,
+        182.2
+      ],
+      "baseline": {
+        "status": "unresolved",
+        "reason": "text_mismatch",
+        "stored_reading_keys": [
+          "reason",
+          "status"
+        ],
+        "render_attempted": false
+      },
+      "native_reading": {
+        "selected_tokens": 18,
+        "crossing_tokens": 0,
+        "clipped_or_rotated": false,
+        "unaligned_join": "• G lobal Tool의 분석 한계를 보완하여 국내 좁은 지형에 특화된 사업장 단위의 정밀 물 리스크 시뮬레이션 구현",
+        "parser_raw_text": "• Global Tool의 분석 한계를 보완하여 국내 좁은 지형에 특화된 사업장 단위의 정밀 물 리스크 시뮬레이션 구현",
+        "first_divergence_index": 3
+      },
+      "ink_geometry": {
+        "spurious_boundary_gap_pt": 1.128,
+        "other_same_line_gap_min_pt": 2.248,
+        "other_same_line_gap_max_pt": 2.88,
+        "separated": true
+      },
+      "alignment_transform": {
+        "boundary_token_index": 1,
+        "gap_pt": 1.127991,
+        "left_token": "G",
+        "right_token": "lobal",
+        "deleted_inserted_spaces": 1
+      },
+      "aligned_join": "• Global Tool의 분석 한계를 보완하여 국내 좁은 지형에 특화된 사업장 단위의 정밀 물 리스크 시뮬레이션 구현",
+      "aligned_equals_parser_text": true,
+      "independent_render": {
+        "status": "read",
+        "image_sha256": "69dd7bcdb2eedb40690eb122e57290fd7c274736eaafabad84c0f7c4b77e3df8",
+        "pixel_bbox": [
+          532,
+          514,
+          1567,
+          547
+        ],
+        "scale": 3,
+        "padding_px": 0,
+        "equals_parser_text": true,
+        "quote_unique_in_render": true
+      },
+      "quote_unique_in_parser_text": true,
+      "would_verify": true,
+      "preserved_unchanged": {
+        "quote": "• Global Tool의 분석 한계를 보완하여 국내 좁은 지형에 특화된 사업장 단위의 정밀 물 리스크 시뮬레이션 구현",
+        "char_start": 0,
+        "char_end": 66,
+        "source_id": "ac49142f-49fe-59a7-a9a0-d31f9ba4a371"
+      },
+      "selected_tokens_geometry": [
+        {
+          "text": "•",
+          "bbox": [
+            177.931,
+            176.104,
+            179.995,
+            178.2
+          ]
+        },
+        {
+          "text": "G",
+          "bbox": [
+            182.411,
+            173.592,
+            187.139,
+            179.512
+          ]
+        },
+        {
+          "text": "lobal",
+          "bbox": [
+            188.267,
+            173.472,
+            204.403,
+            179.496
+          ]
+        },
+        {
+          "text": "Tool의",
+          "bbox": [
+            206.795,
+            173.048,
+            228.099,
+            180.24
+          ]
+        },
+        {
+          "text": "분석",
+          "bbox": [
+            230.907,
+            173.048,
+            243.963,
+            180.4
+          ]
+        },
+        {
+          "text": "한계를",
+          "bbox": [
+            246.771,
+            173.048,
+            267.523,
+            180.304
+          ]
+        },
+        {
+          "text": "보완하여",
+          "bbox": [
+            269.771,
+            173.048,
+            297.019,
+            180.24
+          ]
+        },
+        {
+          "text": "국내",
+          "bbox": [
+            299.8589,
+            173.048,
+            313.075,
+            180.376
+          ]
+        },
+        {
+          "text": "좁은",
+          "bbox": [
+            315.739,
+            173.256,
+            329.371,
+            180.28
+          ]
+        },
+        {
+          "text": "지형에",
+          "bbox": [
+            331.771,
+            173.016,
+            351.931,
+            180.424
+          ]
+        },
+        {
+          "text": "특화된",
+          "bbox": [
+            354.603,
+            173.048,
+            374.963,
+            180.384
+          ]
+        },
+        {
+          "text": "사업장",
+          "bbox": [
+            377.411,
+            173.048,
+            398.459,
+            180.368
+          ]
+        },
+        {
+          "text": "단위의",
+          "bbox": [
+            400.8831,
+            173.048,
+            420.7471,
+            180.24
+          ]
+        },
+        {
+          "text": "정밀",
+          "bbox": [
+            423.6271,
+            173.048,
+            436.7951,
+            180.368
+          ]
+        },
+        {
+          "text": "물",
+          "bbox": [
+            439.4351,
+            173.24,
+            445.9631,
+            180.296
+          ]
+        },
+        {
+          "text": "리스크",
+          "bbox": [
+            448.6271,
+            173.048,
+            468.9471,
+            180.24
+          ]
+        },
+        {
+          "text": "시뮬레이션",
+          "bbox": [
+            471.1951,
+            173.048,
+            505.8191,
+            180.312
+          ]
+        },
+        {
+          "text": "구현",
+          "bbox": [
+            508.3871,
+            173.056,
+            521.6111,
+            180.296
+          ]
+        }
+      ],
+      "parser_raw_text": "• Global Tool의 분석 한계를 보완하여 국내 좁은 지형에 특화된 사업장 단위의 정밀 물 리스크 시뮬레이션 구현"
+    },
+    {
+      "source_id": "b80b6685-c935-5688-a1b0-74d72aa28683",
+      "page_num": 90,
+      "pinned_box": [
+        614.565,
+        308.963,
+        734.175,
+        342.856
+      ],
+      "baseline": {
+        "status": "unresolved",
+        "reason": "text_mismatch",
+        "stored_reading_keys": [
+          "reason",
+          "status"
+        ],
+        "render_attempted": false
+      },
+      "native_reading": {
+        "selected_tokens": 17,
+        "crossing_tokens": 0,
+        "clipped_or_rotated": false,
+        "unaligned_join": "• 내 수(도시침수): 사업장 내 최대 침수심 0.2m 이하로 유지되어 우수 정체로 인한 영향은 극히 미미한 수준",
+        "parser_raw_text": "• 내수(도시침수): 사업장 내 최대 침수심 0.2m 이하로 유지되어 우수 정체로 인한 영향은 극히 미미한 수준",
+        "first_divergence_index": 3
+      },
+      "ink_geometry": {
+        "spurious_boundary_gap_pt": 0.8175,
+        "other_same_line_gap_min_pt": 1.7549,
+        "other_same_line_gap_max_pt": 2.8575,
+        "separated": true
+      },
+      "alignment_transform": {
+        "boundary_token_index": 1,
+        "gap_pt": 0.817505,
+        "left_token": "내",
+        "right_token": "수(도시침수):",
+        "deleted_inserted_spaces": 1
+      },
+      "aligned_join": "• 내수(도시침수): 사업장 내 최대 침수심 0.2m 이하로 유지되어 우수 정체로 인한 영향은 극히 미미한 수준",
+      "aligned_equals_parser_text": true,
+      "independent_render": {
+        "status": "read",
+        "image_sha256": "6784c5818e24bbb5a3c9d9be0250b66d2ae962e59c2cbdc8c8981f90d66cb8b6",
+        "pixel_bbox": [
+          1843,
+          926,
+          2203,
+          1029
+        ],
+        "scale": 3,
+        "padding_px": 0,
+        "equals_parser_text": true,
+        "quote_unique_in_render": true
+      },
+      "quote_unique_in_parser_text": true,
+      "would_verify": true,
+      "preserved_unchanged": {
+        "quote": "• 내수(도시침수): 사업장 내 최대 침수심 0.2m 이하로 유지되어 우수 정체로 인한 영향은 극히 미미한 수준",
+        "char_start": 0,
+        "char_end": 62,
+        "source_id": "b80b6685-c935-5688-a1b0-74d72aa28683"
+      },
+      "selected_tokens_geometry": [
+        {
+          "text": "•",
+          "bbox": [
+            614.9025,
+            313.141,
+            616.8375,
+            315.106
+          ]
+        },
+        {
+          "text": "내",
+          "bbox": [
+            619.0875,
+            310.276,
+            624.5025,
+            317.0185
+          ]
+        },
+        {
+          "text": "수(도시침수):",
+          "bbox": [
+            625.32,
+            310.2685,
+            663.1875,
+            317.251
+          ]
+        },
+        {
+          "text": "사업장",
+          "bbox": [
+            665.04,
+            310.276,
+            684.5475,
+            317.1385
+          ]
+        },
+        {
+          "text": "내",
+          "bbox": [
+            686.6175,
+            310.276,
+            692.0325,
+            317.0185
+          ]
+        },
+        {
+          "text": "최대",
+          "bbox": [
+            694.35,
+            310.276,
+            706.5825,
+            317.0185
+          ]
+        },
+        {
+          "text": "침수심",
+          "bbox": [
+            708.9824,
+            310.2685,
+            727.4924,
+            317.0935
+          ]
+        },
+        {
+          "text": "0.2m",
+          "bbox": [
+            618.8175,
+            322.906,
+            634.6875,
+            328.5685
+          ]
+        },
+        {
+          "text": "이하로",
+          "bbox": [
+            637.0575,
+            322.276,
+            656.0475,
+            329.0185
+          ]
+        },
+        {
+          "text": "유지되어",
+          "bbox": [
+            657.93,
+            322.276,
+            683.1375,
+            329.071
+          ]
+        },
+        {
+          "text": "우수",
+          "bbox": [
+            685.575,
+            322.4185,
+            698.2425,
+            329.0935
+          ]
+        },
+        {
+          "text": "정체로",
+          "bbox": [
+            700.1924,
+            322.276,
+            719.34,
+            329.1385
+          ]
+        },
+        {
+          "text": "인한",
+          "bbox": [
+            721.4699,
+            322.2835,
+            734.0175,
+            328.966
+          ]
+        },
+        {
+          "text": "영향은",
+          "bbox": [
+            618.93,
+            334.2535,
+            637.9875,
+            341.176
+          ]
+        },
+        {
+          "text": "극히",
+          "bbox": [
+            639.87,
+            334.276,
+            651.96,
+            341.1385
+          ]
+        },
+        {
+          "text": "미미한",
+          "bbox": [
+            654.8175,
+            334.276,
+            673.7625,
+            341.0185
+          ]
+        },
+        {
+          "text": "수준",
+          "bbox": [
+            675.5175,
+            334.4185,
+            688.185,
+            341.0935
+          ]
+        }
+      ],
+      "parser_raw_text": "• 내수(도시침수): 사업장 내 최대 침수심 0.2m 이하로 유지되어 우수 정체로 인한 영향은 극히 미미한 수준"
+    }
+  ],
+  "replay_note": "selected_tokens_geometry is the REAL pinned-box selection produced by the frozen readers on this run's own source bytes. It is replayed by tests/integration/test_claim_span_bullet_alignment.py so the admission rule is exercised against measured geometry rather than invented coordinates."
+}

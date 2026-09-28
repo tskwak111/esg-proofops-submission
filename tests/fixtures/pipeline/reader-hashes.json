@@ -1,0 +1,11 @@
+{
+  "citations.py": "cbbd174a53628edd54777b7ee47d9ec792d9fa3ff11d72b2fe1a611a1b0bdc26",
+  "claim_source_verification.py": "8b95383c73d76b2bf838e51f208448c8b1995271a6639e5726df659e7cef2a61",
+  "claim_span_bullet_alignment.py": "b82a2023b0a42d3868fd21868fb3494c27a14f774a0479a3e20da6b1a1e4185d",
+  "claim_span_render_resolution.py": "48f24a69ec1061c4329510a993fd5c8a7a363489c74286df1ef4596614eb321b",
+  "native_glyph_geometry.py": "71da3f12656dc00bc6791d78aee83cda8ce2f233503b7f6320a8bc2e6b154685",
+  "native_ocr.swift": "a379e2901aa0e20d6b325f3e711abbf53324265855ad0e0c0e316cdd616cd74d",
+  "native_paragraph_typography.py": "83491c030b214962d5b98b6214a189e1f648ee478e8bb751cec2f6571e3fc84f",
+  "selected_cell_table_verification.py": "045f4dca825e35a29f12307e234c30be546d53c5a18fc916e8c98c852a1389db",
+  "source_verification.py": "e9062fb57f98ae0db3a90a2431328c65d315bee87a23c0d11898503f2fdb8fe0"
+}

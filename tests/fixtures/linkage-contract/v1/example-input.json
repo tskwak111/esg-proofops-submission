@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "synthetic": true,
+  "identity": {
+    "tenant_id": "fixture-tenant",
+    "company_id": "fixture-company",
+    "claim_id": "fixture-claim",
+    "package_id": "fixture-package",
+    "period_start": "2024-01-01",
+    "period_end": "2024-12-31",
+    "sustainability_document_version": "sr-v1",
+    "financial_document_version": "fs-v1"
+  },
+  "item": "C1",
+  "sources": [
+    {
+      "source_id": "sr-scope",
+      "document_id": "sr-v1",
+      "artifact_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "locator": "physical_page=1;fixture",
+      "quote": "공시 대상 법인은 가상법인 A와 B입니다."
+    },
+    {
+      "source_id": "fs-scope",
+      "document_id": "fs-v1",
+      "artifact_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "locator": "fixture-note/entities",
+      "quote": "공시 대상 법인은 가상법인 A와 B입니다."
+    }
+  ],
+  "sustainability": {
+    "raw": "가상법인 A, B",
+    "normalized": "[\"A\",\"B\"]",
+    "kind": "entity_set",
+    "unit": "entity",
+    "source_id": "sr-scope"
+  },
+  "financial": {
+    "raw": "가상법인 A, B",
+    "normalized": "[\"A\",\"B\"]",
+    "kind": "entity_set",
+    "unit": "entity",
+    "source_id": "fs-scope"
+  },
+  "comparability": "comparable",
+  "explanation": {
+    "source_id": null,
+    "search_complete": false
+  },
+  "c3_context": null
+}

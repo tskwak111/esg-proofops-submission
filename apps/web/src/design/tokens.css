@@ -1,0 +1,320 @@
+/* ── tokens ── */
+:root {
+  --focus-ring: #075985;
+  --status-neutral: #475569;
+  --status-success: #166534;
+  --status-warning: #854d0e;
+  --status-danger: #991b1b;
+
+  --bg: #f1f5f9;
+  --panel: #ffffff;
+  --border: #cbd5e1;
+  --text: #1e293b;
+  --text-muted: #64748b;
+  --link: #0369a1;
+  --link-hover: #075985;
+  --btn-bg: #e2e8f0;
+  --btn-bg-hover: #cbd5e1;
+  --btn-primary-bg: #0369a1;
+  --btn-primary-text: #ffffff;
+  --btn-primary-hover: #075985;
+  --radius: 6px;
+  --font: system-ui, 'Segoe UI', 'Noto Sans KR', sans-serif;
+}
+
+/* ── reset & base ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/* ── focus ── */
+:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+/* ── typography ── */
+h1 { font-size: 1.5rem; font-weight: 700; margin: 0 0 .75rem; line-height: 1.3; }
+h2 { font-size: 1.25rem; font-weight: 700; margin: 1.25rem 0 .5rem; line-height: 1.35; }
+h3 { font-size: 1.05rem; font-weight: 600; margin: 1rem 0 .4rem; line-height: 1.4; }
+h4, h5, h6 { font-size: 1rem; font-weight: 600; margin: .75rem 0 .35rem; }
+p  { margin: 0 0 .75rem; }
+p:last-child { margin-bottom: 0; }
+
+code, pre {
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+  font-size: .875em;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+code { padding: .1em .35em; overflow-wrap: anywhere; }
+pre  { padding: .75rem 1rem; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+
+/* ── links ── */
+a { color: var(--link); text-decoration: underline; text-underline-offset: 2px; }
+a:hover { color: var(--link-hover); }
+
+/* ── layout: top-level main ── */
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+/* ── sections become white panels ── */
+main:not(.static-main):not(.kia-case) > section,
+main:not(.static-main):not(.kia-case) > section > section {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+/* avoid triple nesting extra panels */
+main:not(.static-main):not(.kia-case) > section > section > section {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin-bottom: 0;
+}
+
+/* ── nav ── */
+nav[aria-label] ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem .75rem;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+}
+nav[aria-label] a {
+  display: inline-block;
+  padding: .3rem .65rem;
+  border-radius: 4px;
+  text-decoration: none;
+  color: var(--link);
+  font-size: .9rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+nav[aria-label] a:hover {
+  background: var(--bg);
+  border-color: var(--border);
+  color: var(--link-hover);
+}
+nav[aria-label] a:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+/* ── form controls — min44, native semantics ── */
+button,
+select,
+textarea,
+input:not([type="checkbox"]):not([type="radio"]) {
+  min-height: 44px;
+  font-family: inherit;
+  font-size: .95rem;
+  line-height: 1.4;
+}
+
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  display: block;
+  width: 100%;
+  padding: .45rem .65rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  appearance: auto;
+}
+input:not([type="checkbox"]):not([type="radio"]):focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-color: var(--focus-ring);
+}
+input[disabled],
+select[disabled],
+textarea[disabled] {
+  background: #f8fafc;
+  color: var(--text-muted);
+  cursor: not-allowed;
+  border-color: var(--border);
+}
+
+textarea { min-height: 88px; resize: vertical; }
+
+/* ── labels ── */
+label {
+  display: block;
+  font-size: .9rem;
+  font-weight: 500;
+  margin-bottom: .15rem;
+  color: var(--text);
+}
+label > input,
+label > select,
+label > textarea {
+  margin-top: .25rem;
+}
+
+/* ── buttons ── */
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  padding: .4rem .9rem;
+  background: var(--btn-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 500;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  text-align: start;
+  text-decoration: none;
+}
+button:hover:not([disabled]) {
+  background: var(--btn-bg-hover);
+}
+button[disabled] {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+/* primary intent: submit */
+button[type="submit"],
+button[data-variant="primary"] {
+  background: var(--btn-primary-bg);
+  border-color: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+}
+button[type="submit"]:hover:not([disabled]),
+button[data-variant="primary"]:hover:not([disabled]) {
+  background: var(--btn-primary-hover);
+  border-color: var(--btn-primary-hover);
+}
+
+/* ── checkbox & radio — preserve native semantics ── */
+input[type="checkbox"],
+input[type="radio"] {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: 0 .35rem 0 0;
+  vertical-align: middle;
+  cursor: pointer;
+  accent-color: var(--focus-ring);
+}
+
+/* ── status badge ── */
+.status-badge {
+  color: var(--status-neutral);
+  font-weight: 600;
+  font-size: .875rem;
+  white-space: nowrap;
+}
+.status-badge[data-tone="success"] { color: var(--status-success); }
+.status-badge[data-tone="warning"] { color: var(--status-warning); }
+.status-badge[data-tone="danger"]  { color: var(--status-danger);  }
+
+/* ── tables ── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .9rem;
+  margin-bottom: .75rem;
+}
+thead th {
+  background: #f8fafc;
+  font-weight: 600;
+  text-align: left;
+  padding: .5rem .75rem;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+tbody tr + tr { border-top: 1px solid var(--border); }
+tbody td {
+  padding: .45rem .75rem;
+  vertical-align: top;
+  word-break: break-word;
+  /* IDs / hashes wrap so they don't overflow */
+  overflow-wrap: anywhere;
+  max-width: 280px;
+}
+tbody tr:hover { background: #f8fafc; }
+
+/* scrollable table wrapper for wide tables */
+.table-scroll { overflow-x: auto; }
+
+/* ── alerts / status messages ── */
+[role="alert"] {
+  padding: .5rem .75rem;
+  border-left: 4px solid var(--status-danger);
+  background: #fef2f2;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  color: var(--status-danger);
+  margin-bottom: .75rem;
+}
+[role="status"] {
+  color: var(--text-muted);
+  font-style: italic;
+  margin-bottom: .5rem;
+}
+
+/* ── details/summary ── */
+details { margin-bottom: .75rem; }
+summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: .35rem .1rem;
+  list-style: revert;
+}
+details[open] > summary { margin-bottom: .5rem; }
+
+/* ── utility: flex form row ── */
+form[aria-label] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: .6rem;
+}
+form[aria-label] label { flex: 1 1 200px; }
+form[aria-label] button { flex: 0 0 auto; }
+
+/* ── forced-colors (Windows HC) ── */
+@media (forced-colors: active) {
+  .status-badge { color: CanvasText; }
+  button { forced-color-adjust: auto; }
+  input, select, textarea { forced-color-adjust: auto; }
+}
+
+/* ── responsive: 320 px min, no page-wide overflow ── */
+@media (max-width: 600px) {
+  main { padding: 1rem .75rem 2rem; }
+  main:not(.static-main):not(.kia-case) > section,
+  main:not(.static-main):not(.kia-case) > section > section {
+    padding: 1rem;
+  }
+  h1 { font-size: 1.25rem; }
+  h2 { font-size: 1.1rem; }
+  table { display: block; overflow-x: auto; }
+  form[aria-label] label { flex: 1 1 100%; }
+}

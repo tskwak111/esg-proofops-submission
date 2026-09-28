@@ -1,0 +1,23 @@
+version: proofops-domain-v2.0-impl2
+effective_date: '2026-09-25'
+source_document_sha256: 0f9d7e3495d1bc6330ee4ffd2bb644ce8189c89e91dd5f9ae4c720b9ffaebc6a
+status: draft
+scope: source-derived implementation baseline; clause/legal approval not completed
+source_section: '4.6'
+category_checklists:
+  forward_looking:
+  - assumptions
+  - scenario_or_premises
+  emissions_estimate:
+  - identified_as_estimate
+  - estimation_method
+  - uncertainty
+  third_party_information:
+  - source_named
+  - acquisition_context
+  - limitations
+grade_mapping: null
+reasonable_basis_boolean_mapping: null
+missing_mapping_state: blocked_rule_gap
+legal_effect: not_determined
+gap_id: GAP-001

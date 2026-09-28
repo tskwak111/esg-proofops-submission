@@ -1,0 +1,3 @@
+﻿document_id,company_id,company_name,dart_corp_code,document_role,fiscal_year,period_start,period_end,published_at,consolidation,rcept_no,source_url,local_filename,sha256,rights_status,split,layout_types,reviewer,notes
+SYN-SR,SYN-COMPANY,합성 예시 기업,00000000,sustainability,2024,2024-01-01,2024-12-31,2025-06-30,consolidated,,,SYNTHETIC-NOT-A-REAL-PDF,1111111111111111111111111111111111111111111111111111111111111111,pending,dev,,교육용,합성·원본 없음·실제 gold 사용 금지
+SYN-FS,SYN-COMPANY,합성 예시 기업,00000000,financial,2024,2024-01-01,2024-12-31,2025-03-31,consolidated,SYN-RECEIPT,,,2222222222222222222222222222222222222222222222222222222222222222,pending,dev,,,합성 예시

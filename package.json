@@ -1,0 +1,11 @@
+{
+  "name": "proofops-workspace",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "pnpm@10.0.0",
+  "workspaces": ["apps/web"],
+  "scripts": {
+    "build": "pnpm --filter proofops-web build",
+    "typecheck": "pnpm --filter proofops-web typecheck"
+  }
+}

@@ -1,0 +1,36 @@
+version: proofops-domain-v2.0-impl2
+effective_date: '2026-09-25'
+source_document_sha256: 0f9d7e3495d1bc6330ee4ffd2bb644ce8189c89e91dd5f9ae4c720b9ffaebc6a
+status: draft
+scope: source-derived implementation baseline; clause/legal approval not completed
+track: performance
+source_section: '4.4'
+branches:
+- id: PERF_NO_VALUE
+  when:
+    quantitative_or_qualified_ordinal: false
+  grade: E0
+- id: PERF_E3
+  require_all:
+  - quantitative_or_qualified_ordinal
+  - unit_or_qualified_ordinal
+  - comparison_baseline
+  - calculation_boundary
+  - method
+  - assurance_covered
+  grade: E3
+- id: PERF_E2
+  require_all:
+  - quantitative_or_qualified_ordinal
+  - unit_or_qualified_ordinal
+  - comparison_baseline
+  - calculation_boundary
+  grade: E2
+- id: PERF_E1
+  require_all:
+  - quantitative_or_qualified_ordinal
+  - unit_or_qualified_ordinal
+  grade: E1
+unmatched: blocked_rule_gap
+prohibit: method OR verification shortcut
+additional_element_policy: report_without_grade_effect

@@ -1,0 +1,64 @@
+{
+  "source_sha256": "d8dd4f3e510428fcfd86c4e0003b19f35f2d5a8b30fdf9f55ccee166d0bd5a52",
+  "physical_page": 117,
+  "reviewer": "coordinator-provided boundaries refined by Codex AI visual review; not independent gold",
+  "x": [
+    163,
+    322,
+    413,
+    475,
+    566,
+    657,
+    747,
+    950
+  ],
+  "y": [
+    230,
+    244,
+    257,
+    270,
+    283,
+    296,
+    309,
+    322,
+    335,
+    348,
+    361,
+    374
+  ],
+  "rowspans": [
+    [
+      1,
+      0,
+      6
+    ],
+    [
+      7,
+      0,
+      4
+    ],
+    [
+      1,
+      6,
+      6
+    ],
+    [
+      7,
+      6,
+      4
+    ]
+  ],
+  "columns": {
+    "metric": 0,
+    "dimension": 1,
+    "unit": 2,
+    "years": [
+      3,
+      4,
+      5
+    ],
+    "notes": 6
+  },
+  "parents": {},
+  "context_boxes": []
+}

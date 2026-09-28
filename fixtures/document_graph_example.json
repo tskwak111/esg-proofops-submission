@@ -1,0 +1,44 @@
+{
+  "schema_version": "1",
+  "document_version_id": "00000000-0000-4000-8000-000000000002",
+  "parse_manifest_id": "00000000-0000-4000-8000-000000000003",
+  "source_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+  "blocks": [
+    {
+      "source_id": "00000000-0000-4000-8000-000000000001",
+      "page_num": 28,
+      "kind": "paragraph",
+      "raw_text": "2030년까지",
+      "raw_text_sha256": "dbae09a2a1cf927fa4dbade3f24846a2d7d0599f505ad2cf6e129deafd3c6708",
+      "normalized_text": "2030년까지",
+      "bbox": [
+        120,
+        340,
+        180,
+        372
+      ],
+      "provenance": [
+        {
+          "parser_run_id": "00000000-0000-4000-8000-000000000008",
+          "source_native_id": "synthetic-block-1",
+          "native_bbox": [
+            120,
+            470,
+            180,
+            502
+          ],
+          "native_coordinate_system": "pdf_bottom_left_points",
+          "to_canonical_affine": [
+            1,
+            0,
+            0,
+            -1,
+            0,
+            842
+          ]
+        }
+      ]
+    }
+  ],
+  "edges": []
+}

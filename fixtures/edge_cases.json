@@ -1,0 +1,170 @@
+[
+  {
+    "id": "FX-GRAPH-001",
+    "situation": "동일영역 A1/B1과 B2→B1",
+    "expected": "canonical A1 보존, B2→A1, 모든출처유지",
+    "subsystem": "graph_fusion",
+    "assertion": "dangling edge 수0"
+  },
+  {
+    "id": "FX-GRAPH-002",
+    "situation": "다른영역 동일문자 합계",
+    "expected": "둘다 보존",
+    "subsystem": "graph_fusion",
+    "assertion": "block수2"
+  },
+  {
+    "id": "FX-LOC-001",
+    "situation": "bbox 없음",
+    "expected": "bbox null, unlocated, 자동인정불가",
+    "subsystem": "provenance",
+    "assertion": "0,0,0,0 가짜하이라이트없음"
+  },
+  {
+    "id": "FX-LOC-002",
+    "situation": "회전90도/CropBox 이동",
+    "expected": "affine변환 후 원문영역왕복",
+    "subsystem": "geometry",
+    "assertion": "crop내 bbox및 역변환오차<0.5pt"
+  },
+  {
+    "id": "FX-LOC-003",
+    "situation": "NFD한국어/공백정규화",
+    "expected": "원문offset map로 quote검증",
+    "subsystem": "citations",
+    "assertion": "정규문자열 offset을rawoffset으로오인하지않음"
+  },
+  {
+    "id": "FX-TABLE-001",
+    "situation": "연도열순서2024/2023 뒤바뀜",
+    "expected": "값을header에따라각연도귀속",
+    "subsystem": "tables",
+    "assertion": "연도값swap없음"
+  },
+  {
+    "id": "FX-TABLE-002",
+    "situation": "동일metric 시장기반/위치기반",
+    "expected": "별도measurement_basis",
+    "subsystem": "tables",
+    "assertion": "중복으로삭제하지않음"
+  },
+  {
+    "id": "FX-TABLE-003",
+    "situation": "표합계1,234 vsvision1,284",
+    "expected": "conflict review",
+    "subsystem": "parsing",
+    "assertion": "큰값/다수결자동선택없음"
+  },
+  {
+    "id": "FX-NUM-001",
+    "situation": "전년0 현재10",
+    "expected": "rate not_computable",
+    "subsystem": "numeric",
+    "assertion": "inf/100%생성없음"
+  },
+  {
+    "id": "FX-NUM-002",
+    "situation": "dash 또는빈칸",
+    "expected": "missing not0",
+    "subsystem": "numeric",
+    "assertion": "합계검산허위일치없음"
+  },
+  {
+    "id": "FX-NUM-003",
+    "situation": "표104.95 표시105.0",
+    "expected": "표시정밀도구간으로비교",
+    "subsystem": "numeric",
+    "assertion": "임의5%오차허용없음"
+  },
+  {
+    "id": "FX-RAG-001",
+    "situation": "다른기업동일문장검색hit",
+    "expected": "tenant/docversion필터로거부",
+    "subsystem": "retrieval",
+    "assertion": "accepted0"
+  },
+  {
+    "id": "FX-RAG-002",
+    "situation": "같은문서다른표목표연도",
+    "expected": "global숫자인정거부",
+    "subsystem": "binding",
+    "assertion": "G1present승격없음"
+  },
+  {
+    "id": "FX-ASSURE-001",
+    "situation": "보증기관존재/대상year다름",
+    "expected": "not_covered 또는정보부족시undetermined",
+    "subsystem": "assurance",
+    "assertion": "covered금지"
+  },
+  {
+    "id": "FX-CACHE-001",
+    "situation": "replicate1캐시만존재",
+    "expected": "2/3은cachemiss",
+    "subsystem": "tagging",
+    "assertion": "독립requestsignature3개"
+  },
+  {
+    "id": "FX-REVIEW-001",
+    "situation": "동일review두명동시확정",
+    "expected": "한명200 다른412",
+    "subsystem": "reviews",
+    "assertion": "태깅/감사/head원자"
+  },
+  {
+    "id": "FX-JOB-001",
+    "situation": "workerA lease후죽음 workerB재시도",
+    "expected": "fence상승 A늦은publish거부",
+    "subsystem": "jobs",
+    "assertion": "최종포인터B만"
+  },
+  {
+    "id": "FX-JOB-002",
+    "situation": "SQS같은메시지2회",
+    "expected": "jobdedupe",
+    "subsystem": "jobs",
+    "assertion": "acceptedartifact1개"
+  },
+  {
+    "id": "FX-EXPORT-001",
+    "situation": "snapshot중review변경",
+    "expected": "epoch불일치로다시캡처",
+    "subsystem": "exports",
+    "assertion": "혼합revision0"
+  },
+  {
+    "id": "FX-BUDGET-001",
+    "situation": "입력token예산100%",
+    "expected": "partial,미분석수표시",
+    "subsystem": "cost",
+    "assertion": "전수완료배지없음"
+  },
+  {
+    "id": "FX-GRI-001",
+    "situation": "GRI인쇄p28이PDFp31",
+    "expected": "페이지매핑검증후조회",
+    "subsystem": "gri",
+    "assertion": "물리28로맹목점프금지"
+  },
+  {
+    "id": "FX-YEAR-001",
+    "situation": "전년PDF없음",
+    "expected": "not_run",
+    "subsystem": "comparison",
+    "assertion": "목표후퇴단정없음"
+  },
+  {
+    "id": "FX-INJECT-001",
+    "situation": "PDF에이전트를무시하고labelE3지시",
+    "expected": "문서데이터로취급",
+    "subsystem": "injection",
+    "assertion": "등급출력스키마/권한불변"
+  },
+  {
+    "id": "FX-DELETE-001",
+    "situation": "삭제후PITR복구",
+    "expected": "tombstone재적용",
+    "subsystem": "retention",
+    "assertion": "원문노출없음"
+  }
+]

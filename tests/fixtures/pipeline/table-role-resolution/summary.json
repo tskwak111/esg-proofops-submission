@@ -1,0 +1,69 @@
+{
+  "results": [
+    {
+      "case_id": "A-kb-p30-investment-amount-real",
+      "response": {
+        "claim_id": "414a5817-5aaf-5ffc-a093-79350cb9a0f0",
+        "track": null,
+        "safe_harbor_category": null,
+        "track_confidence": null,
+        "dimensions": {
+          "entity": null,
+          "metric": {
+            "source_index": 3,
+            "quote": "투자 금액"
+          },
+          "reporting_period": {
+            "source_index": 4,
+            "quote": "2025"
+          }
+        }
+      }
+    },
+    {
+      "case_id": "B-kia-p35-hev-2024-actual",
+      "response": {
+        "claim_id": "7d054ab7-d044-5e81-ad75-cb425c1bf7c2",
+        "track": null,
+        "safe_harbor_category": null,
+        "track_confidence": null,
+        "dimensions": {
+          "entity": null,
+          "metric": null,
+          "reporting_period": {
+            "source_index": 3,
+            "quote": "2024"
+          }
+        }
+      }
+    },
+    {
+      "case_id": "C-kia-p35-hev-2025-plan",
+      "response": {
+        "claim_id": "10d26277-4beb-5fbc-acad-a3b2a1154b78",
+        "track": null,
+        "safe_harbor_category": null,
+        "track_confidence": null,
+        "dimensions": {
+          "entity": null,
+          "metric": null,
+          "reporting_period": null
+        }
+      }
+    },
+    {
+      "case_id": "D-synthetic-activity-row-and-plan-column",
+      "response": {
+        "claim_id": "eeb228ee-7edd-536a-9179-6052188d26c5",
+        "track": null,
+        "safe_harbor_category": null,
+        "track_confidence": null,
+        "dimensions": {
+          "entity": null,
+          "metric": null,
+          "reporting_period": null
+        }
+      }
+    }
+  ]
+}

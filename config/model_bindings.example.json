@@ -1,0 +1,18 @@
+{
+  "schema_version": "1",
+  "status": "requires_account_preflight",
+  "roles": {
+    "extractor": null,
+    "tagger": null,
+    "vision": null,
+    "writer": {
+      "strategy": "templates"
+    }
+  },
+  "embedding": {
+    "model_id": "amazon.titan-embed-text-v2:0",
+    "dimensions": 1024,
+    "region_verified": false
+  },
+  "note": "실재 model/profile ARN·처리리전·한도·가격·검증일을 확인한 config/model_bindings.json을 배포 시 생성. 빈 역할은 실행 불가."
+}

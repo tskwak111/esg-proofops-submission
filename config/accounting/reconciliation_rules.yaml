@@ -1,0 +1,38 @@
+version: handoff-v3-draft
+effective_date: '2026-09-19'
+status: draft
+approved: false
+current_stage: 1
+items:
+  C1:
+    stage: 1
+    trigger_elements:
+    - organizational_boundary
+    - implementation_scope
+    allowed_difference_types:
+    - operational_control_vs_control
+    - overseas_subsidiary_excluded
+    - equity_method_excluded
+    - acquisition_disposal_proration
+    allowed_type_alone_is_not_approval: true
+    identity_policy_decision: DEC-C1
+  C2:
+    stage: 1
+    trigger: quantitative performance claim
+    rule: same period or verified timing explanation
+  C3:
+    stage: 1
+    trigger: goal and currency investment commitment
+    annual_capex_multiple: null
+    source_example_multiple: 5.0
+    account_mapping: null
+    missing_commitment_alone_is_not_failure: true
+  C4:
+    stage: 1
+    trigger: revenue or share of classification
+    requires:
+    - definition
+    - calculation_basis
+  C5:
+    stage: 2
+    execution: disabled

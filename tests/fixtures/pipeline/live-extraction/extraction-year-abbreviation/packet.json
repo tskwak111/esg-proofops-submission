@@ -1,0 +1,20 @@
+{
+  "document_version_id": "e2684f42-cd32-4ac2-976e-71b0bdc65fff",
+  "extraction_profile": {
+    "extraction_epoch": 1,
+    "model_sha256": "50ebece5e6cd52b750c8efdd0162418cac948d0b7376ceb00b91131935eead8f",
+    "prompt_sha256": "ffafe54d30da3c37c84ddbfe9551655f7635278fccb6aecb36582875c1a1499d",
+    "replicate_id": 1,
+    "rule_sha256": "bd04e6799177e63eaae4f61c215b04d9b4648423f57ca44c59e7ad3bb9d2a4e9",
+    "synthetic": false
+  },
+  "parse_manifest_id": "524dd5ab-e792-5f31-9759-9ff92a1519a4",
+  "source_sha256": "d8dd4f3e510428fcfd86c4e0003b19f35f2d5a8b30fdf9f55ccee166d0bd5a52",
+  "tenant_id": "76f278d4-d831-4da9-ba98-8041de9f0952",
+  "untrusted_document_data": {
+    "kind": "paragraph",
+    "page_num": 25,
+    "source_id": "be751a43-3c17-559f-9478-117e79267d85",
+    "text": "롯데케미칼은 각종 환경 데이터 일원화를 통해 글로벌 ESG 공시에 대응하고자 ‘24 년도에 환경관리시스템(Environment Management System, EMS)를 구축하였 습니다. 이를 통해 통합법에 따른 기록보존 의무를 준수하고, 사업장 전과정(유입공정-배출)을 통합관리하고 있습니다. 시스템을 통해 환경영향물질 배출정보, 연료· 원료·에너지 사용량과 같은 기초데이터 뿐만 아니라 시설 운전현황에 관한 정보 확 보가 가능합니다. 해당 정보를 바탕으로 대내외 환경 변화를 검토하고, 환경 투자 등 주요 의사결정의 수단으로 활용하고 있습니다. 또한, 2025년에는 시스템 추가 개발을 통해 정부시스템인 올바로와의 자동 연계 기능을 구축하는 등 환경관리 체 계화를 지속적으로 추진하고 있습니다."
+  }
+}

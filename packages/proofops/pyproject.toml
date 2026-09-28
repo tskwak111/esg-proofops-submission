@@ -1,0 +1,33 @@
+[project]
+name = "proofops"
+version = "0.0.0"
+description = "ESG ProofOps domain package (TASK-000 baseline): typed immutable values, no third-party runtime deps"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.optional-dependencies]
+parsing = [
+    "opendataloader-pdf==2.5.7",
+    "pdfplumber==0.11.10",
+    "pypdf==6.18.0",
+]
+auth = [
+    "httpx==0.28.1",
+    "pyjwt[crypto]==2.13.0",
+]
+verification = [
+    "pypdf==6.18.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# The project root is the package. Map ordinary selected files into the wheel;
+# editable installs read the source through its parent, without copied modules.
+[tool.hatch.build]
+dev-mode-dirs = [".."]
+
+[tool.hatch.build.targets.wheel]
+only-include = ["__init__.py", "composition.py", "domain", "application", "adapters"]
+sources = { "" = "proofops" }

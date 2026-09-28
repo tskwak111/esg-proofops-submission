@@ -1,0 +1,10 @@
+{
+  "name": "proofops-cdk",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

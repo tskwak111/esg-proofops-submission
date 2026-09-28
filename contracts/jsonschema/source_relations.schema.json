@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Literal source role relations",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "relations"
+  ],
+  "properties": {
+    "relations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_index",
+          "dimensions"
+        ],
+        "properties": {
+          "source_index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "dimensions": {
+            "type": "object",
+            "required": [
+              "entity",
+              "metric",
+              "reporting_period"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "entity": {
+                "$ref": "#/$defs/source_span"
+              },
+              "metric": {
+                "$ref": "#/$defs/source_span"
+              },
+              "reporting_period": {
+                "$ref": "#/$defs/source_span"
+              },
+              "facility": {
+                "$ref": "#/$defs/source_span"
+              },
+              "scope": {
+                "$ref": "#/$defs/source_span"
+              },
+              "product": {
+                "$ref": "#/$defs/source_span"
+              },
+              "material": {
+                "$ref": "#/$defs/source_span"
+              },
+              "boundary": {
+                "$ref": "#/$defs/source_span"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "source_span": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source_index",
+            "quote"
+          ],
+          "properties": {
+            "source_index": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "quote": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    }
+  }
+}

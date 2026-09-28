@@ -1,0 +1,83 @@
+{
+  "SourceRef": {
+    "source_id": "00000000-0000-4000-8000-000000000001",
+    "document_version_id": "00000000-0000-4000-8000-000000000002",
+    "parse_manifest_id": "00000000-0000-4000-8000-000000000003",
+    "page_num": 28,
+    "printed_page_label": "28",
+    "bbox": [
+      120.0,
+      340.0,
+      180.0,
+      372.0
+    ],
+    "raw_text_sha256": "dbae09a2a1cf927fa4dbade3f24846a2d7d0599f505ad2cf6e129deafd3c6708",
+    "quote": "2030년까지",
+    "char_start": 0,
+    "char_end": 7,
+    "location_quality": "located",
+    "verification_state": "verified"
+  },
+  "Element": {
+    "element_id": "G1",
+    "state": "present",
+    "evidence_refs": [
+      {
+        "source_id": "00000000-0000-4000-8000-000000000001",
+        "document_version_id": "00000000-0000-4000-8000-000000000002",
+        "parse_manifest_id": "00000000-0000-4000-8000-000000000003",
+        "page_num": 28,
+        "printed_page_label": "28",
+        "bbox": [
+          120.0,
+          340.0,
+          180.0,
+          372.0
+        ],
+        "raw_text_sha256": "dbae09a2a1cf927fa4dbade3f24846a2d7d0599f505ad2cf6e129deafd3c6708",
+        "quote": "2030년까지",
+        "char_start": 0,
+        "char_end": 7,
+        "location_quality": "located",
+        "verification_state": "verified"
+      }
+    ],
+    "normalized_value": "2030",
+    "credited_from": null,
+    "reason_code": null
+  },
+  "Decision": {
+    "decision_revision": 1,
+    "tag_revision": 1,
+    "decision_status": "decided",
+    "evidence_grade": "E1",
+    "label": "INCOMPLETE",
+    "sublabel": "IMPL",
+    "review_status": "auto_confirmed",
+    "missing_elements": [
+      "G3",
+      "G4",
+      "G5",
+      "G6"
+    ],
+    "rule_ids": [
+      "GOAL_E1"
+    ],
+    "rule_pack_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "semantic_hash": "3333333333333333333333333333333333333333333333333333333333333333",
+    "gap_ids": []
+  },
+  "RunCreate": {
+    "document_version_id": "00000000-0000-4000-8000-000000000002",
+    "mode": "disclosure",
+    "scope": "full",
+    "rule_pack_id": "00000000-0000-4000-8000-000000000005",
+    "consent_profile_id": "00000000-0000-4000-8000-000000000006",
+    "runtime_binding_id": "00000000-0000-4000-8000-000000000007"
+  },
+  "CompanyCreate": {
+    "legal_name": "합성 예시 기업",
+    "registration_identifier": null,
+    "aliases": []
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "schema_version": "collection-1",
+  "manifest_id": "synthetic-manifest",
+  "package_id": "fixture-package",
+  "synthetic": true,
+  "fetched_at": "2026-09-19T00:00:00Z",
+  "artifacts": [
+    {
+      "source_id": "fs-scope",
+      "document_version_id": "fs-v1",
+      "artifact_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "corp_code": "00000000",
+      "fy": 2024,
+      "rcept_no": "synthetic-receipt",
+      "consolidation": "consolidated",
+      "source_system": "DART",
+      "locator": "fixture-note/entities",
+      "status": "retrieved",
+      "error_code": null,
+      "fetched_at": "2026-09-19T00:00:00Z"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+version: handoff-v3-draft
+effective_date: '2026-09-19'
+effective_date_semantics: configuration_date_not_legal_effect
+status: draft
+standard: K-IFRS
+clauses_from_supplied_source:
+- '1036'
+- '1037'
+verification_status: unverified
+official_source_url: null
+verified_on: null
+requirements_summary: null
+stage: 2

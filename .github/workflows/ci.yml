@@ -1,0 +1,166 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "feature/*"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  python:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@445689ea25e0de0a23313031f5fe577c74ae45a1 # v6.3.0
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run mypy packages/proofops apps/api/src apps/worker/src apps/agent/src evaluation tests/load infra/cdk/staging_gate.py
+      - run: uv run pytest tests/unit tests/contracts tests/e2e/test_staging_gate.py -q
+
+  reconciliation:
+    env:
+      PYTHONUTF8: "1"
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022, macos-15]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@445689ea25e0de0a23313031f5fe577c74ae45a1
+      - run: uv sync --locked
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Select Java 21 for real parser regression
+        shell: python
+        run: |
+          import os
+          import pathlib
+          import sys
+          java = pathlib.Path(os.environ["JAVA_HOME"]) / "bin" / ("java.exe" if sys.platform == "win32" else "java")
+          assert java.is_file(), "Java 21 must be available"
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as stream:
+              stream.write(f"PROOFOPS_TEST_JAVA={java}\n")
+      - name: Developer B offline release checks and GPM regression
+        run: uv run --no-sync python scripts/verify_reconciliation.py --output .local/reconciliation-ci --timeout-seconds 600
+      - name: Real Java parser and local tagging regression
+        run: uv run --no-sync python -m pytest tests/acceptance/test_parsing.py tests/integration/test_local_tag_runner.py tests/integration/test_native_paragraph_worker.py -q
+      - name: Preserve verification evidence, including failures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: reconciliation-${{ matrix.os }}
+          path: .local/reconciliation-ci
+          include-hidden-files: true
+          if-no-files-found: warn
+
+  frontend:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        with:
+          version: 10.0.0
+      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter proofops-web typecheck
+      - run: pnpm --filter proofops-web build
+
+  architecture:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@445689ea25e0de0a23313031f5fe577c74ae45a1
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run python scripts/verify_architecture.py
+
+  supply-chain:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@445689ea25e0de0a23313031f5fe577c74ae45a1
+        with:
+          enable-cache: true
+      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda
+        with:
+          version: 10.0.0
+      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e
+        with:
+          node-version: "22"
+      - name: Install supply-chain tools
+        run: |
+          uv sync --locked
+          pnpm install --frozen-lockfile
+      - name: Check uv.lock is in sync (fail-closed)
+        run: uv sync --locked --dry-run
+      - name: Check pnpm-lock.yaml is in sync (fail-closed)
+        run: pnpm install --frozen-lockfile
+      - name: Generate SBOM from both lockfiles and scan secrets
+        run: uv run --no-sync python scripts/check_licenses.py --generate-sbom --env ENABLE_LEGACY_PYMUPDF=false
+      - name: Dependency audit - fail-closed
+        run: |
+          uv export --locked --no-emit-workspace --format requirements-txt --output-file /tmp/proofops-audit.txt
+          uv run --no-sync pip-audit --strict --no-deps --disable-pip -r /tmp/proofops-audit.txt
+          pnpm audit
+      - name: License inventory gate (PyMuPDF AGPL) - fail-closed
+        run: |
+          uv run python scripts/check_licenses.py --root . --env ENABLE_LEGACY_PYMUPDF=false
+          test ! -f packages/proofops/adapters/parsing/legacy_pymupdf.py
+      - name: Local acceptance and integration tests
+        run: |
+          test -x "$JAVA_HOME_21_X64/bin/java"
+          PROOFOPS_TEST_JAVA="$JAVA_HOME_21_X64/bin/java" uv run --no-sync pytest tests/acceptance tests/integration tests/security -q
+      - name: SBOM artifact upload
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: sbom
+          path: sbom.json
+          if-no-files-found: error
+
+  containers-iac:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda
+        with:
+          version: 10.0.0
+      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e
+        with:
+          node-version: "22"
+      - run: pnpm install --frozen-lockfile
+      - name: Typecheck IAM policy builder
+        run: pnpm --dir apps/web exec tsc --noEmit --project ../../infra/cdk/tsconfig.json

@@ -1,0 +1,135 @@
+{
+  "name": "c1-same-entities",
+  "input": {
+    "schema_version": "1.1",
+    "synthetic": true,
+    "identity": {
+      "tenant_id": "fixture-tenant",
+      "company_id": "fixture-company",
+      "claim_id": "fixture-claim",
+      "package_id": "fixture-package",
+      "period_start": "2024-01-01",
+      "period_end": "2024-12-31",
+      "sustainability_document_version": "sr-v1",
+      "financial_document_version": "fs-v1",
+      "dart_corp_code": "00000000",
+      "financial_fiscal_year": 2024,
+      "consolidation": "consolidated",
+      "financial_period_start": "2024-01-01",
+      "financial_period_end": "2024-12-31",
+      "sr_published_at": "2025-06-30",
+      "financial_published_at": "2025-03-31",
+      "rcept_no": "synthetic-receipt",
+      "as_of_date": "2025-06-30"
+    },
+    "item": "C1",
+    "sources": [
+      {
+        "source_id": "sr-scope",
+        "document_id": "sr-v1",
+        "artifact_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "locator": "physical_page=1;fixture",
+        "quote": "공시 대상 법인은 가상법인 A와 B입니다."
+      },
+      {
+        "source_id": "fs-scope",
+        "document_id": "fs-v1",
+        "artifact_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "locator": "fixture-note/entities",
+        "quote": "공시 대상 법인은 가상법인 A와 B입니다."
+      }
+    ],
+    "sustainability": {
+      "raw": "가상법인 A, B",
+      "normalized": "[\"A\",\"B\"]",
+      "kind": "entity_set",
+      "unit": "entity",
+      "source_id": "sr-scope"
+    },
+    "financial": {
+      "raw": "가상법인 A, B",
+      "normalized": "[\"A\",\"B\"]",
+      "kind": "entity_set",
+      "unit": "entity",
+      "source_id": "fs-scope"
+    },
+    "comparability": "comparable",
+    "explanation": {
+      "source_id": null,
+      "search_complete": false
+    },
+    "c3_context": null,
+    "claim": {
+      "track": "performance",
+      "quote": "공시 대상 법인은 가상법인 A와 B입니다.",
+      "source_id": "sr-scope",
+      "trigger_elements": [
+        "organizational_boundary"
+      ],
+      "fiscal_year": 2024
+    },
+    "search": {
+      "state": "not_run",
+      "coverage_policy_id": null,
+      "required_document_ids": [
+        "sr-v1",
+        "fs-v1"
+      ],
+      "reviewed_source_ids": [],
+      "failed_document_ids": [],
+      "receipt_id": null
+    },
+    "c4_context": null
+  },
+  "policy": {
+    "schema_version": "1.1",
+    "version": "synthetic-demo-only",
+    "approved": true,
+    "synthetic_only": true,
+    "current_stage": 1,
+    "enabled_items": [
+      "C1",
+      "C2",
+      "C3",
+      "C4"
+    ],
+    "c1_identity_rule": "exact_verified_entity_set",
+    "c3_threshold": null,
+    "c3_account_mapping_approved": false,
+    "approved_by": "synthetic-fixture-author",
+    "approved_on": "2026-09-18",
+    "source_policy_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+    "allowed_capex_account_ids": [],
+    "coverage_policy_id": "synthetic-coverage-only",
+    "allowed_difference_types": [
+      "operational_control_vs_control"
+    ],
+    "c2_timing_rule": "same_period_or_verified_explanation",
+    "c4_required_explanations": [
+      "definition",
+      "calculation_basis"
+    ]
+  },
+  "expected": {
+    "schema_version": "1.1",
+    "claim_id": "fixture-claim",
+    "item": "C1",
+    "execution_state": "completed",
+    "status": "matched",
+    "review_required": false,
+    "reason_codes": [
+      "same_verified_entity_set"
+    ],
+    "source_ids": [
+      "sr-scope",
+      "fs-scope"
+    ],
+    "explanation_source_id": null,
+    "sustainability_value": "가상법인 A, B",
+    "financial_value": "가상법인 A, B",
+    "packet_sha256": "13bf403fa27839769deb842466dd873568e51caff82261dd8a40299726cd14bc",
+    "policy_sha256": "4f13943a9a0ab34bdf81a82a08eaddfaa6a10f320e7cf00fe23fb80930a8783a",
+    "synthetic": true,
+    "engine_version": "synthetic-expected-not-engine"
+  }
+}

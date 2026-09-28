@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "VITE_DEMO_STATIC=true pnpm build",
+  "outputDirectory": "apps/web/dist",
+  "functions": {
+    "api/live-claim.py": {
+      "maxDuration": 55,
+      "includeFiles": "{api/rulepack.json,prompts/element_tagging.md,packages/proofops/**}",
+      "excludeFiles": "{tests/**,fixtures/**,evidence/**,docs/**,sources/**,evaluation/**,apps/**,scripts/**,node_modules/**}"
+    }
+  },
+  "rewrites": [
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
+}
