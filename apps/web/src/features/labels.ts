@@ -22,6 +22,14 @@ export const elementLabels: Record<string, string> = {
 };
 
 export function getElementLabel(elementId: string): string {
+  if (Object.hasOwn(fieldLabels, elementId)) return fieldLabels[elementId];
   const label = elementLabels[elementId];
   return Object.hasOwn(elementLabels, elementId) ? `${elementId} · ${label}` : elementId;
 }
+
+const fieldLabels: Record<string, string> = {
+  quantitative_or_qualified_ordinal: "정량 수치", unit_or_qualified_ordinal: "단위", comparison_baseline: "비교 기준",
+  calculation_boundary: "산정 경계", method: "산정 방법론", assurance_covered: "외부 보증", target_year: "목표 연도",
+  target_metric: "목표 지표·수치", baseline_year: "기준 연도", baseline_value: "기준값", scope: "적용 범위",
+  org_boundary: "조직 경계", current_progress: "현재 진척", transition_plan: "이행 계획",
+};

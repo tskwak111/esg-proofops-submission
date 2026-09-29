@@ -1,6 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
-  <title id="title">ProofOps</title>
-  <rect width="64" height="64" fill="#08432D"/>
-  <path d="M18 48V16h14c10 0 16 5 16 14S42 44 32 44h-6v4h-8Zm8-12h6c5 0 8-2 8-6s-3-6-8-6h-6v12Z" fill="#FFFFFF"/>
-  <path d="M44 49h11" stroke="#B7E36A" stroke-width="3"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="ProofOps"><rect width="64" height="64" fill="#0A2A20"/><path d="M17 47C17 28 29 17 47 17c0 18-11 30-30 30Z" fill="none" stroke="#5BE3A4" stroke-width="3.4"/><path d="M17 47 37 27" stroke="#FFFFFF" stroke-width="3.4"/><circle cx="37" cy="27" r="3.2" fill="#FFFFFF"/></svg>
