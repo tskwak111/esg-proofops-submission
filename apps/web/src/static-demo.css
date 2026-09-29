@@ -13,8 +13,8 @@
 /* labels */
 .eyebrow, .tiny-label, .kicker { display: inline-flex; align-items: center; gap: 10px; font: 500 12px/1.4 var(--font); letter-spacing: .12em; text-transform: uppercase; color: var(--coral) }
 .kicker { color: var(--signal) } .kicker.dark { color: var(--green) }
-.pulse { width: 7px; height: 7px; background: var(--signal); box-shadow: 0 0 0 0 rgba(91, 227, 164, .6); animation: pulse 2.4s infinite }
-@keyframes pulse { 70% { box-shadow: 0 0 0 10px rgba(91, 227, 164, 0) } 100% { box-shadow: 0 0 0 0 rgba(91, 227, 164, 0) } }
+.pulse { width: 7px; height: 7px; background: var(--signal); box-shadow: 0 0 0 0 rgba(228, 98, 63, .5); animation: pulse 2.4s infinite }
+@keyframes pulse { 70% { box-shadow: 0 0 0 10px rgba(228, 98, 63, 0) } 100% { box-shadow: 0 0 0 0 rgba(228, 98, 63, 0) } }
 
 /* header */
 .site-header { position: sticky; top: 0; z-index: 50; background: rgba(249, 248, 244, .88); backdrop-filter: saturate(160%) blur(14px); -webkit-backdrop-filter: saturate(160%) blur(14px) }
@@ -94,7 +94,7 @@ a.card:hover, .features .card:hover, .steps .card:hover { transform: translateY(
 .trace blockquote { margin: 16px 0 12px; font-size: 16px; line-height: 1.55; font-weight: 600; letter-spacing: -.02em }
 .trace-rows { list-style: none; margin: 0; padding: 0 }
 .trace-rows li { display: grid; grid-template-columns: 22px 1fr auto; gap: 12px; align-items: start; padding: 12px 0; border-bottom: 1px solid var(--line); opacity: 0; animation: appear .7s var(--ease) forwards }
-.check { width: 20px; height: 20px; border-radius: 50%; background: #E3F3EA; color: var(--green); display: grid; place-items: center; font-size: 11px; font-weight: 700; margin-top: 1px }
+.check { width: 20px; height: 20px; border-radius: 50%; background: #E6EBE2; color: var(--green); display: grid; place-items: center; font-size: 11px; font-weight: 700; margin-top: 1px }
 .trace-rows strong { display: block; font-size: 13px; font-weight: 600 }
 .trace-rows p { font-size: 12.5px; color: var(--muted); line-height: 1.5; margin-top: 2px }
 .trace-page { font: 500 11.5px var(--mono); color: var(--ink-2); white-space: nowrap; margin-top: 2px }
@@ -122,11 +122,11 @@ a.card:hover, .features .card:hover, .steps .card:hover { transform: translateY(
 .thumb i:first-child { width: 45%; background: var(--line-2) }
 .thumb i:nth-child(2) { height: 100%; }
 .thumb i:nth-child(3), .thumb i:nth-child(4) { display: none }
-.t-results { background: #16241D } .t-results i:first-child { background: rgba(255, 255, 255, .3) } .t-results i:nth-child(2) { background: linear-gradient(90deg, var(--e3) 0 20%, var(--e2) 20% 42%, var(--e1) 42% 70%, var(--e0) 70%); height: 10px; align-self: end }
+.t-results { background: #2B2A27 } .t-results i:first-child { background: rgba(255, 255, 255, .3) } .t-results i:nth-child(2) { background: linear-gradient(90deg, var(--e3) 0 20%, var(--e2) 20% 42%, var(--e1) 42% 70%, var(--e0) 70%); height: 10px; align-self: end }
 .t-report i:nth-child(2) { background: #fff; box-shadow: inset 0 26px 0 -14px var(--beige) }
 .t-live { background: #1B1B1B } .t-live i:first-child { background: rgba(255, 255, 255, .3) } .t-live i:nth-child(2) { background: #2A2A2A; border: 1px solid #3a3a3a }
 .t-review i:nth-child(2) { background: repeating-linear-gradient(#fff 0 18px, var(--beige) 18px 22px) }
-.t-kia { background: #E7EEF0 } .t-upload i:nth-child(2) { background: transparent; border: 1.5px dashed var(--line-2) }
+.t-kia { background: #EAE4DA } .t-upload i:nth-child(2) { background: transparent; border: 1.5px dashed var(--line-2) }
 
 .faq-inner { max-width: 820px !important }
 .faq h2.serif { font-size: clamp(26px, 2.8vw, 36px); margin: 0 0 20px }
@@ -252,8 +252,8 @@ a.card:hover, .features .card:hover, .steps .card:hover { transform: translateY(
 .guide-help summary { list-style: none; cursor: pointer; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--line-2); font: 600 10px var(--font); color: var(--muted); border-radius: 50% }
 .guide-help summary::-webkit-details-marker { display: none }
 .guide-help summary:hover { border-color: var(--ink); color: var(--ink) }
-.guide-help [role=note] { border-radius: 10px; position: absolute; z-index: 20; top: 24px; left: -8px; width: 280px; padding: 14px 16px; background: var(--ink); color: #EAF4EE; font: 400 13px/1.6 var(--font); letter-spacing: 0; text-transform: none; box-shadow: 0 20px 40px -20px rgba(0, 0, 0, .5) }
-.guide-help [role=note] a { color: #9EE6C1; display: inline-block; margin-top: 6px }
+.guide-help [role=note] { border-radius: 10px; position: absolute; z-index: 20; top: 24px; left: -8px; width: 280px; padding: 14px 16px; background: var(--ink); color: #F4EFE6; font: 400 13px/1.6 var(--font); letter-spacing: 0; text-transform: none; box-shadow: 0 20px 40px -20px rgba(0, 0, 0, .5) }
+.guide-help [role=note] a { color: #F2B8A6; display: inline-block; margin-top: 6px }
 
 /* guide */
 .decision-guide { margin-top: 40px }
@@ -276,7 +276,7 @@ a.card:hover, .features .card:hover, .steps .card:hover { transform: translateY(
 .analyze-upload h2, .analyze-info h2 { font-size: 24px; letter-spacing: -.04em; margin-bottom: 8px }
 .analyze-upload > p { color: var(--muted); font-size: 14px }
 .drop-zone { position: relative; margin-top: 24px; min-height: 280px; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: #fff; border: 1px dashed var(--line-2); cursor: pointer; transition: border-color .25s, background .25s }
-.drop-zone:hover { border-color: var(--green); background: #FCFDFB }
+.drop-zone:hover { border-color: var(--green); background: #FDFCF9 }
 .drop-zone > span { font-size: 26px; color: var(--green); animation: bob 2.4s ease-in-out infinite }
 @keyframes bob { 50% { transform: translateY(-6px) } }
 .drop-zone strong { font-size: 17px; color: var(--ink) } .drop-zone small { font-size: 13px; color: var(--muted) }
@@ -363,3 +363,13 @@ main.landing > section.hero { padding: 96px 40px 110px }
 .demo-site .hero-sub { margin: 26px auto 34px }
 .demo-site .prompt { margin: 72px auto 0 }
 @media (max-width: 760px) { main.landing > section.sec { padding: 84px 20px } main.landing > section.hero { padding: 64px 20px 80px } .demo-site .sec > h2.serif { margin-bottom: 40px } .demo-site .prompt { margin-top: 48px } }
+
+/* unify feature pages with the warm editorial system */
+.demo-site .kia-hero h1, .demo-site .live-heading h1, .demo-site .replay-hero h1, .demo-site .audit-cover h1, .demo-site .review-sim h1, .demo-site .review-sim-head h1 { font-family: var(--serif) !important; font-weight: 400 !important; letter-spacing: -.02em !important }
+.demo-site .kia-overline, .demo-site .audit-kicker, .demo-site .audit-section-head > span, .demo-site .replay-kicker, .demo-site .replay-section-head .eyebrow, .demo-site .review-sim-kicker { color: var(--coral) !important; font-weight: 500 !important }
+.demo-site .kia-claim-list button { border-radius: 0; min-height: 0 }
+.demo-site .kia-claim-list button:hover, .demo-site .kia-claim-list button.selected { background: var(--paper) }
+.demo-site .audit-toolbar button, .demo-site .audit-toolbar a, .demo-site .live-form button[type=submit], .demo-site form button[type=submit] { border-radius: 999px }
+.demo-site .audit-brand-mark { border-radius: 8px }
+.demo-site .review-sim-head h1, .demo-site .review-sim-head h2 { font-family: var(--serif) !important; font-weight: 400 !important; letter-spacing: -.02em !important }
+.demo-site .audit-toolbar button { background: #fff; color: var(--ink); border-color: var(--line-2) } .demo-site .audit-toolbar button:first-of-type { background: var(--ink); color: #fff; border-color: var(--ink) } .demo-site .audit-brand { color: var(--ink) !important }

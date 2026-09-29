@@ -11,9 +11,9 @@
   --coral-soft: #FCE8E1;
   --card-line: #EAE4DA;
   --serif: 'Noto Serif KR', 'Nanum Myeongjo', serif;
-  --forest: #0A2A20;
-  --forest-2: #0F3528;
-  --forest-line: rgba(214, 236, 224, .14);
+  --forest: #1F1E1B;
+  --forest-2: #2B2A27;
+  --forest-line: rgba(255, 255, 255, .1);
 
   /* ink */
   --ink: #161616;
@@ -23,18 +23,18 @@
   --line-2: #D8D2C7;
 
   /* brand */
-  --green: #0E7A51;
-  --green-deep: #09553A;
-  --signal: #5BE3A4;
-  --lime: #5BE3A4;
-  --amber: #B7791F;
+  --green: #3F5B45;
+  --green-deep: #2C4231;
+  --signal: #E4623F;
+  --lime: #E4623F;
+  --amber: #B7793A;
   --red: #B4402F;
 
   /* grades */
-  --e3: #0E7A51;
-  --e2: #3E9A6D;
-  --e1: #8DB8A0;
-  --e0: #BAC3BD;
+  --e3: #3F5B45;
+  --e2: #7F9A83;
+  --e1: #BCC7B3;
+  --e0: #DAD4C8;
 
   /* legacy aliases used by feature styles */
   --panel: var(--bg); --border: var(--line); --text: var(--ink); --text-muted: var(--muted);
@@ -76,8 +76,8 @@ button[type=submit], button[data-variant=primary] { background: var(--ink); bord
 button[type=submit]:hover:not(:disabled), button[data-variant=primary]:hover:not(:disabled) { background: var(--green); border-color: var(--green) }
 input:not([type=checkbox]):not([type=radio]), select, textarea { display: block; width: 100%; min-height: 46px; padding: 11px 14px; border: 1px solid var(--line-2); border-radius: 10px; background: #fff; color: var(--ink); font-size: 15px; transition: border-color .2s, box-shadow .2s; -webkit-appearance: none; appearance: none }
 select { background-image: linear-gradient(45deg, transparent 50%, var(--ink-2) 50%), linear-gradient(135deg, var(--ink-2) 50%, transparent 50%); background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 36px }
-input:focus, select:focus, textarea:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px rgba(14, 122, 81, .12) }
-input::placeholder, textarea::placeholder { color: #A3ACA7 }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px rgba(63, 91, 69, .14) }
+input::placeholder, textarea::placeholder { color: #A9A49C }
 textarea { min-height: 96px; resize: vertical }
 label { display: block; color: var(--ink-2); font-size: 13px; font-weight: 600 }
 label > input, label > select, label > textarea { margin-top: 8px }
