@@ -216,8 +216,11 @@ function Guide({ data }: { data: Snapshot }) {
     </section>
     <section className="sec sec-beige">
       <p className="eyebrow-c center">판정 기준</p><h2 className="serif center">주장 유형과 근거 수준</h2>
-      <div className="features">{tracks.map(([title, body]) => <article className="card" key={title}><h3>{title}</h3><p>{body}</p></article>)}</div>
-      <div className="features">{grades.map(([grade, label, body]) => <article className="card" key={grade}><h3>{grade}</h3><p><strong>{label}</strong></p><p>{body}</p></article>)}</div>
+      <div className="criteria">
+        <article className="card criteria-card"><h3>주장 유형</h3><dl>{tracks.map(([title, body]) => <div key={title}><dt>{title}</dt><dd>{body}</dd></div>)}</dl></article>
+        <article className="card criteria-card"><h3>근거 수준</h3><dl>{grades.filter(([grade]) => grade.startsWith("E")).map(([grade, label, body]) => <div key={grade}><dt>{grade}<small>{label}</small></dt><dd>{body}</dd></div>)}</dl></article>
+      </div>
+      <p className="criteria-note">확인되지 않은 요소가 남아 있으면 등급을 하나로 확정하지 않고, 규칙상 가능한 등급의 범위(예: E2–E3)나 보류 사유를 함께 표시합니다. 판정 규칙이 아직 정해지지 않은 유형도 등급 대신 보류로 남깁니다.</p>
     </section>
     <section className="sec sec-beige">
       <p className="eyebrow-c">활용 사례</p><h2 className="serif">실무를 위한 설계</h2>
