@@ -362,6 +362,13 @@ def test_new_local_approval_profiles_use_bounded_24h_lifetime(tmp_path, monkeypa
         "--period-end",
         "2024-12-31",
     ]
+    # A prior API import must not bind this pilot to another composition/origin.
+    import os
+
+    from proofops_api import main as api_main
+
+    monkeypatch.setattr(os, "environ", os.environ.copy())
+    monkeypatch.setattr(api_main, "app", object())
     monkeypatch.setattr(sys, "argv", argv)
     exit_code = pilot.main()
     assert exit_code == 0

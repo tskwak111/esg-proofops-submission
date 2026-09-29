@@ -471,7 +471,6 @@ class LocalTagStore:
 
     def load_inputs(self, tenant_id, run_id, claim_id):
         run = self.store.jobs.get_run(tenant_id, run_id)
-        evidence = self.claims.load_evidence(tenant_id, run_id)
         envelope = None
         if "tag_job" in run:
             envelope, evidence = self._load_snapshot_with_evidence(tenant_id, run_id)
@@ -480,6 +479,7 @@ class LocalTagStore:
                 raise KeyError("tagged claim not published")
             raw = item["review_inputs"]
         else:
+            evidence = self.claims.load_evidence(tenant_id, run_id)
             _, discovery, graph = evidence
             claim = next((c for c in discovery.claims if c.claim_id == claim_id), None)
             if claim is None:

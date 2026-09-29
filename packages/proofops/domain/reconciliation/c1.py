@@ -5,6 +5,11 @@ only when the verified identifier sets are equal. Cardinality is never a proxy f
 identity, and ``policy.allowed_difference_types`` is a taxonomy that tells a
 reviewer what kind of explanation to look for -- it is deliberately never read
 here, because it must not act as an automatic pass list.
+
+Sets are compared only when the sustainability reporting period equals the
+pinned financial period and the consolidation basis is verified. A facility
+set and a legal-entity set are different kinds and stay blocked without a
+source-verified control/boundary mapping.
 """
 
 from __future__ import annotations
@@ -20,6 +25,16 @@ def evaluate(context: Context) -> Outcome:
     unresolved = context.unresolved_values()
     if unresolved is not None:
         return unresolved
+
+    identity = context.packet["identity"]
+    reporting = (identity["period_start"], identity["period_end"])
+    financial_period = (identity["financial_period_start"], identity["financial_period_end"])
+    if None in reporting or None in financial_period:
+        return blocked("c1_period_unresolved")
+    if reporting != financial_period:
+        return blocked("c1_period_mismatch")
+    if identity["consolidation"] == "unknown":
+        return blocked("c1_consolidation_unknown")
 
     sustainability = parse_entity_set(
         context.sustainability["normalized"], "sustainability.normalized"

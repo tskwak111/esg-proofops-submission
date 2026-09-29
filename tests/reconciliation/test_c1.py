@@ -244,3 +244,41 @@ def test_c1_result_reports_both_compared_sources():
 def test_c1_is_deterministic_across_repeated_evaluation():
     value, pol = packet(setify(["A", "B"]), setify(["A", "C"]), search="complete"), policy()
     assert engine.evaluate(value, pol) == engine.evaluate(value, pol)
+
+
+def test_rec001_sets_are_not_compared_across_different_periods():
+    same = setify(["KR-HQ"])
+    value = packet(same, same)
+    value["identity"]["period_start"] = "2023-07-01"
+    result = engine.evaluate(value, policy())
+    assert (result["execution_state"], result["status"]) == ("blocked", None)
+    assert result["reason_codes"] == ["c1_period_mismatch"]
+
+
+@pytest.mark.parametrize("prefix", ["", "financial_"])
+def test_rec001_an_unresolved_period_blocks_instead_of_matching(prefix):
+    same = setify(["KR-HQ"])
+    value = packet(same, same)
+    value["identity"][f"{prefix}period_start"] = None
+    value["identity"][f"{prefix}period_end"] = None
+    result = engine.evaluate(value, policy())
+    assert (result["execution_state"], result["status"]) == ("blocked", None)
+    assert result["reason_codes"] == ["c1_period_unresolved"]
+
+
+def test_rec001_an_unknown_consolidation_basis_blocks_instead_of_matching():
+    same = setify(["KR-HQ"])
+    value = packet(same, same)
+    value["identity"]["consolidation"] = "unknown"
+    result = engine.evaluate(value, policy())
+    assert (result["execution_state"], result["status"]) == ("blocked", None)
+    assert result["reason_codes"] == ["c1_consolidation_unknown"]
+
+
+def test_rec001_a_facility_set_is_never_mapped_onto_a_legal_entity_set():
+    """No source-verified control mapping exists in 1.1, even with an explanation."""
+    value = packet(setify(["plant-A"]), setify(["entity-A"]), explained=True, search="complete")
+    value["sustainability"]["kind"] = "facility_set"
+    result = engine.evaluate(value, policy())
+    assert (result["execution_state"], result["status"]) == ("blocked", None)
+    assert result["reason_codes"] == ["kind_mismatch"]

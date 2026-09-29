@@ -88,10 +88,9 @@ def test_actor_suffix_is_exact_tested_bytes():
     suffix, _, _ = _actor()
     raw = suffix.encode("utf-8")
     assert len(raw) == 832
-    assert \
-        hashlib.sha256(raw).hexdigest() == (
-            "b1acebbb3d47b5d96d76ec04afa8ec79dc2d3d96476ea0c62d37fd6b68ca1782"
-        )
+    assert hashlib.sha256(raw).hexdigest() == (
+        "b1acebbb3d47b5d96d76ec04afa8ec79dc2d3d96476ea0c62d37fd6b68ca1782"
+    )
     assert suffix.startswith(" First distinguish the actor of the asserted action.")
     assert suffix.endswith("All source-index, exact quote and no-grade rules remain unchanged.")
 
@@ -233,14 +232,20 @@ def test_actor_and_goal_prompts_can_never_be_swapped(tmp_path, monkeypatch):
     )
 
     adapter, request, _, _, _ = _configured(
-        tmp_path, monkeypatch, profile=GOAL_MODEL_PROFILE, prompt=GOAL_ROLE_SYSTEM_PROMPT,
+        tmp_path,
+        monkeypatch,
+        profile=GOAL_MODEL_PROFILE,
+        prompt=GOAL_ROLE_SYSTEM_PROMPT,
         actor_role=True,
     )
     with pytest.raises(ValueError, match="UPSTAGE_PRELIMINARY_PROMPT_INVALID"):
         adapter._wire_request(request)
     adapter, request, _, _, _ = _configured(
-        tmp_path / "b", monkeypatch, profile=ACTOR_MODEL_PROFILE,
-        prompt=ACTOR_ROLE_SYSTEM_PROMPT, actor_role=False,
+        tmp_path / "b",
+        monkeypatch,
+        profile=ACTOR_MODEL_PROFILE,
+        prompt=ACTOR_ROLE_SYSTEM_PROMPT,
+        actor_role=False,
     )
     with pytest.raises(ValueError, match="UPSTAGE_PRELIMINARY_PROMPT_INVALID"):
         adapter._wire_request(request)
@@ -251,16 +256,22 @@ def test_wrong_prompt_for_actor_profile_refused_before_spend(tmp_path, monkeypat
 
     with pytest.raises(ValueError, match="UPSTAGE_TAGGING_BINDING_INVALID"):
         _configured(
-            tmp_path, monkeypatch, profile=ACTOR_MODEL_PROFILE,
-            prompt=GOAL_ROLE_SYSTEM_PROMPT, actor_role=True,
+            tmp_path,
+            monkeypatch,
+            profile=ACTOR_MODEL_PROFILE,
+            prompt=GOAL_ROLE_SYSTEM_PROMPT,
+            actor_role=True,
         )
 
 
 def test_null_track_with_all_null_dimensions_validates_no_grade(tmp_path, monkeypatch):
     """Observed provider-visit shape: track null, confidence null, all dims null."""
     _, _, envelope, claim, graph = _configured(
-        tmp_path, monkeypatch, profile=ACTOR_MODEL_PROFILE,
-        prompt=_actor()[1], actor_role=True,
+        tmp_path,
+        monkeypatch,
+        profile=ACTOR_MODEL_PROFILE,
+        prompt=_actor()[1],
+        actor_role=True,
     )
     assert envelope["schema"] == TABLE_SCHEMA
     response = dict(
@@ -285,8 +296,11 @@ def test_null_consensus_returns_none_without_element_dispatch(tmp_path, monkeypa
 
     runtime, claim, graph, calls, _, _ = live_configured(tmp_path, monkeypatch)
     _, _, envelope, _, _ = _configured(
-        tmp_path / "actor", monkeypatch, profile=ACTOR_MODEL_PROFILE,
-        prompt=_actor()[1], actor_role=True,
+        tmp_path / "actor",
+        monkeypatch,
+        profile=ACTOR_MODEL_PROFILE,
+        prompt=_actor()[1],
+        actor_role=True,
     )
     assert envelope["schema"] == TABLE_SCHEMA
     null_response = dict(
@@ -301,14 +315,16 @@ def test_null_consensus_returns_none_without_element_dispatch(tmp_path, monkeypa
 
     g2, c2, _ = corpus()
     null_result = validate_preliminary_table_sources(
-        c2, g2,
+        c2,
+        g2,
         dict(null_response, claim_id=c2.claim_id),
         tenant_id=TENANT,
     )
     assert null_result.track is None
     element_calls = []
     monkeypatch.setattr(
-        runtime.element_transport, "invoke",
+        runtime.element_transport,
+        "invoke",
         lambda request: element_calls.append(request) or pytest.fail("no element dispatch on null"),
     )
     monkeypatch.setattr(runtime, "_source_replicas", lambda *a, **k: [null_result])
@@ -328,8 +344,12 @@ def test_preflight_allowlist_accepts_actor_pair_and_rejects_mismatch():
     def _settings(profile, prompt):
         return TaggingSettings(
             ModelBinding("00000000-0000-4000-8000-000000000001", "tagger", False),
-            MODEL_PRO4, profile, "provider-managed-unverified", prompt,
-            json.dumps({"type": "object"}), max_tokens=1024,
+            MODEL_PRO4,
+            profile,
+            "provider-managed-unverified",
+            prompt,
+            json.dumps({"type": "object"}),
+            max_tokens=1024,
         )
 
     settings = _settings(ACTOR_MODEL_PROFILE, ACTOR_ROLE_SYSTEM_PROMPT)
@@ -358,13 +378,20 @@ def test_pilot_actor_settings_select_own_pair_and_require_goal_role():
     from evaluation.local_upstage_pilot import live_tagging_settings
 
     goal = live_tagging_settings(
-        12, preliminary_context=True, preliminary_table_context=True,
-        preliminary_table_role=True, preliminary_goal_role=True,
+        12,
+        preliminary_context=True,
+        preliminary_table_context=True,
+        preliminary_table_role=True,
+        preliminary_goal_role=True,
     )
     assert goal["preliminary_settings"]["model_profile"] == GOAL_MODEL_PROFILE
     enabled = live_tagging_settings(
-        12, preliminary_context=True, preliminary_table_context=True,
-        preliminary_table_role=True, preliminary_goal_role=True, preliminary_actor_role=True,
+        12,
+        preliminary_context=True,
+        preliminary_table_context=True,
+        preliminary_table_role=True,
+        preliminary_goal_role=True,
+        preliminary_actor_role=True,
     )
     assert enabled["preliminary_settings"]["model_profile"] == ACTOR_ROLE_MODEL_PROFILE_V2
     assert enabled["preliminary_settings"]["system_prompt"] == ACTOR_ROLE_SYSTEM_PROMPT_V2
@@ -375,14 +402,20 @@ def test_pilot_actor_settings_select_own_pair_and_require_goal_role():
     for bad in (1, "yes", None):
         with pytest.raises(ValueError):
             live_tagging_settings(
-                12, preliminary_context=True, preliminary_table_context=True,
-                preliminary_table_role=True, preliminary_goal_role=True,
+                12,
+                preliminary_context=True,
+                preliminary_table_context=True,
+                preliminary_table_role=True,
+                preliminary_goal_role=True,
                 preliminary_actor_role=bad,
             )
     with pytest.raises(ValueError):
         live_tagging_settings(
-            12, preliminary_context=True, preliminary_table_context=True,
-            preliminary_table_role=True, preliminary_goal_role=False,
+            12,
+            preliminary_context=True,
+            preliminary_table_context=True,
+            preliminary_table_role=True,
+            preliminary_goal_role=False,
             preliminary_actor_role=True,
         )
 
@@ -394,18 +427,39 @@ def test_pilot_resume_restores_and_defaults_actor_flag():
 
     def _resume_args(**overrides):
         base = dict(
-            pdf=None, report_year=None, period_start=None, period_end=None, pages="1",
-            claim_pages=None, model="solar-pro3", verify_paragraphs=False, verify_tables=False,
-            verify_merged_tables=False, verify_selected_cells=False,
-            native_quote_typography=False, repair_table_headers=False, verify_claim_spans=False,
-            raster_ocr=False, live_tagging=False, live_relations=False, preliminary_context=False,
-            preliminary_table_context=False, preliminary_table_role=False,
-            preliminary_goal_role=False, preliminary_actor_role=False,
-            extraction_year_notation=False, extraction_context=False,
-            extraction_table_context=False, extraction_source_ids=False,
-            extraction_assertion_prompt=False, extraction_complete_selection=False,
-            claim_span_render_resolution=False, claim_span_bullet_spacing=False,
-            claim_span_typography=False, tagging_max_calls=12, extraction_total_calls=None,
+            pdf=None,
+            report_year=None,
+            period_start=None,
+            period_end=None,
+            pages="1",
+            claim_pages=None,
+            model="solar-pro3",
+            verify_paragraphs=False,
+            verify_tables=False,
+            verify_merged_tables=False,
+            verify_selected_cells=False,
+            native_quote_typography=False,
+            repair_table_headers=False,
+            verify_claim_spans=False,
+            raster_ocr=False,
+            live_tagging=False,
+            live_relations=False,
+            preliminary_context=False,
+            preliminary_table_context=False,
+            preliminary_table_role=False,
+            preliminary_goal_role=False,
+            preliminary_actor_role=False,
+            extraction_year_notation=False,
+            extraction_context=False,
+            extraction_table_context=False,
+            extraction_source_ids=False,
+            extraction_assertion_prompt=False,
+            extraction_complete_selection=False,
+            claim_span_render_resolution=False,
+            claim_span_bullet_spacing=False,
+            claim_span_typography=False,
+            tagging_max_calls=12,
+            extraction_total_calls=None,
             max_calls=8,
         )
         base.update(overrides)
@@ -414,9 +468,14 @@ def test_pilot_resume_restores_and_defaults_actor_flag():
     restored = _resume_args()
     apply_resume_metadata(
         restored,
-        {"source_path": "/tmp/elsewhere.pdf", "preliminary_context": True,
-         "preliminary_table_context": True, "preliminary_table_role": True,
-         "preliminary_goal_role": True, "preliminary_actor_role": True},
+        {
+            "source_path": "/tmp/elsewhere.pdf",
+            "preliminary_context": True,
+            "preliminary_table_context": True,
+            "preliminary_table_role": True,
+            "preliminary_goal_role": True,
+            "preliminary_actor_role": True,
+        },
     )
     assert restored.preliminary_actor_role is True
     legacy = _resume_args()
@@ -432,20 +491,39 @@ def test_pilot_resume_cannot_add_actor_to_legacy_run(tmp_path, monkeypatch, caps
     state = tmp_path / "legacy-run"
     state.mkdir()
     (state / "pilot.json").write_text(
-        json.dumps({"source_path": "/tmp/elsewhere.pdf", "live_tagging": True,
-                    "preliminary_context": True, "preliminary_table_context": True,
-                    "preliminary_table_role": True, "preliminary_goal_role": True})
+        json.dumps(
+            {
+                "source_path": "/tmp/elsewhere.pdf",
+                "live_tagging": True,
+                "preliminary_context": True,
+                "preliminary_table_context": True,
+                "preliminary_table_role": True,
+                "preliminary_goal_role": True,
+            }
+        )
     )
     monkeypatch.setattr(
-        sys, "argv",
-        ["local_upstage_pilot", "--resume", "--state", str(state), "--live-tagging",
-         "--preliminary-context", "--preliminary-table-context", "--preliminary-table-role",
-         "--preliminary-goal-role", "--preliminary-actor-role",
-         "--key-file", str(tmp_path / "absent.key")],
+        sys,
+        "argv",
+        [
+            "local_upstage_pilot",
+            "--resume",
+            "--state",
+            str(state),
+            "--live-tagging",
+            "--preliminary-context",
+            "--preliminary-table-context",
+            "--preliminary-table-role",
+            "--preliminary-goal-role",
+            "--preliminary-actor-role",
+            "--key-file",
+            str(tmp_path / "absent.key"),
+        ],
     )
     with pytest.raises(SystemExit):
         pilot.main()
     assert "--resume cannot add preliminary actor role" in capsys.readouterr().err
+
 
 def test_preflight_allowlist_accepts_actor_v2():
     from proofops.application.preflight import check_local_upstage_tagger
@@ -459,8 +537,12 @@ def test_preflight_allowlist_accepts_actor_v2():
     def _settings(profile, prompt):
         return TaggingSettings(
             ModelBinding("00000000-0000-4000-8000-000000000001", "tagger", False),
-            MODEL_PRO4, profile, "provider-managed-unverified", prompt,
-            json.dumps({"type": "object"}), max_tokens=1024,
+            MODEL_PRO4,
+            profile,
+            "provider-managed-unverified",
+            prompt,
+            json.dumps({"type": "object"}),
+            max_tokens=1024,
         )
 
     settings = _settings(ACTOR_ROLE_MODEL_PROFILE_V2, ACTOR_ROLE_SYSTEM_PROMPT_V2)
@@ -478,15 +560,21 @@ def test_actor_v2_transport_accepts_exact_v2_and_rejects_v1_packet(tmp_path, mon
         ACTOR_ROLE_SYSTEM_PROMPT_V2,
         ACTOR_ROLE_TRANSPORT_VERSION_V2,
     )
+
     adapter, request, packet, claim, graph = _configured(
-        tmp_path, monkeypatch, profile=ACTOR_ROLE_MODEL_PROFILE_V2,
-        prompt=ACTOR_ROLE_SYSTEM_PROMPT_V2, actor_role=True, period_role=True,
+        tmp_path,
+        monkeypatch,
+        profile=ACTOR_ROLE_MODEL_PROFILE_V2,
+        prompt=ACTOR_ROLE_SYSTEM_PROMPT_V2,
+        actor_role=True,
+        period_role=True,
     )
     assert adapter.TRANSPORT_VERSION == ACTOR_ROLE_TRANSPORT_VERSION_V2
     assert json.loads(adapter._wire_request(request)[1]) == json.loads(json.dumps(packet))
-    legacy = preliminary_table_request(claim, graph, tenant_id=TENANT,
-        role_resolution=True, goal_role=True, actor_role=True)
-    assert [key for key in packet if packet[key] != legacy[key]] == ['prompt_sha256']
+    legacy = preliminary_table_request(
+        claim, graph, tenant_id=TENANT, role_resolution=True, goal_role=True, actor_role=True
+    )
+    assert [key for key in packet if packet[key] != legacy[key]] == ["prompt_sha256"]
     with pytest.raises(ValueError):
         adapter._wire_request(dict(request, user_json=json.dumps(legacy)))
 
@@ -496,26 +584,33 @@ def test_worker_builds_the_pinned_actor_v2_packet():
 
     from proofops_agent.upstage_preliminary import ACTOR_ROLE_SYSTEM_PROMPT_V2
     from proofops_worker.live_tagging import LiveTaggingRuntime
+
     graph, claim, _ = table_corpus()
-    seen=[]
+    seen = []
+
     def replicas(role, claim, packet, *args):
         seen.append(packet)
-        assert packet['prompt_sha256'] == canonical_hash(ACTOR_ROLE_SYSTEM_PROMPT_V2)
+        assert packet["prompt_sha256"] == canonical_hash(ACTOR_ROLE_SYSTEM_PROMPT_V2)
         return None
-    runtime=SimpleNamespace(
+
+    runtime = SimpleNamespace(
         auth=SimpleNamespace(tenant_id=TENANT),
-        preliminary_settings=SimpleNamespace(model_profile='upstage-preliminary-source-quotes-actor-role-v2'),
-        preliminary_transport=SimpleNamespace(bound_context=lambda packet:packet),
-        preliminary_records={}, _source_replicas=replicas,
+        preliminary_settings=SimpleNamespace(
+            model_profile="upstage-preliminary-source-quotes-actor-role-v2"
+        ),
+        preliminary_transport=SimpleNamespace(bound_context=lambda packet: packet),
+        preliminary_records={},
+        _source_replicas=replicas,
     )
-    assert LiveTaggingRuntime.preliminary(runtime,claim,graph) is None
-    assert len(seen)==1
+    assert LiveTaggingRuntime.preliminary(runtime, claim, graph) is None
+    assert len(seen) == 1
 
 
 def test_actor_v2_suffix_is_the_evaluated_period_role_prompt():
     from hashlib import sha256
 
     from proofops.application.tagging.preliminary import PERIOD_ROLE_SYSTEM_SUFFIX
+
     assert sha256(PERIOD_ROLE_SYSTEM_SUFFIX.encode()).hexdigest() == (
-        'b6bde180178474df6e8939816563730f759c91d7f00087467c7f5fc9621a141a'
+        "b6bde180178474df6e8939816563730f759c91d7f00087467c7f5fc9621a141a"
     )

@@ -220,27 +220,40 @@ def test_v3_profile_remains_unchanged(tmp_path, monkeypatch):
 def test_refinement_preserves_qualifiers_identity_and_rejects_unsafe_candidates():
     from copy import deepcopy
 
-    original = dict(quote="2050년까지", char_start=30, char_end=37,
-                    document_version_id="source-a", page=22, bbox=[1, 2, 3, 4],
-                    verification_state="verified", source_hash="unchanged")
-    element = dict(element_id="G1", state="present", normalized_value="2050년",
-                   evidence_refs=[original])
+    original = dict(
+        quote="2050년까지",
+        char_start=30,
+        char_end=37,
+        document_version_id="source-a",
+        page=22,
+        bbox=[1, 2, 3, 4],
+        verification_state="verified",
+        source_hash="unchanged",
+    )
+    element = dict(
+        element_id="G1", state="present", normalized_value="2050년", evidence_refs=[original]
+    )
     UpstageTaggingTransport._refine_g1_year(element)
     assert element["evidence_refs"] == [original, dict(original, quote="2050년", char_end=35)]
     before = deepcopy(element)
     UpstageTaggingTransport._refine_g1_year(element)
     assert element == before  # Idempotent; retain the original deadline qualifier.
     for changes in (
-        dict(state="unknown"), dict(state="absent"), dict(element_id="G2"),
-        dict(normalized_value="２０５０년"), dict(normalized_value="0000년"),
-        dict(normalized_value="2050"), dict(normalized_value="2050년까지"),
+        dict(state="unknown"),
+        dict(state="absent"),
+        dict(element_id="G2"),
+        dict(normalized_value="２０５０년"),
+        dict(normalized_value="0000년"),
+        dict(normalized_value="2050"),
+        dict(normalized_value="2050년까지"),
         dict(evidence_refs=[dict(original, quote="12050년")]),
         dict(evidence_refs=[dict(original, quote="2040년")]),
         dict(evidence_refs=[original, dict(original, document_version_id="source-b")]),
         dict(evidence_refs=[original, dict(original, quote="2050년부터 2050년까지")]),
     ):
-        candidate = dict(element_id="G1", state="present", normalized_value="2050년",
-                         evidence_refs=[original])
+        candidate = dict(
+            element_id="G1", state="present", normalized_value="2050년", evidence_refs=[original]
+        )
         candidate.update(changes)
         before = deepcopy(candidate)
         UpstageTaggingTransport._refine_g1_year(candidate)

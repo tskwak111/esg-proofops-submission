@@ -206,3 +206,67 @@ def test_cli_roundtrip_and_c5_dispatch(tmp_path):
     assert event["execution_state"] == "not_run"
     assert event["reason_codes"] == ["stage_disabled"]
     assert event["dispatch_schema_version"] == "1.0"
+
+
+def _c3_commitment_bundle(tmp_path, monkeypatch, *, mapping_approved=True):
+    """Fixture c3-policy-unresolved plus one registered, verified commitment note."""
+    import evaluation.reconciliation_fixtures as fixtures
+
+    case = json.loads((EXAMPLES / "c3-policy-unresolved.json").read_text(encoding="utf-8"))
+    case["input"]["sources"].append(
+        {
+            "source_id": "fs-commitment",
+            "document_id": "fs-v1",
+            "artifact_sha256": "0" * 64,
+            "locator": "fixture-note/commitment",
+            "quote": "SYNTHETIC commitment note: 2030 investment plan",
+        }
+    )
+    case["input"]["c3_context"]["commitment_source_id"] = "fs-commitment"
+    if mapping_approved:
+        case["policy"].update(
+            c3_account_mapping_approved=True, allowed_capex_account_ids=["synthetic-PPE"]
+        )
+    assert case["policy"]["c3_threshold"] is None
+    examples = tmp_path / "examples"
+    examples.mkdir()
+    (examples / "c3-policy-unresolved.json").write_text(json.dumps(case), encoding="utf-8")
+    monkeypatch.setattr(fixtures, "EXAMPLES", examples)
+    return fixtures.build_case("c3-policy-unresolved", tmp_path / "artifacts")
+
+
+def test_rec004_registered_commitment_matches_with_null_threshold(tmp_path, monkeypatch):
+    bundle = _c3_commitment_bundle(tmp_path, monkeypatch)
+    result = run_case(bundle, tmp_path / "artifacts")
+    assert (result["execution_state"], result["status"]) == ("completed", "matched")
+    assert result["reason_codes"] == ["commitment_disclosed"]
+    assert "fs-commitment" in result["source_ids"]
+    schema = json.loads((ROOT / "contracts/reconciliation/output.schema.json").read_text("utf-8"))
+    Draft202012Validator(schema).validate(result)
+
+
+def test_rec004_commitment_without_its_verified_role_stays_blocked(tmp_path, monkeypatch):
+    bundle = _c3_commitment_bundle(tmp_path, monkeypatch)
+    bundle["documents"]["fs-v1"]["source_bindings"]["fs-commitment"]["roles"] = []
+    result = run_case(bundle, tmp_path / "artifacts")
+    assert (result["execution_state"], result["status"]) == ("blocked", None)
+    assert result["reason_codes"] == ["source_role_mismatch"]
+
+
+def test_rec004_commitment_with_unapproved_mapping_stays_blocked(tmp_path, monkeypatch):
+    bundle = _c3_commitment_bundle(tmp_path, monkeypatch, mapping_approved=False)
+    result = run_case(bundle, tmp_path / "artifacts")
+    assert (result["execution_state"], result["status"]) == ("blocked", None)
+    assert result["reason_codes"] == ["c3_policy_unapproved"]
+
+
+@pytest.mark.parametrize("kept", ["sr-v1", "fs-v1"])
+def test_rec005_a_complete_receipt_must_cover_both_package_documents(tmp_path, kept):
+    bundle = build_case("c1-difference-no-explanation", tmp_path)
+    assert run_case(bundle, tmp_path)["status"] == "needs_explanation"
+    receipt = bundle["packet"]["search"]["receipt_id"]
+    bundle["coverage"][receipt]["required_document_ids"] = [kept]
+    bundle["packet"]["search"]["required_document_ids"] = [kept]
+    result = run_case(bundle, tmp_path)
+    assert (result["execution_state"], result["status"]) == ("blocked", None)
+    assert result["reason_codes"] == ["coverage_unverified"]

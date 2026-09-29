@@ -398,8 +398,12 @@ def build_pilot_argv(
     if preliminary_context or preliminary_actor_role:
         argv.append("--preliminary-context")
     if preliminary_actor_role:
-        argv += ["--preliminary-table-context", "--preliminary-table-role",
-                 "--preliminary-goal-role", "--preliminary-actor-role"]
+        argv += [
+            "--preliminary-table-context",
+            "--preliminary-table-role",
+            "--preliminary-goal-role",
+            "--preliminary-actor-role",
+        ]
     if ai_project_review:
         argv.append("--ai-project-review")
     if extraction_year_notation:

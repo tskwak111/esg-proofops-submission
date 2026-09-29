@@ -1,4 +1,5 @@
 import sys
+from contextlib import contextmanager
 from dataclasses import replace
 from hashlib import sha256
 from io import BytesIO
@@ -21,6 +22,35 @@ def cell(graph, text):
 
 def crop_ocr(page, box, **kwargs):
     return dict(status="read", text=page.crop(box).extract_text() or "", image_sha256="a" * 64)
+
+
+@contextmanager
+def bundled_pdfium_fonts():
+    """Resolve non-embedded base-14 fonts to pdfium's bundled faces, not host fonts.
+
+    The fixtures draw unembedded /Helvetica; pdfium otherwise may substitute an installed
+    face (Arial via GDI on Windows) or fall back to its bundled face (Linux CI), so tight
+    glyph boxes and the receipt hash would depend on the host rather than the receipt.
+    """
+    import pypdfium2.raw as pdfium_raw
+
+    info = pdfium_raw.FPDF_SYSFONTINFO(version=1)
+    for name, result in (
+        ("Release", None),
+        ("EnumFonts", None),
+        ("MapFont", None),
+        ("GetFont", None),
+        ("GetFontData", 0),
+        ("GetFaceName", 0),
+        ("GetFontCharset", 0),
+        ("DeleteFont", None),
+    ):
+        setattr(info, name, type(getattr(info, name))(lambda *a, result=result: result))
+    pdfium_raw.FPDF_SetSystemFontInfo(info)
+    try:
+        yield
+    finally:
+        pdfium_raw.FPDF_SetSystemFontInfo(pdfium_raw.FPDF_GetDefaultSystemFontInfo())
 
 
 def merged_cell_fixture(text, *, second_line=None, overlay=None, cell_box=(20, 730, 420, 770)):
@@ -649,9 +679,10 @@ def test_existing_full_cell_and_paragraph_receipts_keep_head_hashes(monkeypatch)
     graph = stable_graph(graph)
     monkeypatch.setattr(table_span_source_verification, "_rendered_text", crop_ocr)
     full_cell = cell(graph, "2024")
-    table_receipt = table_span_source_verification.attest_table_spans(
-        graph, source, (ref_for(full_cell, "2024"),), tenant_id=TENANT
-    )
+    with bundled_pdfium_fonts():
+        table_receipt = table_span_source_verification.attest_table_spans(
+            graph, source, (ref_for(full_cell, "2024"),), tenant_id=TENANT
+        )
     paragraph_source = pdf()
     paragraph_batch = candidate(
         "span",
@@ -672,15 +703,16 @@ def test_existing_full_cell_and_paragraph_receipts_keep_head_hashes(monkeypatch)
         "_rendered_text",
         lambda *a, **k: dict(status="read", text="Page I emissions 1234 tCO2e"),
     )
-    paragraph_receipt = claim_source_verification.attest_claim_spans(
-        paragraph_graph, paragraph_source, (paragraph_ref,), tenant_id=TENANT
-    )
+    with bundled_pdfium_fonts():
+        paragraph_receipt = claim_source_verification.attest_claim_spans(
+            paragraph_graph, paragraph_source, (paragraph_ref,), tenant_id=TENANT
+        )
 
     assert (
         canonical_hash(table_receipt)
-        == "cf0ca7a2df1c07350c2b8ee239a1ea432e812200d868da80b862862086bc2b7b"
+        == "e796627f338bccd44187111da2c580934088a18affaf3f122d2773f728548e17"
     )
     assert (
         canonical_hash(paragraph_receipt)
-        == "0492382c327303cd622d46c398095a778c7c4648c98243d9f0b00fb51eaf5636"
+        == "f437ae1079f6fd47d045fc0847de7012e559ae55d307a905947234dbcaa78275"
     )

@@ -1057,8 +1057,10 @@ def main():
     from proofops.application.registry import artifact_sha256
     from proofops.application.rulepacks import RulePackRecord, compute_pack_sha256
     from proofops_api.auth import SESSION_COOKIE_NAME
-    from proofops_api.main import app
+    from proofops_api.main import create_app
 
+    # Bind this invocation to its own state and origin, even after prior API imports.
+    app = create_app()
     c = app.state.composition
     tenant = (
         json.loads(manifest_path.read_text())["tenant_id"]

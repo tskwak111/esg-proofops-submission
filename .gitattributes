@@ -1,3 +1,11 @@
 # These immutable reference files are verified byte-for-byte against source_manifest.json.
 /sources/PROJECT_DOMAIN_V2_ORIGINAL.md text eol=lf
 /sources/DEVELOPMENT_PACKAGE_REQUEST_ORIGINAL.md text eol=lf
+
+# Reader policies hash source bytes: keep Python/Swift identical across checkouts.
+*.py text eol=lf
+*.swift text eol=lf
+
+# SBOM metadata also pins the raw lockfile bytes.
+/uv.lock text eol=lf
+/pnpm-lock.yaml text eol=lf

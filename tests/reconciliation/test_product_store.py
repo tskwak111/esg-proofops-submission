@@ -777,7 +777,7 @@ def test_a_reviewed_and_approved_case_reaches_the_engine(registered, store):
     assert result["schema_version"] == "1.1"
     assert result["execution_state"] == "completed"
     assert result["status"] == "matched"
-    assert result["engine_version"] == "reconciliation-engine-1.1.0"
+    assert result["engine_version"] == "reconciliation-engine-1.2.0"
     assert evaluated["latest_result"]["projection"]["projection_schema_version"] == (
         "reconciliation-presentation-1"
     )

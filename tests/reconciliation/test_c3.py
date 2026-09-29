@@ -388,3 +388,98 @@ def test_target_and_capex_periods_are_both_validated_for_ordering():
     reversed_target["c3_context"]["target_period_end"] = "2024-01-01"
     with pytest.raises(DomainValidationError):
         engine.evaluate(reversed_target, approved_policy())
+
+
+def mapping_only_policy(**overrides) -> dict:
+    """Approve account mapping while leaving the threshold unset."""
+    return approved_policy(c3_threshold=None, **overrides)
+
+
+def test_rec004_a_disclosed_commitment_matches_without_an_approved_threshold():
+    result = run("10000000000", "1000000000", commitment_source=True, policy=mapping_only_policy())
+    assert (result["execution_state"], result["status"]) == ("completed", "matched")
+    assert result["reason_codes"] == ["commitment_disclosed"]
+    assert "commit" in result["source_ids"]
+    assert result["engine_version"] == engine.ENGINE_VERSION
+
+
+@pytest.mark.parametrize("search", ["not_run", "complete"])
+@pytest.mark.parametrize("amounts", [("1000", "1000"), ("10000000000", "1000000000")])
+def test_rec004_the_threshold_path_stays_blocked_while_the_threshold_is_null(search, amounts):
+    result = run(*amounts, search=search, policy=mapping_only_policy())
+    assert (result["execution_state"], result["status"]) == ("blocked", None)
+    assert result["reason_codes"] == ["c3_policy_unapproved"]
+
+
+def test_rec004_a_verified_difference_explanation_does_not_bypass_a_null_threshold():
+    result = run(
+        "10000000000", "1000000000", explained=True, search="complete", policy=mapping_only_policy()
+    )
+    assert (result["execution_state"], result["status"]) == ("blocked", None)
+    assert result["reason_codes"] == ["c3_policy_unapproved"]
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [{"c3_account_mapping_approved": False}, {"allowed_capex_account_ids": []}],
+)
+def test_rec004_a_commitment_does_not_bypass_an_unapproved_account_mapping(overrides):
+    result = run("1000", "1000", commitment_source=True, policy=mapping_only_policy(**overrides))
+    assert (result["execution_state"], result["status"]) == ("blocked", None)
+    assert result["reason_codes"] == ["c3_policy_unapproved"]
+
+
+def test_rec004_a_commitment_does_not_bypass_the_account_allowlist_or_shipped_draft():
+    outside = run(
+        "1000",
+        "1000",
+        commitment_source=True,
+        accounts=("cash-flow-investing-total",),
+        policy=mapping_only_policy(),
+    )
+    assert outside["reason_codes"] == ["c3_policy_unapproved"]
+    shipped = run("1000", "1000", commitment_source=True, policy=draft_policy())
+    assert shipped["reason_codes"] == ["c3_policy_unapproved"]
+
+
+def test_rec004_a_commitment_does_not_bypass_currency_period_or_amount_guards():
+    currency = packet("1000", "1000", commitment_source=True)
+    currency["financial"]["unit"] = "USD"
+    period = packet("1000", "1000", commitment_source=True)
+    period["c3_context"]["target_period_end"] = None
+    for value, reason in ((currency, "c3_currency_mismatch"), (period, "c3_period_unresolved")):
+        result = engine.evaluate(value, mapping_only_policy())
+        assert (result["execution_state"], result["reason_codes"]) == ("blocked", [reason])
+    unresolved = run(None, "1000", commitment_source=True, policy=mapping_only_policy())
+    assert unresolved["reason_codes"] == ["value_unresolved"]
+    zero = run("1000", "0", commitment_source=True, policy=mapping_only_policy())
+    assert zero["reason_codes"] == ["c3_capex_not_positive"]
+
+
+def test_rec004_a_commitment_does_not_bypass_the_trigger_or_policy_gates():
+    value = packet("1000", "1000", commitment_source=True)
+    value["claim"]["track"] = "performance"
+    result = engine.evaluate(value, mapping_only_policy())
+    assert (result["status"], result["reason_codes"]) == ("not_applicable", ["c3_trigger_absent"])
+    unapproved = engine.evaluate(
+        packet("1000", "1000", commitment_source=True), mapping_only_policy(approved=False)
+    )
+    assert unapproved["reason_codes"] == ["policy_unapproved"]
+
+
+@pytest.mark.parametrize("commitment_source", [False, True])
+def test_rec003_capex_must_cover_exactly_the_pinned_financial_period(commitment_source):
+    """A two-year CAPEX aggregate is not the pinned FY and must never be compared."""
+    value = packet("1000", "1000", commitment_source=commitment_source)
+    value["c3_context"]["capex_period_start"] = "2023-01-01"
+    result = engine.evaluate(value, approved_policy())
+    assert (result["execution_state"], result["status"]) == ("blocked", None)
+    assert result["reason_codes"] == ["c3_capex_period_mismatch"]
+
+
+def test_rec003_an_unresolved_financial_period_blocks_the_capex_comparison():
+    value = packet("1000", "1000", commitment_source=True)
+    value["identity"]["financial_period_start"] = None
+    value["identity"]["financial_period_end"] = None
+    result = engine.evaluate(value, mapping_only_policy())
+    assert result["reason_codes"] == ["c3_period_unresolved"]

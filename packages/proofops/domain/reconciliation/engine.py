@@ -34,7 +34,9 @@ from .common import (
     validate_policy,
 )
 
-ENGINE_VERSION = "reconciliation-engine-1.1.0"
+# Version 1.2.0 adds C1 period/consolidation and C3 CAPEX period/commitment
+# rules. Stored results remain immutable; replays retain the producing version.
+ENGINE_VERSION = "reconciliation-engine-1.2.0"
 
 _ITEM_EVALUATORS = {
     "C1": c1.evaluate,

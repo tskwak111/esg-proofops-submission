@@ -213,7 +213,9 @@ def test_preliminary_context_requires_live_tagging_before_reading_state(
 
 def test_resume_restores_frozen_extraction_allowance_without_increasing_it():
     saved = dict(
-        source_path="/reports/report.pdf", extraction_batch_calls=4, extraction_total_calls=40
+        source_path=str(Path("/reports/report.pdf").resolve()),
+        extraction_batch_calls=4,
+        extraction_total_calls=40,
     )
     args = _fresh_args()
     apply_resume_metadata(args, saved)
@@ -226,7 +228,10 @@ def test_resume_restores_frozen_extraction_allowance_without_increasing_it():
 def test_resume_retains_frozen_parser_output_limit():
     import pytest
 
-    saved = {"source_path": "/reports/kia.pdf", "parser_max_output_bytes": 67108864}
+    saved = {
+        "source_path": str(Path("/reports/kia.pdf").resolve()),
+        "parser_max_output_bytes": 67108864,
+    }
     args = _fresh_args()
     apply_resume_metadata(args, saved)
     assert args.parser_max_output_bytes == 67108864

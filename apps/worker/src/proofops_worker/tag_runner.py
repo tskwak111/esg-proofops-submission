@@ -204,7 +204,16 @@ class LocalTagRunner:
                 self.reviews.store.publish_transaction(db, inputs, review)
                 jobs._bump_run(db, jobs._get(db, tenant, run_id, "run", "META"))
 
-    def _execute(self, lease, snapshot, usage, recovery=None, reprocess=None, heartbeat_state=None):
+    def _execute(
+        self,
+        lease,
+        snapshot,
+        usage,
+        recovery=None,
+        reprocess=None,
+        heartbeat_state=None,
+        deferred=None,
+    ):
         message = lease.message
         tenant, run_id = message.tenant_id, message.run_id
         extraction, discovery, graph = self.claims.load_evidence(tenant, run_id)
@@ -635,7 +644,14 @@ class LocalTagRunner:
                 report_level_link=link_config,
                 report_level_review=link_receipts,
             )
-            self._publish_claim(lease, inputs, heartbeat_state)
+            if reprocess is not None:
+                # A reprocess target is published only inside the fenced checkpoint
+                # transaction, after its authorized lineage is rechecked, so a lineage
+                # change during tagging can never leave a revision behind.
+                inputs.validate()
+                deferred.append(inputs)
+            else:
+                self._publish_claim(lease, inputs, heartbeat_state)
             item.update(
                 status="completed"
                 if decision and decision.decision_status == "decided"
@@ -719,6 +735,7 @@ class LocalTagRunner:
                 return "ignored"
             usage = {"model_calls": 0, "synthetic_calls": 0}
             heartbeat_state = LeaseHeartbeatState(int(self.clock()))
+            deferred: list[ReviewInputs] = []
 
             def operation(owned):
                 # An explicit recovery or reprocess job carries its own bounded
@@ -740,6 +757,7 @@ class LocalTagRunner:
                         recovery,
                         reprocess,
                         heartbeat_state=heartbeat_state,
+                        deferred=deferred,
                     )
                 finally:
                     self.resume = None
@@ -853,6 +871,8 @@ class LocalTagRunner:
             def publish(db):
                 if reprocess is not None:
                     reprocess.verify_publication(self.store, db)
+                    for inputs in deferred:
+                        self.reviews.publish_transaction(db, inputs)
                 pending = jobs._get(db, tenant_id, run_id, "outbox", event["event_id"])
                 if pending["status"] != "pending" or pending["attempts"] != event["attempts"]:
                     raise ValueError("TAG_OUTBOX_FENCE_MISMATCH")

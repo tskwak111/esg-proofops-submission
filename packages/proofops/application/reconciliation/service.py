@@ -338,6 +338,13 @@ def _apply_coverage(
         return None, "coverage_unverified"
     if state == "complete" and (not required_ids or failed_ids):
         return None, "coverage_unverified"
+    # Complete coverage must include both registered package documents.
+    package_documents = {
+        identity["sustainability_document_version"],
+        identity["financial_document_version"],
+    }
+    if state == "complete" and not package_documents <= set(required_ids):
+        return None, "coverage_unverified"
     packet["search"] = {
         "state": state,
         "coverage_policy_id": entry["coverage_policy_id"],
