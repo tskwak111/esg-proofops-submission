@@ -66,12 +66,12 @@ export function StaticDemo() {
     <header className="site-header"><div className="site-header-inner">
       <Link className="brand" to="/" aria-label="ProofOps 홈"><span className="brand-dot" aria-hidden="true" />ProofOps</Link>
       <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="site-menu" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? "닫기" : "메뉴"}<span aria-hidden="true">{menuOpen ? "×" : "☰"}</span></button>
-      <nav id="site-menu" className={menuOpen ? "open" : ""} aria-label="주요 메뉴" onClick={() => setMenuOpen(false)}><Link to="/">서비스</Link><Link to="/analyze">분석</Link><Link to="/demo">분석 사례</Link><Link to="/report/naver">보고서 예시</Link><Link to="/live">문장 분석</Link><Link to="/guide">서비스 가이드라인</Link></nav>
+      <nav id="site-menu" className={menuOpen ? "open" : ""} aria-label="주요 메뉴" onClick={() => setMenuOpen(false)}><Link to="/">서비스</Link><Link to="/analyze">분석</Link><Link to="/demo">분석 사례</Link><Link to="/guide">서비스 가이드라인</Link></nav>
     </div></header>
     {isLive ? <LiveClaim /> : error ? <main className="static-main"><section className="surface"><h1>분석 결과를 불러오지 못했습니다</h1><p>잠시 후 새로고침해 주세요.</p></section></main> :
       !data ? <main className="static-main loading-main" role="status" aria-label="검토 결과 불러오는 중"><div className="skeleton skeleton-title" /><div className="skeleton skeleton-card" /><div className="skeleton skeleton-card" /></main> :
       <Routes><Route path="/" element={<Landing data={data} />} /><Route path="/analyze" element={<Analyze data={data} />} /><Route path="/guide" element={<Guide data={data} />} /><Route path={replayPath} element={<ReplayPage snapshot={data} />} /><Route path="/demo" element={<Demo data={data} />} /><Route path="/demo/:claimId" element={<Demo data={data} />} /><Route path={kiaRoute.path} element={<><div className="kia-route-toolbar"><CompanyTabs selected="kia" /><Link to="/report/kia">기아 검토 보고서 ↗</Link></div><kiaRoute.Component /></>} /><Route path={reviewRoutePath} element={<ReviewPage claims={data.claims} />} /><Route path={auditReportRoute.path} element={<AuditReportPage />} /><Route path="*" element={<NotFound />} /></Routes>}
-    <footer className="site-footer"><div className="wrap footer-inner"><div><strong>ProofOps</strong><p>본 서비스는 공시 발간 전 근거 점검을 돕는 도구이며, 제3자 보증, 기업 성과 진위, 법률·회계 판단을 대신하지 않습니다.</p></div><nav aria-label="바닥글"><Link to="/analyze">분석</Link><Link to="/demo">분석 사례</Link><Link to="/report/naver">보고서 예시</Link><Link to="/live">문장 분석</Link><Link to="/guide">서비스 가이드라인</Link><a href="https://github.com/tskwak111/esg-proofops-submission" target="_blank" rel="noopener noreferrer">GitHub</a></nav><span>© 2026 ProofOps</span></div></footer>
+    <footer className="site-footer"><div className="wrap footer-inner"><div><strong>ProofOps</strong><p>본 서비스는 공시 발간 전 근거 점검을 돕는 도구이며, 제3자 보증, 기업 성과 진위, 법률·회계 판단을 대신하지 않습니다.</p></div><nav aria-label="바닥글"><Link to="/analyze">분석</Link><Link to="/demo">분석 사례</Link><Link to="/guide">서비스 가이드라인</Link><a href="https://github.com/tskwak111/esg-proofops-submission" target="_blank" rel="noopener noreferrer">GitHub</a></nav><span>© 2026 ProofOps</span></div></footer>
   </div>;
 }
 
@@ -159,8 +159,6 @@ function Landing({ data }: { data: Snapshot }) {
     ["/analyze", "보고서 분석", "어떤 기업 보고서든 선택한 쪽을 바로 분석합니다", "t-upload"],
     ["/demo", "분석 사례 · NAVER", "NAVER 2025 보고서의 주장·근거·판정", "t-results"],
     [`/review/${reviewTarget}`, "검토", "요소를 바꾸면 판정이 다시 계산됩니다", "t-review"],
-    ["/report/naver", "감사 보고서", "판정 분포와 주장별 근거", "t-report"],
-    ["/live", "문장 분석", "한 문장을 바로 분석합니다", "t-live"],
     ["/demo/kia", "분석 사례 · 기아", "수치 검산과 검증의견서 연결", "t-kia"],
   ];
   return <main className="landing">
@@ -169,11 +167,11 @@ function Landing({ data }: { data: Snapshot }) {
       <h1 className="hero-brand">ProofOps</h1>
       <p className="hero-sub">기업 보고서 내 환경 주장의 근거를 공시 안에서 찾으며, 규칙엔진을 기반으로 근거 수준을 판정합니다. 근거에 대한 쪽수·원문 인용 또는 확인 범위가 함께 표시됩니다.</p>
       <Link className="pill pill-dark" to="/analyze">보고서 분석 시작 <span aria-hidden="true">→</span></Link>
-      <form className="prompt" onSubmit={event => { event.preventDefault(); navigate(draft.trim() ? `/live?claim=${encodeURIComponent(draft.trim().slice(0, 500))}` : "/analyze"); }}>
-        <textarea aria-label="분석할 환경 주장" value={draft} onChange={event => setDraft(event.target.value)} placeholder={example} rows={3} />
-        <div className="prompt-bar"><div className="chips"><Link to="/analyze" className="chip"><span className="ic">⬆</span>PDF 업로드</Link><Link to="/demo" className="chip"><span className="ic">◎</span>분석 사례</Link><Link to="/report/naver" className="chip"><span className="ic">▤</span>보고서</Link><Link to="/demo/kia" className="chip"><span className="ic">◇</span>기아 사례</Link></div><button type="submit" className="send" aria-label="문장 분석">↑</button></div>
+      <form className="prompt" onSubmit={event => { event.preventDefault(); navigate("/analyze"); }}>
+        <textarea aria-label="분석 요청" value={draft} onChange={event => setDraft(event.target.value)} placeholder={example} rows={3} />
+        <div className="prompt-bar"><div className="chips"><Link to="/analyze" className="chip"><span className="ic">⬆</span>PDF 업로드</Link><Link to="/demo" className="chip"><span className="ic">◎</span>분석 사례</Link><Link to="/demo/kia" className="chip"><span className="ic">◇</span>기아 사례</Link></div><button type="submit" className="send" aria-label="보고서 분석">↑</button></div>
       </form>
-      <p className="hero-note">문장을 입력하면 분류 → 요소 태깅 → 규칙엔진 판정을 바로 실행합니다</p>
+      <p className="hero-note">PDF를 올리면 분석할 쪽을 골라 바로 분석합니다</p>
     </section>
 
     <section className="sec sec-cream">
