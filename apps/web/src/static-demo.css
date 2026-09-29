@@ -442,8 +442,8 @@ main.landing > section.hero { padding: 96px 40px 110px }
 .guide-cta { margin: 48px 0 0 !important }
 .analyze-heading p.analyze-lead { max-width: none; font-size: 14.5px; line-height: 1.85; letter-spacing: -.025em; white-space: normal }
 /* Landing hero fills the first screen; the next section starts below the fold */
-main.landing > section.hero { min-height: calc(100vh - var(--header-h, 69px)); min-height: calc(100svh - var(--header-h, 69px)); display: flex; flex-direction: column; justify-content: center; align-items: center; padding-top: 48px; padding-bottom: 56px }
-main.landing > section.hero .prompt { width: 100%; margin-top: 56px }
+main.landing:not(.guide-main) > section.hero { min-height: calc(100vh - var(--header-h, 69px)); min-height: calc(100svh - var(--header-h, 69px)); display: flex; flex-direction: column; justify-content: center; align-items: center; padding-top: 48px; padding-bottom: 56px }
+main.landing:not(.guide-main) > section.hero .prompt { width: 100%; margin-top: 56px }
 /* Landing lower sections: equal space above and below each block */
 main.landing > section.sec { padding: 96px 40px !important; margin-top: 0 !important; margin-bottom: 0 !important }
 main.landing > section.hero { margin: 0 auto !important }
@@ -458,3 +458,7 @@ main.landing .faq-inner li:last-child { margin-bottom: 0 !important }
 .live-claims-layout { margin-top: 20px }
 /* Header: menu centred between equal side columns now that the action buttons are gone */
 @media (min-width: 761px) { .site-header-inner { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important } .site-header-inner > .brand { justify-self: start } }
+
+/* Guide page: compact intro and centred section headings like the other guide blocks */
+main.guide-main > section.hero { padding: 96px 40px 72px !important }
+main.guide-main .uses-head { text-align: center }

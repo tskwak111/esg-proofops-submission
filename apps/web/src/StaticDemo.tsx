@@ -223,7 +223,7 @@ function Guide({ data }: { data: Snapshot }) {
       <p className="criteria-note">확인되지 않은 요소가 남아 있으면 등급을 하나로 확정하지 않고, 규칙상 가능한 등급의 범위(예: E2–E3)나 보류 사유를 함께 표시합니다. 판정 규칙이 아직 정해지지 않은 유형도 등급 대신 보류로 남깁니다.</p>
     </section>
     <section className="sec sec-beige">
-      <p className="eyebrow-c">활용 사례</p><h2 className="serif">실무를 위한 설계</h2>
+      <p className="eyebrow-c center">활용 사례</p><h2 className="serif center">실무를 위한 설계</h2>
       <div className="uses">
         <div className="use"><div className="use-copy"><h3>문장마다 근거 경로를 추적</h3><p>주장 하나에 필요한 입증 요소를 원문 쪽수와 인용으로 연결합니다. 이행 주체, 적용 범위, 외부 검증이 모두 확인되면 규칙엔진이 E3로 판정합니다.</p><Link className="more" to="/demo">분석 결과 보기 →</Link></div><EvidenceTrace /></div>
         <div className="use reverse"><div className="use-copy"><h3>보고서 한 권의 처리 과정을 한눈에</h3><p>파싱부터 판정까지 단계별 처리량과 시간, 모델 호출 수를 기록합니다. 어디서 막혔는지, 무엇이 확인되지 않았는지 숨기지 않습니다.</p><Link className="more" to="/analyze/replay">처리 과정 보기 →</Link></div><FunnelPreview data={data} /></div>
