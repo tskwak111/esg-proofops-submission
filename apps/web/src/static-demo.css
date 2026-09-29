@@ -452,3 +452,7 @@ main.landing .faq-inner > h2:not(:first-child) { margin-top: 64px !important }
 main.landing .faq-inner > p, main.landing .faq-inner > ul { margin: 0 !important }
 @media (max-width: 760px) { main.landing > section.sec { padding: 72px 20px !important } }
 main.landing .faq-inner li:last-child { margin-bottom: 0 !important }
+/* Live results reuse the case-study list; list items are buttons here */
+.claim-list button.claim-item { display: block; width: 100%; text-align: left; border-radius: 0; min-height: 0; font: inherit; font-weight: inherit; color: inherit; cursor: pointer }
+.claim-list button.claim-item:hover:not(:disabled) { border-color: var(--line) }
+.live-claims-layout { margin-top: 20px }

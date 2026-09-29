@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { getElementLabel } from "../labels";
 import type { PageInfo, Section } from "./sectionPicker";
 
-type Decision = { evidence_grade: string | null; grade_range: { floor: string; ceiling: string } | null; decision_status: string };
+type Decision = { evidence_grade: string | null; label?: string | null; missing_elements?: string[]; grade_range: { floor: string; ceiling: string; open_elements?: string[] } | null; decision_status: string };
+export type LiveResultClaim = Claim;
 type Claim = { quote: string; page: number; track: string | null; source_verified: boolean; blocked_reason: string | null; elements: { name: string; element_id: string; state: string; quote: string | null; source_verified: boolean }[]; decision: Decision | null };
 type Result = { claims: Claim[]; pages: number[]; duration_ms: number; cost_usd: number; tagging_passes?: number; notice: string };
 const tracks: Record<string, string> = { goal: "목표", performance: "성과", management: "관리체계" };
@@ -28,7 +29,7 @@ function parsePages(value: string, total: number): number[] {
   return pages.sort((a, b) => a - b);
 }
 
-export function LiveReport({ file }: { file: File }) {
+export function LiveReport({ file, renderClaims }: { file: File; renderClaims?: (claims: LiveResultClaim[]) => ReactNode }) {
   const panel = useRef<HTMLElement>(null);
   const results = useRef<HTMLElement>(null);
   const [range, setRange] = useState("");
@@ -141,12 +142,12 @@ export function LiveReport({ file }: { file: File }) {
   </section>
     {result && <section ref={results} className="surface live-report-results analyze-results" aria-label="분석 결과"><h3>선택한 쪽의 분석 결과</h3><p>{result.pages.length}쪽 · {result.claims.length}건 · {(result.duration_ms / 1000).toFixed(1)}초 · 처리 비용 ${result.cost_usd.toFixed(4)} · 사용자 최종 검토 전</p><p>묶음당 환경 관련 문단 최대 16개에서 주장 최대 5건을 추출합니다.</p>
       {result.claims.length === 0 && <p>검토한 문단에서 확인 가능한 환경 주장을 찾지 못했습니다. 다른 쪽을 선택해 주세요.</p>}
-      <ol>{result.claims.map((claim, index) => <li key={`${claim.page}-${index}`}>
+      {renderClaims ? renderClaims(result.claims) : <ol>{result.claims.map((claim, index) => <li key={`${claim.page}-${index}`}>
         <div className="live-report-claim-head"><strong>{claim.page}쪽 · {claim.track ? tracks[claim.track] || claim.track : "분류 검토 필요"}</strong><span>{claim.source_verified ? "원문 확인" : "원문 대조 필요"}</span></div>
         <blockquote>{claim.quote}</blockquote>
         {claim.decision?.decision_status === "blocked_rule_gap" ? <p>{claim.blocked_reason}</p> : claim.decision?.evidence_grade ? <p>규칙 판정 {claim.decision.evidence_grade}</p> : claim.decision?.grade_range ? <p>가능 범위 {claim.decision.grade_range.floor}–{claim.decision.grade_range.ceiling} · 검토 필요</p> : <p>{claim.blocked_reason || "판정 검토 필요"}</p>}
         {claim.elements.length > 0 && <details><summary>요소와 근거</summary><ul>{claim.elements.map(element => <li key={element.name}><strong>{getElementLabel(element.element_id)}</strong> · {element.state === "present" ? "근거 확인" : "미확인"}{element.quote && <q>{element.quote}</q>}</li>)}</ul></details>}
-      </li>)}</ol>
+      </li>)}</ol>}
     </section>}
   </>;
 }

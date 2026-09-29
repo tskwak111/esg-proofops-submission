@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Route, Routes, useLocation, useNavigate, useParams } from "react-router";
 import { LiveClaim } from "./features/live/LiveClaim";
-import { LiveReport } from "./features/live/LiveReport";
+import { LiveReport, type LiveResultClaim } from "./features/live/LiveReport";
 import { ReplayPage, replayPath } from "./features/replay/route";
 import { kiaRoute } from "./features/kia/route";
 import ReviewPage, { reviewRoutePath } from "./features/reviewsim/route";
@@ -20,6 +20,7 @@ type Claim = {
   elements: Element[];
   decision: { grade: string | null; label: string | null; display_grade?: string | null; display_label?: string | null; display_note?: string | null; estimated?: boolean; grade_range: { floor: string; ceiling: string; open_elements: string[] } | null; status: string; missing: string[]; unresolved: string[] };
   review: { status: string; tag_revision: number; decision_revision: number; audit: string | null };
+  note?: string | null;
 };
 type Snapshot = {
   title: string; generated_at: string; partial: boolean;
@@ -103,7 +104,7 @@ function Analyze({ data }: { data: Snapshot }) {
     <section className="analyze-grid"><div className="surface analyze-upload"><h2>PDF 보고서 선택</h2><p>파일을 놓거나 눌러 선택하세요.</p><label className="drop-zone" onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); void inspect(event.dataTransfer.files[0]); }}><span aria-hidden="true">↥</span><strong>{busy ? "파일 지문 계산 중…" : "PDF 업로드"}</strong><small>또는 클릭해 파일 선택 · PDF는 이 브라우저 안에서만 읽습니다</small><input type="file" accept=".pdf,application/pdf" aria-label="분석할 PDF 선택" disabled={busy} onChange={event => { void inspect(event.target.files?.[0]); event.target.value = ""; }} /></label>
       {result && <div className={`analyze-result ${result.matched ? "match" : "no-match"}`} role="status"><small>{result.name}</small><h3>{result.message}</h3>{result.matched ? <><Link to="/analyze/replay">분석 과정 보기 ↗</Link><small>오른쪽에서 실시간 분석도 할 수 있습니다.</small></> : <p>오른쪽에서 분석할 쪽을 확인해 주세요.</p>}</div>}
     </div>
-      {file ? <LiveReport key={file.name + file.lastModified} file={file} /> : <aside className="surface live-report live-placeholder"><p className="eyebrow">LIVE REPORT</p><h2>실시간 분석</h2><p>PDF를 선택하면 목차를 읽어 환경(E)·부록 쪽을 자동으로 고릅니다. 쪽을 확인하고 접근 키를 넣은 뒤 분석을 시작하세요.</p><ol className="live-steps"><li>PDF 업로드</li><li>분석할 구역·쪽 확인</li><li>접근 키 입력 후 실시간 분석 시작</li></ol></aside>}</section>
+      {file ? <LiveReport key={file.name + file.lastModified} file={file} renderClaims={claims => <LiveClaimBrowser claims={claims} />} /> : <aside className="surface live-report live-placeholder"><p className="eyebrow">LIVE REPORT</p><h2>실시간 분석</h2><p>PDF를 선택하면 목차를 읽어 환경(E)·부록 쪽을 자동으로 고릅니다. 쪽을 확인하고 접근 키를 넣은 뒤 분석을 시작하세요.</p><ol className="live-steps"><li>PDF 업로드</li><li>분석할 구역·쪽 확인</li><li>접근 키 입력 후 실시간 분석 시작</li></ol></aside>}</section>
   </main>;
 }
 
@@ -282,7 +283,7 @@ function gradeWhy(claim: Claim) {
   const required = decision.grade === "E0" ? [] : decision.grade && ladder?.[decision.grade];
   const confirmed = (claim.source_verified ? (ladder ? claim.elements.filter(element => (required || ladder.E3).includes(element.id)) : claim.elements.slice(0, 3)) : [])
     .filter(element => element.state === "present" && element.evidence.length > 0)
-    .map(element => `${element.id} ${elementLabels[element.id] || "요소"}는 ${element.evidence.slice(0, 3).map(ref => `p.${ref.page ?? "?"} “${ref.quote.slice(0, 65)}”`).join(" · ")}에서 확인`);
+    .map(element => `${element.id} ${elementLabels[element.id] || "요소"}는 ${element.evidence.slice(0, 3).map(ref => `${ref.page != null ? `p.${ref.page} ` : ""}“${ref.quote.slice(0, 65)}”`).join(" · ")}에서 확인`);
   const evidence = confirmed.length ? `${confirmed.join(", ")}됐습니다. ` : claim.source_verified ? "연결된 확인 근거가 아직 없습니다. " : "원문 대조가 필요합니다. ";
   if (decision.display_note) return claim.source_verified ? `${evidence}핵심 근거 일부가 확인되기 전의 예비 판정입니다.` : "원문 대조가 필요합니다.";
   if (decision.grade) {
@@ -349,16 +350,48 @@ function Demo({ data }: { data: Snapshot }) {
   </main>;
 }
 
-function ClaimDetail({ claim, queue }: { claim: Claim | null; queue: Queue }) {
+const statePriority: Record<string, number> = { present: 0, conflict: 1, absent: 2, unreadable: 3, unknown: 4 };
+function toCaseClaim(claim: LiveResultClaim, index: number): Claim {
+  const byId = new Map<string, Element>();
+  for (const item of claim.elements) {
+    const current = byId.get(item.element_id) || { id: item.element_id, state: item.state, evidence: [] };
+    if ((statePriority[item.state] ?? 5) < (statePriority[current.state] ?? 5)) current.state = item.state;
+    if (item.state === "present" && item.quote && item.source_verified && !current.evidence.some(ref => ref.quote === item.quote)) current.evidence.push({ page: null, quote: item.quote });
+    byId.set(item.element_id, current);
+  }
+  const d = claim.decision;
+  return {
+    id: `live-${claim.page}-${index}`, page: claim.page, track: claim.track, quote: claim.quote, source_verified: claim.source_verified,
+    elements: [...byId.values()].sort((a, b) => a.id.localeCompare(b.id, "en", { numeric: true })),
+    decision: { grade: d?.evidence_grade ?? null, label: d?.label ?? null, grade_range: d?.grade_range ? { floor: d.grade_range.floor, ceiling: d.grade_range.ceiling, open_elements: d.grade_range.open_elements || [] } : null,
+      status: d?.decision_status || "not_run", missing: d?.missing_elements || [], unresolved: [] },
+    review: { status: "none", tag_revision: 1, decision_revision: 1, audit: null },
+    note: claim.blocked_reason,
+  };
+}
+
+function LiveClaimBrowser({ claims }: { claims: LiveResultClaim[] }) {
+  const items = useMemo(() => claims.map(toCaseClaim), [claims]);
+  const [selectedId, setSelectedId] = useState<string | null>(items[0]?.id ?? null);
+  const selected = items.find(item => item.id === selectedId) || items[0] || null;
+  if (!items.length) return <p>검토한 문단에서 확인 가능한 환경 주장을 찾지 못했습니다. 다른 쪽을 선택해 주세요.</p>;
+  return <div className="claims-layout live-claims-layout"><div className="claim-list" aria-label="분석 결과 주장 목록">{items.map(claim =>
+    <button type="button" className={`claim-item ${selected?.id === claim.id ? "selected" : ""}`} key={claim.id} onClick={() => setSelectedId(claim.id)}>
+      <div className="claim-item-top"><span>p.{claim.page ?? "?"} · {claim.track ? trackText[claim.track] : "분류 미합의"}</span><span className={`mini-status ${claim.decision.grade ? "good" : "warn"}`}>{gradeText(claim)}</span></div>
+      <p>{claim.quote}</p><small>{claim.source_verified ? "원문 확인" : "원문 대조 필요"}</small></button>)}</div>
+    <ClaimDetail claim={selected} queue={queueFor(selected || items[0])} embedded /></div>;
+}
+
+function ClaimDetail({ claim, queue, embedded = false }: { claim: Claim | null; queue: Queue; embedded?: boolean }) {
   const [reviewMode, setReviewMode] = useState(false);
   if (!claim) return <aside className="claim-detail"><div className="detail-empty"><span>↖</span><h3>주장을 선택하세요</h3><p>왼쪽 목록에서 문장을 선택하면 근거와 판정 경로를 볼 수 있습니다.</p></div></aside>;
   const d = claim.decision;
-  return <aside className="claim-detail"><div className="detail-top"><div><p className="eyebrow">CLAIM DETAIL · p.{claim.page ?? "?"}</p><h3>주장과 판정 근거</h3></div><Link to={`/demo?queue=${queue}#claims`} aria-label="상세 닫기">×</Link></div><div className="source-quote"><span>{claim.source_verified ? "보고서 원문" : "추출 문장"} · p.{claim.page ?? "?"}</span><blockquote>“{claim.quote}”</blockquote><small>{claim.source_verified ? "원문 인용 검증 기록 있음" : "원문 대조 필요"}</small></div>
-    <div className="detail-actions"><button type="button" aria-pressed={reviewMode} onClick={() => setReviewMode(!reviewMode)}>검토 모드 {reviewMode ? "닫기" : "열기"}</button><Link to={`/report/naver`}>보고서 ↗</Link></div>
+  return <aside className="claim-detail"><div className="detail-top"><div><p className="eyebrow">CLAIM DETAIL · p.{claim.page ?? "?"}</p><h3>주장과 판정 근거</h3></div>{!embedded && <Link to={`/demo?queue=${queue}#claims`} aria-label="상세 닫기">×</Link>}</div><div className="source-quote"><span>{claim.source_verified ? "보고서 원문" : "추출 문장"} · p.{claim.page ?? "?"}</span><blockquote>“{claim.quote}”</blockquote><small>{claim.source_verified ? "원문 인용 검증 기록 있음" : "원문 대조 필요"}</small></div>
+    {!embedded && <div className="detail-actions"><button type="button" aria-pressed={reviewMode} onClick={() => setReviewMode(!reviewMode)}>검토 모드 {reviewMode ? "닫기" : "열기"}</button><Link to={`/report/naver`}>보고서 ↗</Link></div>}
     {reviewMode && <ReviewSimulator claim={claim} />}
-    <div className="why-panel"><h4>왜 이 등급인가 <GuideHelp topic="grade" /></h4><p>{gradeWhy(claim)}</p></div>
+    <div className="why-panel"><h4>왜 이 등급인가 <GuideHelp topic="grade" /></h4><p>{gradeWhy(claim)}{claim.note ? ` ${claim.note}` : ""}</p></div>
     <div className="decision-panel"><span>{!claim.source_verified ? "원문 대조 필요" : d.display_note ? "예비 등급" : "분석 결과"}</span><strong>{gradeText(claim)} <GuideHelp topic={d.estimated ? "estimated" : d.grade_range ? "range" : "grade"} /></strong><p>{d.label || d.display_label || statusText[d.status] || d.status} <GuideHelp topic="label" /></p></div>
-    <div className="detail-block"><h4>요소별 근거 <GuideHelp topic="state" /></h4>{claim.elements.length ? <div className="element-table-wrap"><table className="element-table"><thead><tr><th>요소</th><th>상태</th><th>근거 문구</th></tr></thead><tbody>{claim.elements.map(element => <tr key={element.id}><th scope="row"><b>{element.id}</b><span>{elementLabels[element.id] || element.id}</span></th><td><span className={`element-state ${element.state}`}>{!claim.source_verified && element.state === "present" ? "원문 대조 필요" : stateText[element.state] || element.state}</span></td><td>{element.evidence.length ? element.evidence.map((ref, index) => <p key={index}><small>p.{ref.page ?? "?"}</small> “{ref.quote}”</p>) : <span className="no-evidence">연결된 근거 문구 없음</span>}</td></tr>)}</tbody></table></div> : <p className="caption">요소 태깅 전입니다. 빈 요소를 absent로 보지 않습니다.</p>}</div>
+    <div className="detail-block"><h4>요소별 근거 <GuideHelp topic="state" /></h4>{claim.elements.length ? <div className="element-table-wrap"><table className="element-table"><thead><tr><th>요소</th><th>상태</th><th>근거 문구</th></tr></thead><tbody>{claim.elements.map(element => <tr key={element.id}><th scope="row"><b>{element.id}</b><span>{elementLabels[element.id] || element.id}</span></th><td><span className={`element-state ${element.state}`}>{!claim.source_verified && element.state === "present" ? "원문 대조 필요" : stateText[element.state] || element.state}</span></td><td>{element.evidence.length ? element.evidence.map((ref, index) => <p key={index}>{ref.page != null && <small>p.{ref.page}</small>} “{ref.quote}”</p>) : <span className="no-evidence">연결된 근거 문구 없음</span>}</td></tr>)}</tbody></table></div> : <p className="caption">요소 태깅 전입니다. 빈 요소를 absent로 보지 않습니다.</p>}</div>
     <div className="provenance"><span className="badge blue">{claim.decision.estimated ? "예비 등급" : "분석 결과"}</span></div>
   </aside>;
 }
