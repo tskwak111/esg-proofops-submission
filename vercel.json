@@ -8,9 +8,17 @@
       "maxDuration": 55,
       "includeFiles": "{api/rulepack.json,prompts/element_tagging.md,packages/proofops/**}",
       "excludeFiles": "{tests/**,fixtures/**,evidence/**,docs/**,sources/**,evaluation/**,apps/**,scripts/**,node_modules/**}"
+    },
+    "api/live-report.py": {
+      "maxDuration": 55,
+      "includeFiles": "{api/rulepack.json,packages/proofops/**}",
+      "excludeFiles": "{tests/**,fixtures/**,evidence/**,docs/**,sources/**,evaluation/**,apps/**,scripts/**,node_modules/**}"
     }
   },
   "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
   ]
 }

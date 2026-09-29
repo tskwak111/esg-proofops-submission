@@ -373,3 +373,38 @@ main.landing > section.hero { padding: 96px 40px 110px }
 .demo-site .audit-brand-mark { border-radius: 8px }
 .demo-site .review-sim-head h1, .demo-site .review-sim-head h2 { font-family: var(--serif) !important; font-weight: 400 !important; letter-spacing: -.02em !important }
 .demo-site .audit-toolbar button { background: #fff; color: var(--ink); border-color: var(--line-2) } .demo-site .audit-toolbar button:first-of-type { background: var(--ink); color: #fff; border-color: var(--ink) } .demo-site .audit-brand { color: var(--ink) !important }
+
+/* selected-page report analysis */
+.live-report { margin-top: 32px; padding: 32px; max-width: 820px }
+.live-report h2 { margin: 8px 0; font-size: 25px }
+.live-report > p:not(.eyebrow), .live-report-results > p { color: var(--ink-2); font-size: 14px; line-height: 1.65 }
+.live-report-form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: end; margin-top: 24px }
+.live-report-form label { display: grid; gap: 6px; font-size: 13px; font-weight: 600 }
+.live-report-form label small { font-weight: 400; color: var(--muted) }
+.live-report-form input { width: 100%; min-height: 43px; border: 1px solid var(--line-2); border-radius: 8px; padding: 10px; background: #fff; color: var(--ink) }
+.live-report-form button { min-height: 43px; border: 0; border-radius: 8px; padding: 0 16px; background: var(--green); color: #fff; cursor: pointer }
+.live-report-form button:disabled { opacity: .65; cursor: wait }
+.live-report-error { margin-top: 18px !important; color: #a0392c !important }
+.live-report-stage { margin-top: 18px !important; color: var(--green) !important }
+.live-report-results { margin-top: 30px; border-top: 1px solid var(--line-2); padding-top: 24px }
+.live-report-results h3 { font-size: 20px; margin-bottom: 6px }
+.live-report-results ol { list-style: none; padding: 0; margin: 22px 0 0; display: grid; gap: 14px }
+.live-report-results ol > li { border: 1px solid var(--line); border-radius: 10px; background: #fff; padding: 20px }
+.live-report-claim-head { display: flex; justify-content: space-between; gap: 16px; font-size: 13px; color: var(--green) }
+.live-report-claim-head span { color: var(--muted) }
+.live-report-results blockquote { margin: 12px 0; padding-left: 14px; border-left: 2px solid var(--coral); line-height: 1.65 }
+.live-report-results li > p { font-size: 14px; color: var(--ink-2) }
+.live-report-results details { margin-top: 14px; font-size: 13px }
+.live-report-results summary { cursor: pointer; color: var(--green) }
+.live-report-results details ul { list-style: none; padding: 0; margin: 8px 0 0 }
+.live-report-results details li { padding: 7px 0; border-top: 1px solid var(--line); line-height: 1.5 }
+.live-report-results details q { display: block; color: var(--ink-2); margin-top: 4px }
+@media (max-width: 760px) { .live-report { padding: 24px } .live-report-form { grid-template-columns: 1fr } }
+.live-report-sections { margin-top: 22px; border: 1px solid var(--line); border-radius: 10px; padding: 17px; background: var(--paper) }
+.live-report-sections > strong { font-size: 14px }
+.live-report-sections > div { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 12px 0 }
+.live-report-sections label { font-size: 13px; cursor: pointer; white-space: nowrap }
+.live-report-sections input { accent-color: var(--green) }
+.live-report-sections small { color: var(--muted) }
+.live-report-sections p, .live-report-selection { color: var(--muted) !important; font-size: 12px !important; line-height: 1.7; overflow-wrap: anywhere }
+.live-report-selection { margin-top: 12px !important }

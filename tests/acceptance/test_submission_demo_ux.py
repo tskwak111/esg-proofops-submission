@@ -143,6 +143,9 @@ console.log("ALL SUBMISSION DEMO UX ACCEPTANCE CHECKS PASSED");
             "--platform=node",
             "--format=cjs",
             "--jsx=automatic",
+            # Browser-only PDF libraries load lazily in the live report panel.
+            "--external:pdfjs-dist*",
+            "--external:pdf-lib",
             "--define:import.meta.env={}",
             f"--outfile={bundle}",
         ],

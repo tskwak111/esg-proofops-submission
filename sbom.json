@@ -15,7 +15,7 @@
       },
       {
         "name": "proofops:pnpm-lock.yaml:sha256",
-        "value": "c77052b1ae88f31c7f802f98ed4778d06f2b84b6e50e9204d41f6ef06b27c2ce"
+        "value": "e2dcbed5165953aedb759900e04a8d007a8ebb79d9ff294a86bbe99f92c02c25"
       }
     ]
   },
@@ -322,9 +322,93 @@
     },
     {
       "type": "library",
+      "name": "@napi-rs/canvas",
+      "version": "0.1.100",
+      "purl": "pkg:npm/%40napi-rs/canvas@0.1.100"
+    },
+    {
+      "type": "library",
+      "name": "@napi-rs/canvas-android-arm64",
+      "version": "0.1.100",
+      "purl": "pkg:npm/%40napi-rs/canvas-android-arm64@0.1.100"
+    },
+    {
+      "type": "library",
+      "name": "@napi-rs/canvas-darwin-arm64",
+      "version": "0.1.100",
+      "purl": "pkg:npm/%40napi-rs/canvas-darwin-arm64@0.1.100"
+    },
+    {
+      "type": "library",
+      "name": "@napi-rs/canvas-darwin-x64",
+      "version": "0.1.100",
+      "purl": "pkg:npm/%40napi-rs/canvas-darwin-x64@0.1.100"
+    },
+    {
+      "type": "library",
+      "name": "@napi-rs/canvas-linux-arm-gnueabihf",
+      "version": "0.1.100",
+      "purl": "pkg:npm/%40napi-rs/canvas-linux-arm-gnueabihf@0.1.100"
+    },
+    {
+      "type": "library",
+      "name": "@napi-rs/canvas-linux-arm64-gnu",
+      "version": "0.1.100",
+      "purl": "pkg:npm/%40napi-rs/canvas-linux-arm64-gnu@0.1.100"
+    },
+    {
+      "type": "library",
+      "name": "@napi-rs/canvas-linux-arm64-musl",
+      "version": "0.1.100",
+      "purl": "pkg:npm/%40napi-rs/canvas-linux-arm64-musl@0.1.100"
+    },
+    {
+      "type": "library",
+      "name": "@napi-rs/canvas-linux-riscv64-gnu",
+      "version": "0.1.100",
+      "purl": "pkg:npm/%40napi-rs/canvas-linux-riscv64-gnu@0.1.100"
+    },
+    {
+      "type": "library",
+      "name": "@napi-rs/canvas-linux-x64-gnu",
+      "version": "0.1.100",
+      "purl": "pkg:npm/%40napi-rs/canvas-linux-x64-gnu@0.1.100"
+    },
+    {
+      "type": "library",
+      "name": "@napi-rs/canvas-linux-x64-musl",
+      "version": "0.1.100",
+      "purl": "pkg:npm/%40napi-rs/canvas-linux-x64-musl@0.1.100"
+    },
+    {
+      "type": "library",
+      "name": "@napi-rs/canvas-win32-arm64-msvc",
+      "version": "0.1.100",
+      "purl": "pkg:npm/%40napi-rs/canvas-win32-arm64-msvc@0.1.100"
+    },
+    {
+      "type": "library",
+      "name": "@napi-rs/canvas-win32-x64-msvc",
+      "version": "0.1.100",
+      "purl": "pkg:npm/%40napi-rs/canvas-win32-x64-msvc@0.1.100"
+    },
+    {
+      "type": "library",
       "name": "@napi-rs/lzma-linux-x64-gnu",
       "version": "1.5.1",
       "purl": "pkg:npm/%40napi-rs/lzma-linux-x64-gnu@1.5.1"
+    },
+    {
+      "type": "library",
+      "name": "@pdf-lib/standard-fonts",
+      "version": "1.0.0",
+      "purl": "pkg:npm/%40pdf-lib/standard-fonts@1.0.0"
+    },
+    {
+      "type": "library",
+      "name": "@pdf-lib/upng",
+      "version": "1.0.1",
+      "purl": "pkg:npm/%40pdf-lib/upng@1.0.1"
     },
     {
       "type": "library",
@@ -652,6 +736,24 @@
     },
     {
       "type": "library",
+      "name": "pako",
+      "version": "1.0.11",
+      "purl": "pkg:npm/pako@1.0.11"
+    },
+    {
+      "type": "library",
+      "name": "pdf-lib",
+      "version": "1.17.1",
+      "purl": "pkg:npm/pdf-lib@1.17.1"
+    },
+    {
+      "type": "library",
+      "name": "pdfjs-dist",
+      "version": "5.4.394",
+      "purl": "pkg:npm/pdfjs-dist@5.4.394"
+    },
+    {
+      "type": "library",
       "name": "picocolors",
       "version": "1.1.1",
       "purl": "pkg:npm/picocolors@1.1.1"
@@ -727,6 +829,12 @@
       "name": "tinyglobby",
       "version": "0.2.17",
       "purl": "pkg:npm/tinyglobby@0.2.17"
+    },
+    {
+      "type": "library",
+      "name": "tslib",
+      "version": "1.14.1",
+      "purl": "pkg:npm/tslib@1.14.1"
     },
     {
       "type": "library",

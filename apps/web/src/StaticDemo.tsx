@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Route, Routes, useLocation, useNavigate, useParams } from "react-router";
 import { LiveClaim } from "./features/live/LiveClaim";
+import { LiveReport } from "./features/live/LiveReport";
 import { ReplayPage, replayPath } from "./features/replay/route";
 import { kiaRoute } from "./features/kia/route";
 import ReviewPage, { reviewRoutePath } from "./features/reviewsim/route";
@@ -81,34 +82,30 @@ function CompanyTabs({ selected }: { selected: "naver" | "kia" }) { return <nav 
 
 
 function Analyze({ data }: { data: Snapshot }) {
-  const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<{ name: string; matched: boolean; message: string } | null>(null);
-  useEffect(() => {
-    if (!result?.matched) return;
-    const timer = window.setTimeout(() => navigate("/analyze/replay"), 2500);
-    return () => window.clearTimeout(timer);
-  }, [result, navigate]);
-
   async function inspect(file?: File) {
     if (!file) return;
-    setBusy(true); setResult(null);
+    setBusy(true); setResult(null); setFile(null);
     try {
       if (!file.name.toLowerCase().endsWith(".pdf") || new TextDecoder().decode(await file.slice(0, 4).arrayBuffer()) !== "%PDF") throw new Error("PDF 파일을 선택해 주세요.");
+      setFile(file);
       if (!window.crypto?.subtle) throw new Error("이 브라우저에서는 파일 지문을 계산할 수 없습니다. HTTPS 또는 localhost에서 다시 열어 주세요.");
       const hash = Array.from(new Uint8Array(await window.crypto.subtle.digest("SHA-256", await file.arrayBuffer()))).map(byte => byte.toString(16).padStart(2, "0")).join("");
       const match = data.processed_reports.find(report => report.sha256 === hash);
-      setResult({ name: file.name, matched: !!match, message: match ? "분석 결과를 불러옵니다." : "일치하는 분석 결과가 없습니다." });
+      setResult({ name: file.name, matched: !!match, message: match ? "기존 분석 결과가 있습니다." : "새 보고서를 선택했습니다." });
     } catch (error) {
       setResult({ name: file.name, matched: false, message: error instanceof Error ? error.message : "파일을 읽지 못했습니다." });
     } finally { setBusy(false); }
   }
 
   return <main className="static-main analyze-main"><div className="breadcrumb"><Link to="/">홈</Link><span>/</span> 보고서 분석</div>
-    <section className="analyze-heading"><p className="eyebrow">REPORT ANALYSIS</p><h1>보고서 분석 시작</h1><p>PDF를 선택하면 기존 분석 결과를 확인합니다. 파일은 브라우저 안에서만 읽습니다.</p></section>
+    <section className="analyze-heading"><p className="eyebrow">REPORT ANALYSIS</p><h1>보고서 분석 시작</h1><p>PDF를 선택하면 기존 결과를 확인하거나 선택한 쪽을 실시간 분석합니다.</p></section>
     <section className="analyze-grid"><div className="surface analyze-upload"><h2>PDF 보고서 선택</h2><p>파일을 놓거나 눌러 선택하세요.</p><label className="drop-zone" onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); void inspect(event.dataTransfer.files[0]); }}><span aria-hidden="true">↥</span><strong>{busy ? "파일 지문 계산 중…" : "PDF 파일을 여기에 놓기"}</strong><small>또는 클릭해 파일 선택 · PDF는 이 브라우저 안에서만 읽습니다</small><input type="file" accept=".pdf,application/pdf" aria-label="분석할 PDF 선택" disabled={busy} onChange={event => { void inspect(event.target.files?.[0]); event.target.value = ""; }} /></label>
-      {result && <div className={`analyze-result ${result.matched ? "match" : "no-match"}`} role="status"><small>{result.name}</small><h3>{result.message}</h3>{result.matched ? <><Link to="/analyze/replay">분석 과정 보기 ↗</Link><small>잠시 후 분석 과정으로 이동합니다.</small></> : <><p>새 보고서의 분석은 현재 준비 중입니다.</p><Link to="/live">문장 분석하기 ↗</Link></>}</div>}
+      {result && <div className={`analyze-result ${result.matched ? "match" : "no-match"}`} role="status"><small>{result.name}</small><h3>{result.message}</h3>{result.matched ? <><Link to="/analyze/replay">분석 과정 보기 ↗</Link><small>아래에서 실시간 분석도 선택할 수 있습니다.</small></> : <p>아래에서 분석할 쪽을 선택해 주세요.</p>}</div>}
     </div><aside className="surface analyze-info"><p className="eyebrow">ANALYSIS</p><h2>NAVER 2025 통합보고서</h2><p>보고서의 공시 문장과 원문 근거를 연결한 분석 결과입니다.</p><div><span>원자 주장</span><strong>{data.coverage.claims_discovered}건</strong></div><div><span>규칙 판정</span><strong>{data.coverage.claims_decided}건</strong></div><p className="analyze-note">일치하는 보고서의 분석 결과를 불러옵니다.</p></aside></section>
+    {file && <LiveReport key={file.name + file.lastModified} file={file} />}
   </main>;
 }
 

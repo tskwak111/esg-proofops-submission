@@ -1,0 +1,2 @@
+The browser page picker uses pdf-lib 1.17.1 (MIT License). The exact dependency and transitive versions are recorded in pnpm-lock.yaml. Source: https://github.com/Hopding/pdf-lib/blob/master/LICENSE.md
+The browser section picker uses pdfjs-dist 5.4.394 (Apache License 2.0). The exact dependency and transitive versions are recorded in pnpm-lock.yaml. Source: https://github.com/mozilla/pdf.js/blob/master/LICENSE
