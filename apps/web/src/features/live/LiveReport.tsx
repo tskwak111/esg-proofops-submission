@@ -76,27 +76,39 @@ export function LiveReport({ file }: { file: File }) {
       for (let i = 0; i < pages.length; i += 10) chunks.push(pages.slice(i, i + 10));
       const combined: Result = { claims: [], pages, duration_ms: 0, cost_usd: 0, notice: "사용자 최종 검토 전" };
       const started = performance.now();
+      const skipped: number[] = [];
+      const failed: string[] = [];
       for (let i = 0; i < chunks.length; i++) {
         const selected = await PDFDocument.create();
         const copies = await selected.copyPages(original, chunks[i].map(page => page - 1));
         copies.forEach(page => selected.addPage(page));
         const bytes = await selected.save({ useObjectStreams: true });
         if (bytes.length > 4_000_000) {
-          if (chunks[i].length === 1) throw new Error(`${chunks[i][0]}쪽의 PDF가 4MB를 넘습니다.`);
+          if (chunks[i].length === 1) { skipped.push(chunks[i][0]); chunks.splice(i, 1); i--; continue; }
           const half = Math.ceil(chunks[i].length / 2);
           chunks.splice(i, 1, chunks[i].slice(0, half), chunks[i].slice(half)); i--; continue;
         }
         setStage(`문서 파싱 · 원문 대조 · 규칙 판정 중 (${i + 1}/${chunks.length}묶음)`);
         const response = await fetch("/api/live-report", { method: "POST", body: new Blob([new Uint8Array(bytes)], { type: "application/pdf" }),
           headers: { "X-Demo-Access-Code": code, "X-Page-Numbers": JSON.stringify(chunks[i]) }, cache: "no-store" });
-        const data = await response.json() as Result & { error?: string };
-        if (!response.ok) throw new Error(errors[data.error || ""] || `분석을 완료하지 못했습니다 (${response.status}).`);
-        if (!Array.isArray(data.claims)) throw new Error("분석 결과를 읽지 못했습니다.");
+        const data = await response.json().catch(() => ({})) as Result & { error?: string };
+        if (response.status === 403) throw new Error(errors[data.error || ""] || "접근 키를 확인해 주세요.");
+        if (!response.ok || !Array.isArray(data.claims)) {
+          failed.push(`${chunks[i][0]}–${chunks[i][chunks[i].length - 1]}쪽(${errors[data.error || ""] || response.status})`);
+          continue;
+        }
         combined.claims.push(...data.claims);
         combined.cost_usd += data.cost_usd;
         combined.duration_ms = Math.round(performance.now() - started);
         setResult({ ...combined, claims: [...combined.claims] });
       }
+      const notes = [
+        skipped.length ? `이미지가 커서 전송 한도(4MB)를 넘은 ${skipped.join(", ")}쪽은 건너뛰었습니다.` : "",
+        failed.length ? `분석하지 못한 묶음: ${failed.join(", ")}` : "",
+      ].filter(Boolean).join(" ");
+      if (!combined.claims.length && (skipped.length || failed.length) && !result) setError(notes || "분석을 완료하지 못했습니다.");
+      else if (notes) setError(notes);
+      setResult({ ...combined, claims: [...combined.claims], duration_ms: Math.round(performance.now() - started) });
       setStage("완료");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "분석을 완료하지 못했습니다."); setStage("");
