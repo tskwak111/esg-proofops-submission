@@ -440,3 +440,4 @@ main.landing > section.hero { padding: 96px 40px 110px }
 @media (max-width: 860px) { .criteria { grid-template-columns: 1fr } .criteria-card dl > div { grid-template-columns: 1fr } }
 .guide-main > section.faq:last-child { padding-bottom: 8px !important }
 .guide-cta { margin: 48px 0 0 !important }
+.analyze-heading p.analyze-lead { max-width: none; font-size: 14.5px; line-height: 1.85; letter-spacing: -.025em; white-space: normal }
