@@ -57,16 +57,16 @@ export function StaticDemo() {
     const observer = new IntersectionObserver(entries => entries.forEach(entry => {
       if (entry.isIntersecting) { entry.target.classList.add("in-view"); observer.unobserve(entry.target); }
     }), { threshold: .1 });
-    const sections = document.querySelectorAll(".demo-site main > section, .demo-site .flow, .demo-site .hero-stats");
+    const sections = document.querySelectorAll(".demo-site main > section");
     sections.forEach(section => observer.observe(section));
     return () => observer.disconnect();
   }, [location.pathname, data]);
   return <div className="demo-site">
-    <header className={`site-header${location.pathname === "/" ? " is-dark" : ""}`}><div className="site-header-inner">
-      <Link className="brand" to="/" aria-label="ProofOps 홈"><img src="/logo-mark.svg" alt="" /> ProofOps</Link>
+    <header className="site-header"><div className="site-header-inner">
+      <Link className="brand" to="/" aria-label="ProofOps 홈"><span className="brand-dot" aria-hidden="true" />ProofOps</Link>
       <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="site-menu" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? "닫기" : "메뉴"}<span aria-hidden="true">{menuOpen ? "×" : "☰"}</span></button>
       <nav id="site-menu" className={menuOpen ? "open" : ""} aria-label="주요 메뉴" onClick={() => setMenuOpen(false)}><Link to="/">서비스</Link><Link to="/analyze">분석</Link><Link to="/demo">결과</Link><Link to="/report/naver">보고서</Link><Link to="/live">문장 분석</Link></nav>
-      <Link className="header-cta" to="/analyze">보고서 분석 시작</Link>
+      <div className="header-actions"><Link className="pill pill-line" to="/demo">결과 보기</Link><Link className="pill pill-dark" to="/analyze">분석 시작</Link></div>
     </div></header>
     {isLive ? <LiveClaim /> : error ? <main className="static-main"><section className="surface"><h1>분석 결과를 불러오지 못했습니다</h1><p>잠시 후 새로고침해 주세요.</p></section></main> :
       !data ? <main className="static-main loading-main" role="status" aria-label="검토 결과 불러오는 중"><div className="skeleton skeleton-title" /><div className="skeleton skeleton-card" /><div className="skeleton skeleton-card" /></main> :
@@ -112,100 +112,109 @@ function Analyze({ data }: { data: Snapshot }) {
   </main>;
 }
 
-const pipelineSteps: [string, string][] = [
-  ["PDF 파싱", "본문·표·레이아웃을 물리 쪽 단위로 읽습니다"],
-  ["주장 추출", "환경 관련 문장을 원자 주장으로 나눕니다"],
-  ["원문 대조", "인용과 쪽 위치를 PDF 원문과 맞춥니다"],
-  ["분류·태깅", "트랙과 입증 요소를 모델 3회 교차로 태깅합니다"],
-  ["규칙 판정", "Python 규칙엔진이 E0–E3 등급을 계산합니다"],
-  ["검토", "검토자는 태깅만 수정하고 이력은 보존됩니다"],
-  ["보고서", "근거·판정 경로를 감사 보고서로 냅니다"],
+const steps: [string, string][] = [
+  ["보고서 업로드", "지속가능경영보고서 PDF를 올리면 쪽 단위로 본문·표·레이아웃을 읽습니다."],
+  ["주장 추출 · 원문 대조", "환경 관련 문장을 원자 주장으로 나누고, 인용과 쪽 위치를 원문과 맞춥니다."],
+  ["규칙엔진 판정", "모델이 태깅한 입증 요소를 Python 규칙엔진이 E0–E3 등급으로 계산합니다."],
+  ["검토 · 보고서", "검토자가 태깅을 확인하면 판정이 다시 계산되고, 감사 보고서로 내보냅니다."],
+];
+const features: [string, string][] = [
+  ["주장 자동 추출", "수백 쪽 보고서에서 환경 주장을 문장 단위로 찾아 관리체계·성과·목표로 분류합니다."],
+  ["원문 근거 대조", "모든 근거는 물리 쪽수와 인용으로 남고, PDF 원문과 일치한 인용만 인정합니다."],
+  ["규칙 기반 판정", "등급과 라벨은 버전이 고정된 규칙엔진이 계산해 언제든 같은 결과를 재현합니다."],
+  ["판정 가능 범위", "확인되지 않은 요소는 ‘근거 없음’으로 처리하지 않고 가능한 등급 범위로 보여 줍니다."],
+  ["검토 이력 보존", "검토자는 태깅만 수정하고, 이전 판정과 변경 이력은 덮어쓰지 않고 남습니다."],
+  ["감사 보고서", "판정 분포와 주장별 근거를 A4 보고서, JSON, CSV로 바로 내보냅니다."],
 ];
 
-function Contours() {
-  const paths = useMemo(() => Array.from({ length: 16 }, (_, ring) => {
-    const radius = 70 + ring * 34;
-    const points = Array.from({ length: 73 }, (_, step) => {
-      const angle = (step / 72) * Math.PI * 2;
-      const wobble = 1 + 0.07 * Math.sin(angle * 3 + ring * 0.55) + 0.045 * Math.sin(angle * 5 - ring * 0.3);
-      return `${(560 + Math.cos(angle) * radius * wobble * 1.25).toFixed(1)},${(360 + Math.sin(angle) * radius * wobble * 0.82).toFixed(1)}`;
-    });
-    return `M${points.join("L")}Z`;
-  }), []);
-  return <svg className="contours" viewBox="0 0 1120 720" preserveAspectRatio="xMidYMid slice" aria-hidden="true">{paths.map((d, index) => <path key={index} d={d} style={{ animationDelay: `${index * 90}ms` }} />)}</svg>;
-}
-
 function EvidenceTrace() {
-  const rows: [string, string, string, string][] = [
-    ["M1", "이행 주체·방식", "p.84", "Operation(환경운영부서)과 내부탄소가격제 TF 운영"],
-    ["M2", "적용 범위", "p.2", "네이버 주식회사 개별 기업을 기준으로 작성"],
-    ["M3", "외부 검증", "p.230 · p.242", "GRI 3-3 중대 토픽 관리 · AA1000AS v3"],
+  const rows: [string, string, string][] = [
+    ["M1 · 이행 주체", "p.84", "Operation(환경운영부서)과 내부탄소가격제 TF 운영"],
+    ["M2 · 적용 범위", "p.2", "네이버 주식회사 개별 기업을 기준으로 작성"],
+    ["M3 · 외부 검증", "p.230 · 242", "GRI 3-3 중대 토픽 관리 · AA1000AS v3"],
   ];
-  return <figure className="trace" aria-label="판정 경로 예시: NAVER p.84 주장">
-    <div className="trace-head"><span>CLAIM · NAVER 2025</span><span>p.84 · 관리체계</span></div>
-    <blockquote>“Operation(환경운영부서)과 Internal Carbon Pricing TF(내부탄소가격제 조직) 운영”</blockquote>
-    <ol className="trace-rows">{rows.map(([id, name, page, quote], index) => <li key={id} style={{ animationDelay: `${600 + index * 450}ms` }}>
-      <span className="trace-id">{id}</span><div><strong>{name}</strong><p>{quote}</p></div><span className="trace-page">{page}</span><span className="trace-check" aria-label="근거 확인">✓</span>
-    </li>)}</ol>
-    <div className="trace-result"><div><span>규칙엔진 판정</span><small>MGMT · M1 + M2 + M3</small></div><strong>E3</strong><em>SUBSTANTIATED</em></div>
+  return <figure className="trace" aria-label="판정 경로 예시">
+    <div className="trace-head"><span className="dot" />NAVER 2025 · p.84 · 관리체계</div>
+    <blockquote>“Operation(환경운영부서)과 Internal Carbon Pricing TF 운영”</blockquote>
+    <ol className="trace-rows">{rows.map(([name, page, quote], index) => <li key={name} style={{ animationDelay: `${300 + index * 350}ms` }}><span className="check">✓</span><div><strong>{name}</strong><p>{quote}</p></div><span className="trace-page">{page}</span></li>)}</ol>
+    <div className="trace-result"><span>규칙엔진 판정</span><strong>E3</strong><em>SUBSTANTIATED</em></div>
   </figure>;
 }
 
+function FunnelPreview({ data }: { data: Snapshot }) {
+  const max = data.coverage.claims_discovered || 1;
+  const rows: [string, number][] = [["추출 주장", data.coverage.claims_discovered], ["원문 대조", data.funnel[1]?.count ?? 0], ["등급 표시", data.claims.length], ["확정 판정", data.coverage.claims_decided]];
+  return <figure className="mini-card"><div className="mini-head"><span>처리 과정</span><span>NAVER 2025</span></div>{rows.map(([label, value], index) => <div className="mini-bar" key={label}><div><span>{label}</span><strong>{value}</strong></div><i><b style={{ width: `${Math.max(value / max * 100, 4)}%`, animationDelay: `${index * 120}ms` }} /></i></div>)}</figure>;
+}
+
+function ReportPreview({ data }: { data: Snapshot }) {
+  const count = (grade: string) => data.claims.filter(claim => (claim.decision.grade || claim.decision.display_grade) === grade).length;
+  const grades = ["E3", "E2", "E1", "E0"];
+  const total = data.claims.length || 1;
+  return <figure className="mini-card report-mini"><div className="mini-head"><span>감사 보고서</span><span>PDF · JSON · CSV</span></div><h4>NAVER 공시 근거 검토 보고서</h4><div className="stack">{grades.map(grade => <i key={grade} className={grade.toLowerCase()} style={{ width: `${count(grade) / total * 100}%` }} />)}</div><ul>{grades.map(grade => <li key={grade}><span className={`sw ${grade.toLowerCase()}`} />{grade}<strong>{count(grade)}</strong></li>)}</ul></figure>;
+}
+
 function Landing({ data }: { data: Snapshot }) {
+  const navigate = useNavigate();
+  const [draft, setDraft] = useState("");
   const verified = data.funnel[1]?.count ?? 0;
-  const featured = data.claims.filter(claim => claim.decision.grade === "E3").slice(0, 4);
-  const reviewTarget = featured[0]?.id || data.claims[0]?.id;
+  const reviewTarget = data.claims.find(claim => claim.decision.grade === "E3")?.id || data.claims[0]?.id;
+  const example = "2024년 Scope 1·2 온실가스 배출량은 전년 대비 8% 감소했으며, 제3자 검증기관의 검증을 받았습니다.";
+  const tools: [string, string, string, string][] = [
+    ["/analyze", "보고서 분석", "PDF를 올려 분석 결과를 확인합니다", "t-upload"],
+    ["/demo", "분석 결과", "331개 주장의 등급과 근거", "t-results"],
+    [`/review/${reviewTarget}`, "검토", "요소를 바꾸면 판정이 다시 계산됩니다", "t-review"],
+    ["/report/naver", "감사 보고서", "판정 분포와 주장별 근거", "t-report"],
+    ["/live", "문장 분석", "한 문장을 바로 분석합니다", "t-live"],
+    ["/demo/kia", "기아 사례", "수치 검산과 검증의견서 연결", "t-kia"],
+  ];
   return <main className="landing">
     <section className="hero">
-      <Contours />
-      <div className="wrap hero-grid">
-        <div className="hero-copy">
-          <p className="kicker"><span className="pulse" />ESG 공시 검증 플랫폼</p>
-          <h1>공시의 모든 주장을<br /><span>원문 근거</span>로 검증합니다.</h1>
-          <p className="lead">ProofOps는 지속가능성 보고서에서 환경 주장을 찾아 원문 위치를 대조하고, 규칙엔진으로 근거 수준을 판정합니다. 모든 판정은 쪽수와 인용으로 되돌아갈 수 있습니다.</p>
-          <div className="hero-cta"><Link className="btn btn-signal" to="/analyze">보고서 분석 시작 <span aria-hidden="true">→</span></Link><Link className="btn btn-line-light" to="/demo">분석 결과 보기</Link></div>
-        </div>
-        <EvidenceTrace />
-      </div>
-      <dl className="wrap hero-stats">
-        <div><dt>분석 대상</dt><dd><CountUp value={data.coverage.pages_total} /><small>쪽</small></dd><p>NAVER 2025 통합보고서</p></div>
-        <div><dt>추출 주장</dt><dd><CountUp value={data.coverage.claims_discovered} /><small>건</small></dd><p>원자 단위 환경 주장</p></div>
-        <div><dt>원문 대조</dt><dd><CountUp value={verified} /><small>건</small></dd><p>인용·쪽 위치 일치</p></div>
-        <div><dt>확정 판정</dt><dd><CountUp value={data.coverage.claims_decided} /><small>건</small></dd><p>E3 · 검토 완료</p></div>
-      </dl>
+      <p className="eyebrow-c">ESG 공시 검증</p>
+      <h1>ESG 공시 검증 | 모든 주장을<br />원문 근거까지, 한 번에</h1>
+      <p className="hero-sub">지속가능경영보고서의 환경 주장을 찾아 원문과 대조하고, 규칙엔진으로 근거 수준을 판정합니다. 모든 판정은 쪽수와 인용으로 확인할 수 있습니다.</p>
+      <Link className="pill pill-dark" to="/analyze">보고서 분석 시작 <span aria-hidden="true">→</span></Link>
+      <form className="prompt" onSubmit={event => { event.preventDefault(); navigate(`/live?claim=${encodeURIComponent((draft || example).slice(0, 500))}`); }}>
+        <textarea aria-label="분석할 환경 주장" value={draft} onChange={event => setDraft(event.target.value)} placeholder={example} rows={3} />
+        <div className="prompt-bar"><div className="chips"><Link to="/analyze" className="chip"><span className="ic">⬆</span>PDF 업로드</Link><Link to="/demo" className="chip"><span className="ic">◎</span>분석 결과</Link><Link to="/report/naver" className="chip"><span className="ic">▤</span>보고서</Link><Link to="/demo/kia" className="chip"><span className="ic">◇</span>기아 사례</Link></div><button type="submit" className="send" aria-label="문장 분석">↑</button></div>
+      </form>
+      <p className="hero-note">문장을 입력하면 분류 → 요소 태깅 → 규칙엔진 판정을 바로 실행합니다</p>
     </section>
 
-    <section className="wrap band principles-band">
-      <header className="band-head"><p className="kicker dark">PRINCIPLES</p><h2>판정은 규칙이,<br />근거는 원문이 말합니다.</h2></header>
-      <div className="principle-list">
-        <article><span>01</span><h3>등급은 규칙엔진이 계산합니다</h3><p>언어모델은 문장 추출과 요소 태깅만 맡습니다. 등급과 라벨은 버전이 고정된 Python 규칙엔진이 재현 가능하게 계산합니다.</p></article>
-        <article><span>02</span><h3>모르는 것은 모른다고 표시합니다</h3><p>확인되지 않은 요소는 ‘근거 없음’으로 처리하지 않습니다. 미확인·충돌·판독 불가를 구분해 판정 가능 범위로 보여 줍니다.</p></article>
-        <article><span>03</span><h3>모든 판정은 원문으로 돌아갑니다</h3><p>근거마다 물리 쪽수와 인용을 남기고, 원문 PDF와 대조된 인용만 근거로 인정합니다. 검토 이력은 덮어쓰지 않고 보존됩니다.</p></article>
-      </div>
+    <section className="sec sec-beige" id="how">
+      <p className="eyebrow-c center">작동 방식</p><h2 className="serif center">몇 분 만에 근거를 확인하세요</h2>
+      <div className="steps">{steps.map(([title, body], index) => <article className="card" key={title}><span className="num">{index + 1}</span><h3>{title}</h3><p>{body}</p></article>)}</div>
+      <div className="proof"><p className="proof-kicker">NAVER 2025 통합보고서</p><h3 className="serif center">실제 보고서 한 권을 끝까지 분석했습니다.</h3>
+        <dl><div><dt>분석 쪽수</dt><dd><CountUp value={data.coverage.pages_total} /></dd></div><div><dt>추출 주장</dt><dd><CountUp value={data.coverage.claims_discovered} /></dd></div><div><dt>원문 대조</dt><dd><CountUp value={verified} /></dd></div><div><dt>확정 판정</dt><dd><CountUp value={data.coverage.claims_decided} /></dd></div></dl></div>
     </section>
 
-    <section className="wrap band flow-band" id="how">
-      <header className="band-head"><p className="kicker dark">PIPELINE</p><h2>보고서 한 권이<br />판정 기록이 되기까지</h2><p>파싱부터 감사 보고서까지 일곱 단계가 하나의 추적 가능한 기록으로 이어집니다.</p></header>
-      <ol className="flow">{pipelineSteps.map(([name, desc], index) => <li key={name} style={{ transitionDelay: `${index * 70}ms` }}><span>{String(index + 1).padStart(2, "0")}</span><strong>{name}</strong><p>{desc}</p></li>)}</ol>
-      <Link className="text-link" to="/analyze/replay">NAVER 보고서 처리 과정 보기 →</Link>
+    <section className="sec sec-cream">
+      <p className="eyebrow-c center">기능</p><h2 className="serif center">검증에 필요한 모든 기능</h2>
+      <div className="features">{features.map(([title, body]) => <article className="card" key={title}><h3>{title}</h3><p>{body}</p></article>)}</div>
     </section>
 
-    <section className="wrap band product-band">
-      <header className="band-head"><p className="kicker dark">RESULTS</p><h2>문장마다 근거와 판정 경로를<br />한 화면에서.</h2></header>
-      <div className="product-grid">
-        <div className="product-copy">
-          <div><span>결과</span><p>331개 주장을 확정·예비 등급·원문 대조 필요로 나누고, 요소별 인용과 쪽수를 함께 보여 줍니다.</p><Link className="text-link" to="/demo">분석 결과 →</Link></div>
-          <div><span>검토</span><p>검토자가 요소 상태를 수정하면 규칙엔진 판정이 다시 계산되고, 이전 판정은 이력으로 남습니다.</p><Link className="text-link" to={`/review/${reviewTarget}`}>검토 화면 →</Link></div>
-          <div><span>보고서</span><p>판정 분포, 핵심 발견, 주장별 근거를 A4 감사 보고서와 JSON·CSV로 내보냅니다.</p><Link className="text-link" to="/report/naver">감사 보고서 →</Link></div>
-        </div>
-        <div className="product-preview" aria-label="확정 판정 예시">
-          <div className="preview-head"><span>NAVER 2025 · 확정 판정</span><span>{data.coverage.claims_decided}건</span></div>
-          {featured.map(claim => <Link key={claim.id} to={`/demo/${claim.id}?queue=decided#claims`}><span className="preview-page">p.{claim.page}</span><p>{claim.quote.replace(/^[•·]\s*/, "")}</p><span className="grade-chip e3">E3</span></Link>)}
-        </div>
+    <section className="sec sec-beige">
+      <p className="eyebrow-c">활용 사례</p><h2 className="serif">실무를 위한 설계</h2>
+      <div className="uses">
+        <div className="use"><div className="use-copy"><h3>문장마다 근거 경로를 추적</h3><p>주장 하나에 필요한 입증 요소를 원문 쪽수와 인용으로 연결합니다. 이행 주체, 적용 범위, 외부 검증이 모두 확인되면 규칙엔진이 E3로 판정합니다.</p><Link className="more" to="/demo">분석 결과 보기 →</Link></div><EvidenceTrace /></div>
+        <div className="use reverse"><div className="use-copy"><h3>보고서 한 권의 처리 과정을 한눈에</h3><p>파싱부터 판정까지 단계별 처리량과 시간, 모델 호출 수를 기록합니다. 어디서 막혔는지, 무엇이 확인되지 않았는지 숨기지 않습니다.</p><Link className="more" to="/analyze/replay">처리 과정 보기 →</Link></div><FunnelPreview data={data} /></div>
+        <div className="use"><div className="use-copy"><h3>감사 보고서로 바로 공유</h3><p>판정 분포, 핵심 발견, 주장별 근거를 담은 보고서를 A4 PDF와 JSON·CSV로 내보내 검토 조직과 공유합니다.</p><Link className="more" to="/report/naver">감사 보고서 보기 →</Link></div><ReportPreview data={data} /></div>
       </div>
     </section>
 
-    <section className="cta-band"><Contours /><div className="wrap cta-inner"><div><p className="kicker">NAVER 2025</p><h2>{data.coverage.claims_discovered}개 공시 주장의<br />근거를 지금 확인하세요.</h2></div><div className="hero-cta"><Link className="btn btn-signal" to="/demo">분석 결과 보기 <span aria-hidden="true">→</span></Link><Link className="btn btn-line-light" to="/live">문장 분석</Link></div></div></section>
+    <section className="sec sec-cream">
+      <p className="eyebrow-c center">더 살펴보기</p><h2 className="serif center">ProofOps 서비스 살펴보기</h2>
+      <div className="tools">{tools.map(([to, title, body, thumb]) => <Link className="card tool" to={to} key={title}><div className={`thumb ${thumb}`}><i /><i /><i /><i /></div><h3>{title}</h3><p>{body}</p></Link>)}</div>
+    </section>
+
+    <section className="sec sec-cream faq">
+      <div className="faq-inner">
+        <h2 className="serif">ProofOps는 무엇인가요?</h2>
+        <p>ProofOps는 지속가능경영보고서의 환경 주장이 같은 보고서 안의 근거로 뒷받침되는지 확인하는 검증 도구입니다. 언어모델은 문장 추출과 요소 태깅만 맡고, 등급과 라벨은 규칙엔진이 계산합니다. 기업 성과의 진위나 법 위반 여부를 판정하지 않습니다.</p>
+        <h2 className="serif">누구에게 필요한가요?</h2>
+        <ul><li><strong>공시 담당자</strong> — 발간 전에 근거가 빠진 주장을 찾아 보완합니다.</li><li><strong>검증·감사 조직</strong> — 주장별 근거 경로와 판정 이력을 한 곳에서 검토합니다.</li><li><strong>투자자·평가기관</strong> — 보고서의 주장을 원문 쪽수와 함께 빠르게 확인합니다.</li></ul>
+      </div>
+    </section>
   </main>;
 }
 

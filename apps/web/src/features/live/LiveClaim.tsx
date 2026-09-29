@@ -53,7 +53,7 @@ const errors: Record<string, string> = {
 
 export function LiveClaim() {
   const [code, setCode] = useState("");
-  const [claim, setClaim] = useState("");
+  const [claim, setClaim] = useState(() => typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("claim")?.slice(0, 500) || "");
   const [context, setContext] = useState("");
   const [page, setPage] = useState("");
   const [busy, setBusy] = useState(false);
