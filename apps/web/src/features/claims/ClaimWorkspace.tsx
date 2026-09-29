@@ -317,7 +317,7 @@ export function PartialClaimSummary({
 
   return (
     <section aria-labelledby="partial-summary-heading" style={{ padding: "16px", background: "#f8f9fa", border: "1px solid #dee2e6", marginBottom: "24px", borderRadius: "4px" }}>
-      <h3 id="partial-summary-heading">검토 초안</h3>
+      <h3 id="partial-summary-heading">검토 중인 내용</h3>
       <p role="status">
         <strong>상태 및 조치:</strong> {reason}
         {missingLabels.length > 0 ? ` 누락된 입증 요소(${missingLabels.join(", ")})를 보완하기 위해 ` : " "}

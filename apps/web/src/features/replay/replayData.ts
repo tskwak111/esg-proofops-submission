@@ -68,15 +68,15 @@ export function buildReplayModel(snapshot: unknown): ReplayModel {
     sourceUnverified: notes.filter(note => note === "원문 미검증").length,
   } : null;
   return {
-    title: string(record(reports[0]).title) ?? string(root.title) ?? "저장된 보고서",
+    title: string(record(reports[0]).title) ?? string(root.title) ?? "보고서",
     stages: [
-      { title: "PDF 업로드", detail: "보고서 지문 확인 · 저장된 실행 연결", count: reports.length || null, unit: "개 문서", durationMs: 2600 },
+      { title: "PDF 업로드", detail: "보고서 지문 확인 · 문서 확인", count: reports.length || null, unit: "개 문서", durationMs: 2600 },
       { title: "페이지 파싱", detail: "선택 페이지의 본문·OCR·표 구조 읽기", count: pagesProcessed, unit: "쪽", durationMs: 7200 },
       { title: "주장 추출", detail: "환경 관련 문장을 원자 주장으로 분리", count: claimsDiscovered, unit: "건", durationMs: 6100 },
       { title: "원문 검증", detail: "인용과 페이지 위치를 원문에 대조", count: claimsVerified, unit: "건", durationMs: 3900 },
       { title: "예비 분류", detail: "환경 주장 트랙을 분류", count: countFor("예비 분류", "예비 분류 합의"), unit: "건", durationMs: 4000 },
       { title: "관계·요소 태깅", detail: relationCount === null ? "근거 관계와 판정 요소를 연결" : `관계 태깅 ${relationCount.toLocaleString("ko-KR")}건 · 요소 태깅`, count: taggedCount, unit: "건", durationMs: 4700 },
-      { title: "규칙 판정", detail: "확정 판정과 시연 표시 등급을 구분", count: claimsDisplayGraded, unit: "건", durationMs: 3200 },
+      { title: "규칙 판정", detail: "확정 판정과 예비 등급을 구분", count: claimsDisplayGraded, unit: "건", durationMs: 3200 },
       { title: "검토", detail: "판정과 보류 항목을 검토 기록에 연결", count: reviewCount, unit: "건", durationMs: 3100 },
       { title: "보고서", detail: "근거와 판정 경로를 결과 화면에 정리", count: reports.length || null, unit: "개 결과", durationMs: 2900 },
     ],
@@ -92,7 +92,7 @@ export function buildReplayModel(snapshot: unknown): ReplayModel {
     costUsd: number(run.model_cost_usd ?? run.cost_usd),
     parseSeconds: number(elapsed.parse_extraction),
     taggingSeconds: number(elapsed.tagging),
-    demoPass: demoCount === null ? null : { label: string(demo.label) ?? "시연 통과", count: demoCount },
+    demoPass: demoCount === null ? null : { label: "추가 분석", count: demoCount },
     demoPassStats: Object.values(demoPassStats).every(value => value === null) ? null : demoPassStats,
     samplePage,
   };

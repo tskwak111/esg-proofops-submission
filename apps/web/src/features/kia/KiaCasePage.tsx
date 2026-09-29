@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
+import { getElementLabel } from "../labels";
 import "./kia.css";
 
 type Evidence = { page: number; quote: string };
@@ -27,7 +28,7 @@ const states: Record<string, string> = { present: "확인", absent: "미기재",
 function DecisionBadge({ claim }: { claim: Claim }) {
   const { decision } = claim;
   return <span className={`kia-grade ${decision.estimated ? "estimated" : ""}`}>
-    {decision.display_grade || "보류"}{decision.estimated ? " 추정" : ""}
+    {decision.display_grade || "보류"}{decision.estimated ? " · 예비 등급" : ""}
   </span>;
 }
 
@@ -38,15 +39,15 @@ function ClaimDetail({ claim }: { claim: Claim }) {
     <h3>{claim.statement}</h3>
     <blockquote>“{claim.quote}”</blockquote>
     <div className="kia-decision">
-      <strong>{decision.display_grade || "판정 보류"} {decision.estimated ? "· 추정" : ""}</strong>
-      <span>{decision.display_label || "근거 확인 필요"}</span>
-      {decision.grade_range && <p>가능 범위 {decision.grade_range.floor}–{decision.grade_range.ceiling} · 미해결 {decision.grade_range.open_elements.join(", ")}</p>}
-      {decision.missing.length > 0 && <p>보완 요소 {decision.missing.join(", ")}</p>}
+      <strong>{decision.display_grade || "판정 보류"} {decision.estimated ? "· 예비 등급" : ""}</strong>
+      <span>{({ INCOMPLETE: "추가 근거 필요", SUBSTANTIATED: "근거 확인", UNSUBSTANTIATED: "근거 부족" } as Record<string, string>)[decision.display_label || ""] || decision.display_label || "근거 확인 필요"}</span>
+      {decision.grade_range && <p>가능 범위 {decision.grade_range.floor}–{decision.grade_range.ceiling} · 미해결 {decision.grade_range.open_elements.map(getElementLabel).join(", ")}</p>}
+      {decision.missing.length > 0 && <p>보완 요소 {decision.missing.map(getElementLabel).join(", ")}</p>}
     </div>
     <h4>요소별 근거</h4>
     <div className="kia-element-list">{claim.elements.map(element => <div key={element.id} className="kia-element">
       <span className={`kia-state ${element.state}`}>{states[element.state] || element.state}</span>
-      <strong>{element.id}</strong>
+      <strong>{getElementLabel(element.id)}</strong>
       {element.evidence.length ? element.evidence.map((ref, index) => <p key={index}>p.{ref.page} “{ref.quote}”</p>) : <p>연결된 원문 인용 없음</p>}
     </div>)}</div>
   </article>;
@@ -74,21 +75,21 @@ export default function KiaCasePage() {
   const selected = claims?.find(claim => claim.id === selectedId) || filtered[0];
   const estimated = claims?.filter(claim => claim.decision.estimated).length || 0;
   return <main className="kia-case">
-    <nav className="kia-breadcrumb" aria-label="경로"><Link to="/">홈</Link><span>/</span><Link to="/demo">실제 결과</Link><span>/</span>기아 2025</nav>
+    <nav className="kia-breadcrumb" aria-label="경로"><Link to="/">홈</Link><span>/</span><Link to="/demo">분석 결과</Link><span>/</span>기아 2025</nav>
     <section className="kia-hero">
-      <div><p className="kia-overline">CASE STUDY · KIA 2025</p><h1>기아 공시의<br /><em>근거를 따라가다.</em></h1>
+      <div><p className="kia-overline">KIA 2025</p><h1>기아 공시의<br /><em>근거를 따라가다.</em></h1>
         <p>선택한 주장 10건을 원문, 수치 검산, 검증의견서까지 연결했습니다.</p>
         <div className="kia-hero-links"><a href="#kia-claims">주장 살펴보기 ↗</a><a href={data.source_url} target="_blank" rel="noopener noreferrer">기아 공식 보고서 ↗</a></div>
-      </div><div className="kia-hero-stat"><small>검토한 주장</small><strong>10<span>건</span></strong><p>성과 3 · 목표 2 · 관리체계 5</p><span className="kia-demo-marker">시연 모드</span></div>
+      </div><div className="kia-hero-stat"><small>검토한 주장</small><strong>10<span>건</span></strong><p>성과 3 · 목표 2 · 관리체계 5</p></div>
     </section>
     <section className="kia-summary" aria-label="검토 요약">
       <div><span>규칙 확정</span><strong>{claims?.length ? claims.filter(c => c.decision.grade).length : 0}</strong><small>등급·라벨 산출</small></div>
-      <div><span>범위 추정</span><strong>{estimated}</strong><small>미해결 근거 보존</small></div>
+      <div><span title="핵심 근거 일부가 확인되기 전의 예비 판정">예비 등급</span><strong>{estimated}</strong><small>추가 근거 확인 필요</small></div>
       <div><span>수치 검산</span><strong>{data.numeric_checks.length}</strong><small>원자료와 재계산</small></div>
       <div><span>보증 연결</span><strong>{data.assurance.length}</strong><small>의견서별 범위 확인</small></div>
     </section>
     <section className="kia-workspace" id="kia-claims"><div className="kia-section-heading"><p className="kia-overline">EVIDENCE EXPLORER</p><h2>주장별 검토</h2><p>주장을 선택하면 등급과 근거를 함께 볼 수 있습니다.</p></div>
-      <div className="kia-filters"><label>검색<input value={query} onChange={event => setQuery(event.target.value)} placeholder="주장, ID, 페이지" /></label>
+      <div className="kia-filters"><label>검색<input value={query} onChange={event => setQuery(event.target.value)} placeholder="주장, 페이지" /></label>
         <label>트랙<select value={track} onChange={event => setTrack(event.target.value)}><option value="all">전체</option><option value="performance">성과</option><option value="goal">목표</option><option value="management">관리체계</option></select></label></div>
       <div className="kia-claims-grid"><div className="kia-claim-list" aria-label="기아 주장 목록">{filtered.map(claim => <button type="button" key={claim.id} className={selected?.id === claim.id ? "selected" : ""} onClick={() => setSelectedId(claim.id)}>
         <span>p.{claim.page} · {tracks[claim.track]}</span><DecisionBadge claim={claim} /><strong>{claim.statement}</strong>
@@ -104,6 +105,6 @@ export default function KiaCasePage() {
           {data.assurance.map(item => <details key={item.id}><summary><span>{item.claim_id.replace("DOC034-", "")}</span><strong>{item.provider}</strong><em className={item.status === "covered" ? "" : "pending"}>{item.status === "covered" ? "포함" : "연결 미확정"}</em></summary>
             <div><p>p.{item.pages.join(", ")} · {item.level === "limited" ? "제한적 보증" : item.level} · {item.period}</p><p>“{item.quote}”</p><small>{item.metrics}</small></div></details>)}</article></div>
     </section>
-    <p className="kia-provenance">사용자 확인 태그 · Python 규칙엔진 {data.run.rule_pack_name} · {data.run.rule_pack_hash.slice(0, 12)}…</p>
+    <p className="kia-provenance">주장별 원문 근거와 판정 요소를 연결했습니다.</p>
   </main>;
 }

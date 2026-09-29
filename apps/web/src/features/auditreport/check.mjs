@@ -10,6 +10,7 @@ try {
   const naver = await load("naver");
   assert.equal(naver.claims.filter(claim => claim.decision.grade).length, 17);
   assert.equal(naver.claims.map(claim => reportRow(claim, false)).filter(row => row.grade === "E3").length, 17);
+  assert.equal(reportRow(naver.claims.find(claim => !claim.source_verified), true).label, "원문 대조 필요");
   if (existsSync(new URL("../../../public/demo/kia-2025.json", import.meta.url))) {
     const kia = await load("kia");
     const kiaRow = reportRow(kia.claims[0], true);

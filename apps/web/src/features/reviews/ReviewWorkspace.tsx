@@ -116,7 +116,7 @@ function Editor(props: Props) {
     try {
       const value = await props.loadLatest();
       if (live.current) setLatest({ ...value, elements: completeElements(value.track, value.elements) });
-    } catch { if (live.current) setError("최신 태깅을 불러오지 못했습니다. 초안은 보존되었습니다."); }
+    } catch { if (live.current) setError("최신 태깅을 불러오지 못했습니다. 작성 중인 내용은 보존되었습니다."); }
   }
   async function save() {
     dialog.current?.close();
@@ -139,7 +139,7 @@ function Editor(props: Props) {
       if (!live.current) return;
       if (failure instanceof ApiError && failure.status === 412) {
         setStale(true);
-        setError("다른 검토자가 먼저 변경했습니다. 초안을 유지한 채 최신 태깅과 비교해 주세요.");
+        setError("다른 검토자가 먼저 변경했습니다. 작성 중인 내용을 유지한 채 최신 태깅과 비교해 주세요.");
         await refresh();
       } else {
         setError(failure instanceof ApiError && failure.status === 422
@@ -165,11 +165,11 @@ function Editor(props: Props) {
     {saved && <p role="status">태깅 revision {saved.new_tag_revision} 저장됨. 판정: {decisionStatusText[saved.decision.decision_status] ?? saved.decision.decision_status}
       {saved.decision.gap_ids.length > 0 && ` · 미정 규칙: ${saved.decision.gap_ids.join(", ")}`}</p>}
     {stale && <section aria-label="충돌 비교">
-      <h3>서버 최신 태깅과 내 초안</h3>
+      <h3>서버 최신 태깅과 내 변경 내용</h3>
       <button type="button" onClick={refresh}>최신 태깅 다시 조회</button>
       {latest && <>
         <p>서버 revision {latest.review.revision} · {latest.review.status} · 트랙 {latest.track}</p>
-        <table><thead><tr><th>요소</th><th>서버</th><th>내 초안</th></tr></thead><tbody>
+        <table><thead><tr><th>요소</th><th>서버</th><th>내 변경 내용</th></tr></thead><tbody>
           {elements.map(e => { const server = latest.elements.find(old => old.element_id === e.element_id)?.state; return <tr key={e.element_id}><th>{getElementLabel(e.element_id)}</th>
             <td>{server ? stateText[server] : "미수집"}</td><td>{stateText[e.state]}</td></tr>; })}
         </tbody></table>
@@ -181,7 +181,7 @@ function Editor(props: Props) {
           // return to the ordinary resolve flow.
           setReReviewing(latest.review.status === "resolved");
           setStale(false); setError(""); key.current = null;
-        }}>차이를 확인했습니다. 내 초안을 새 기준에서 다시 검토</button>
+        }}>차이를 확인했습니다. 내 변경 내용을 새 기준에서 다시 검토</button>
       </>}
     </section>}
     <form onSubmit={event => { event.preventDefault(); if (!editDisabled) dialog.current?.showModal(); }}>

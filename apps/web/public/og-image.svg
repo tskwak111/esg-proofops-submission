@@ -1,16 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title">
   <title id="title">ProofOps — 공시 문장에 근거를 연결합니다</title>
-  <rect width="1200" height="630" fill="#f6f7f2"/>
-  <path d="M790 0h410v630H590z" fill="#e9f1df"/>
-  <rect x="72" y="70" width="64" height="64" rx="17" fill="#17483f"/>
-  <path d="M89 118V86h15c9 0 15 5 15 13s-6 13-15 13h-6v6h-9Zm9-15h6c4 0 6-1 6-4s-2-4-6-4h-6v8Z" fill="#fff"/>
-  <circle cx="120" cy="117" r="7" fill="#d7f281"/>
-  <text x="153" y="117" font-family="Arial,sans-serif" font-size="35" font-weight="700" fill="#17483f">ProofOps</text>
-  <text x="72" y="275" font-family="Arial,sans-serif" font-size="60" font-weight="700" fill="#152728">공시 문장 하나마다</text>
-  <text x="72" y="355" font-family="Arial,sans-serif" font-size="60" font-weight="700" fill="#39735a">근거를 연결합니다.</text>
-  <text x="74" y="432" font-family="Arial,sans-serif" font-size="27" fill="#607070">주장 추출 · 원문 검증 · 규칙 판정 · 검토 보고서</text>
-  <rect x="796" y="195" width="288" height="258" rx="18" fill="#17483f"/>
-  <text x="828" y="250" font-family="Arial,sans-serif" font-size="17" font-weight="700" fill="#d7f281">EVIDENCE REVIEW</text>
-  <path d="M830 298h218M830 335h160M830 372h193" stroke="#87af98" stroke-width="11" stroke-linecap="round"/>
-  <circle cx="1037" cy="397" r="21" fill="#d7f281"/>
+  <rect width="1200" height="630" fill="#FFFFFF"/>
+  <path d="M0 0h1200" stroke="#0E6B47" stroke-width="8"/>
+  <path d="M72 84h64v64H72z" fill="#08432D"/>
+  <path d="M90 132v-32h14c10 0 16 5 16 14s-6 14-16 14h-6v4h-8Zm8-12h6c5 0 8-2 8-6s-3-6-8-6h-6v12Z" fill="#FFFFFF"/>
+  <text x="155" y="131" font-family="Arial,sans-serif" font-size="35" font-weight="700" fill="#0B1F17">ProofOps</text>
+  <text x="72" y="310" font-family="Arial,sans-serif" font-size="64" font-weight="700" fill="#0B1F17">공시 문장 하나마다</text>
+  <text x="72" y="392" font-family="Arial,sans-serif" font-size="64" font-weight="700" fill="#0E6B47">근거를 연결합니다.</text>
+  <text x="74" y="477" font-family="Arial,sans-serif" font-size="27" fill="#3C4A43">주장 추출 · 원문 검증 · 규칙 판정 · 검토 보고서</text>
+  <path d="M850 80c80 98 86 199 3 300 83-66 154-76 265-50" fill="none" stroke="#0E6B47" stroke-width="2"/>
+  <path d="M918 126c19 54 11 108-23 155M993 187c-35 31-66 72-87 123" fill="none" stroke="#B7E36A" stroke-width="2"/>
+  <path d="M72 556h1056" stroke="#D9DFDB"/>
 </svg>

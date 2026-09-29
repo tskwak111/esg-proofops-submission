@@ -70,7 +70,7 @@ function ClassificationForm({ apiBase, runId, claimId, untagged, session, onSess
       if (request.signal.aborted) return;
       if (isSessionError(failure)) return onSessionInvalid();
       if (failure instanceof ApiError && [409, 412].includes(failure.status)) {
-        setStale(true); setError("상태가 변경되었습니다. 초안을 확인한 뒤 최신 상태를 다시 불러와 주세요.");
+        setStale(true); setError("상태가 변경되었습니다. 입력 내용을 확인한 뒤 최신 상태를 다시 불러와 주세요.");
       } else setError(errorMessage(failure, "분류를 저장하지 못했습니다. 원문 인용과 입력을 확인해 주세요."));
     } finally { if (!request.signal.aborted) setBusy(false); }
   }
@@ -85,7 +85,7 @@ function ClassificationForm({ apiBase, runId, claimId, untagged, session, onSess
     {view?.current_classification ? <p>분류 이력: {view.current_classification.origin === "human_classification" ? "사람 검토" : "AI 위임 검토(사람 아님)"} · {view.current_classification.track} · revision {view.current_classification.revision} · <Link to={`/runs/${runId}/reviews`}>검토 큐 열기</Link></p> : null}
     {view?.pending_job ? <p role="status">후속 태깅 상태: {view.pending_job.status}</p> : null}
     {view && !view.eligible ? <p>분류 확정 불가: {holds[view.ineligible_reason ?? ""] ?? view.ineligible_reason ?? view.blocked_reason}</p> : null}
-    {(!view || stale || !view.eligible || accepted) ? <button type="button" disabled={busy} onClick={() => void load()}>최신 상태 불러오기 (초안 초기화)</button> : null}
+    {(!view || stale || !view.eligible || accepted) ? <button type="button" disabled={busy} onClick={() => void load()}>최신 상태 불러오기 (입력 초기화)</button> : null}
     {view?.eligible && !accepted ? <form onSubmit={save}>
       <p>원문과 보류·응답 충돌을 확인한 뒤 직접 분류하세요. 모르는 항목은 미상으로 남습니다. 확정하면 기존 예산 안에서 후속 모델 태깅을 요청합니다.</p>
       <fieldset disabled={busy || stale}><legend>분류와 원문 근거</legend>

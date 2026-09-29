@@ -27,7 +27,7 @@ test("missing optional data stays unknown and added demo pass data is used", () 
   const model = buildReplayModel({ coverage: { claims_decided: 12 }, demo_pass: { claims_decided: 12 } });
   assert.equal(model.pagesProcessed, null);
   assert.equal(model.paidCalls, null);
-  assert.deepEqual(model.demoPass, { label: "시연 통과", count: 12 });
+  assert.deepEqual(model.demoPass, { label: "추가 분석", count: 12 });
   assert.equal(model.stages[6].count, 12);
   assert.equal(model.displayCounts, null);
   assert.equal(model.demoPassStats, null);

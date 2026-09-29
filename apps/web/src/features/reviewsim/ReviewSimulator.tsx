@@ -101,15 +101,15 @@ export default function ReviewSimulator({ claim }: { claim: SimulatorClaim }) {
     }, ...current]);
   }
 
-  if (!track) return <section className="review-sim"><h2>검토 모드</h2><p>주장 유형이 정해진 뒤 요소 판정을 시연할 수 있습니다.</p></section>;
+  if (!track) return <section className="review-sim"><h2>판정 검토</h2><p>주장 유형을 확인하면 요소별 판정을 검토할 수 있습니다.</p></section>;
   const group = table?.tracks[track];
   const title = { management: "관리체계", performance: "성과", goal: "목표" }[track];
   const grade = display(result);
-  return <section className="review-sim" aria-label="검토 모드">
-    <div className="review-sim-head"><div><span className="review-sim-kicker">REVIEW SIMULATOR</span><h2>요소를 바꾸면 판정이 다시 계산됩니다</h2><p>{title} 주장 · PDF {claim.page ?? "?"}쪽</p></div><span className="review-sim-mode">시연 모드</span></div>
+  return <section className="review-sim" aria-label="판정 검토">
+    <div className="review-sim-head"><div><span className="review-sim-kicker">DECISION REVIEW</span><h2>판정 검토</h2><p>{title} 주장 · 원문 {claim.page ?? "?"}쪽</p></div><span className="review-sim-mode">현재 화면에서 조정</span></div>
     <blockquote>{claim.quote}</blockquote>
     <div className="review-sim-grid">
-      <div className="review-sim-elements"><h3>입증 요소</h3><p className="review-sim-sub">상태를 바꾸면 미리 계산된 Python 규칙엔진 결과를 바로 조회합니다.</p>
+      <div className="review-sim-elements"><h3>입증 요소</h3><p className="review-sim-sub">요소 상태를 변경하면 판정 결과를 바로 확인할 수 있습니다.</p>
         {elementIds[track].map(id => <div className="review-sim-row" key={id}>
           <label htmlFor={`review-${claim.id}-${id}`}>{getElementLabel(id)}</label>
           <select id={`review-${claim.id}-${id}`} value={states[id] ?? "unknown"} disabled={!table} onChange={event => changeState(id, event.target.value as State)}>
@@ -120,7 +120,7 @@ export default function ReviewSimulator({ claim }: { claim: SimulatorClaim }) {
         {track === "management" && <label className="review-sim-check"><input type="checkbox" checked={willingnessOnly} onChange={event => setWillingnessOnly(event.target.checked)} /> 의향만 서술한 주장</label>}
       </div>
       <aside className="review-sim-side"><div className="review-sim-grade" key={grade + result?.[0]}>
-        <span>Python 규칙엔진 조회 결과</span><strong>{error ? "조회 오류" : !table ? "불러오는 중" : grade}</strong>
+        <span>판정 결과</span><strong>{error ? "조회 오류" : !table ? "불러오는 중" : grade}</strong>
         <p>{result?.[2] ?? statusText[result?.[0] ?? ""] ?? ""}</p>
         {result?.[3] && <small>가능 범위 {result[3][0]}–{result[3][1]} · 확인할 요소 {result[3][2].map(getElementLabel).join(", ")}</small>}
       </div>
@@ -129,10 +129,10 @@ export default function ReviewSimulator({ claim }: { claim: SimulatorClaim }) {
           {result[6].filter(id => group?.ladder.includes(id)).length > 0 && <p>부족: {result[6].filter(id => group?.ladder.includes(id)).map(getElementLabel).join(", ")}</p>}
           {result[7].filter(id => group?.ladder.includes(id)).length > 0 && <p>확인 중: {result[7].filter(id => group?.ladder.includes(id)).map(getElementLabel).join(", ")}</p>}
           {result[5].length > 0 && <p>규칙 검토: {result[5].join(", ")}</p>}
-          <small>규칙팩 {table?.rule_pack_sha256.slice(0, 10)} · 결과는 브라우저 시연 기록입니다.</small>
+          <small>변경 사항은 현재 화면에만 적용됩니다.</small>
         </div>}
-        <div className="review-sim-history"><h3>Revision history</h3><p className="review-sim-match">If-Match · 동시 수정 충돌 방지 · 이전 판정은 보존됩니다</p>
-          {history.length ? <ol>{history.map(item => <li key={item.number}><b>rev {item.number}</b> · {item.change} · {item.before}→{item.after} · 검토자{item.note && <small>“{item.note}”</small>}</li>)}</ol> : <p>요소 상태를 바꾸면 시연 기록이 여기에 쌓입니다.</p>}
+        <div className="review-sim-history"><h3>변경 기록</h3><p className="review-sim-match">현재 화면에서 변경한 요소와 판정</p>
+          {history.length ? <ol>{history.map(item => <li key={item.number}><b>{item.number}.</b> {item.change} · {item.before}→{item.after}{item.note && <small>“{item.note}”</small>}</li>)}</ol> : <p>요소 상태를 변경하면 기록이 여기에 표시됩니다.</p>}
         </div>
       </aside>
     </div>

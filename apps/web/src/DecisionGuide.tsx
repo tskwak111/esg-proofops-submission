@@ -6,8 +6,9 @@ const help = {
   track: "관리체계는 조직·절차, 성과는 이미 이룬 결과, 목표는 앞으로 이루려는 수치·계획입니다.",
   state: "근거 확인은 검증된 원문 연결, 미확인은 아직 알 수 없음, 근거 없음은 확인된 부재, 충돌은 자료가 서로 다름입니다.",
   range: "가능 범위는 미해결 요소에 따라 도달할 수 있는 등급의 하한~상한입니다. 확정 등급이 아닙니다.",
+  estimated: "핵심 근거 일부가 확인되기 전의 예비 판정입니다.",
 };
-const helpLabels: Record<keyof typeof help, string> = { grade: "등급", label: "라벨", track: "트랙", state: "요소 상태", range: "가능 범위" };
+const helpLabels: Record<keyof typeof help, string> = { grade: "등급", label: "라벨", track: "트랙", state: "요소 상태", range: "가능 범위", estimated: "예비 등급" };
 
 export function GuideHelp({ topic }: { topic: keyof typeof help }) {
   return <details className="guide-help"><summary aria-label={`${helpLabels[topic]} 설명`}>?</summary><div role="note">{help[topic]} <a href="/demo#guide">전체 안내 ↗</a></div></details>;

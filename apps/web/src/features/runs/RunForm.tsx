@@ -243,11 +243,11 @@ export function RunForm({
         <label htmlFor="rule-pack">규칙집</label>
         <select id="rule-pack" value={rulePackId} onChange={(event) => setRulePackId(event.target.value)} disabled={activePacks.length === 0 && !candidatePackId} required>
           <option value="">현재 모드의 활성 규칙집을 선택하세요</option>
-          {candidatePackId && !activePacks.some(pack => pack.rule_pack_id === candidatePackId) ? <option value={candidatePackId}>초안 기준 · 태깅만 수행 / 등급 보류</option> : null}
+          {candidatePackId && !activePacks.some(pack => pack.rule_pack_id === candidatePackId) ? <option value={candidatePackId}>미승인 기준 · 태깅만 수행 / 등급 보류</option> : null}
           {activePacks.map((pack) => <option key={pack.rule_pack_id} value={pack.rule_pack_id}>{pack.version}</option>)}
         </select>
         {activePacks.length === 0 && !candidatePackId ? <p role="status">현재 모드에 사용할 활성 규칙집이 없습니다.</p> : null}
-        {rulePackId === candidatePackId && candidatePackId ? <p role="status">초안은 추출·태깅 참고용입니다. 승인 전에는 등급과 검토 수정 확정을 보류합니다.</p> : null}
+        {rulePackId === candidatePackId && candidatePackId ? <p role="status">이 기준은 추출·태깅 참고용입니다. 승인 전에는 등급과 검토 수정 확정을 보류합니다.</p> : null}
 
         <label htmlFor="run-scope">분석 범위</label>
         <select id="run-scope" value={scope} onChange={(event) => setScope(event.target.value as typeof scope)}>
