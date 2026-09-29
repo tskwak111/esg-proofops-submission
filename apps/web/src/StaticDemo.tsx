@@ -168,7 +168,7 @@ function Landing({ data }: { data: Snapshot }) {
   return <main className="landing">
     <section className="hero">
       <p className="eyebrow-c">ESG · 지속가능경영보고서 공시 검증</p>
-      <h1>ESG · 지속가능경영보고서 공시 검증 |<br />모든 주장을 원문 근거까지, 한 번에</h1>
+      <h1>ProofOps</h1>
       <p className="hero-sub">기업 보고서 내 환경 주장의 근거를 공시 안에서 찾으며, 규칙엔진을 기반으로 근거 수준을 판정합니다. 근거에 대한 쪽수·원문 인용 또는 확인 범위가 함께 표시됩니다.</p>
       <Link className="pill pill-dark" to="/analyze">보고서 분석 시작 <span aria-hidden="true">→</span></Link>
       <form className="prompt" onSubmit={event => { event.preventDefault(); navigate(draft.trim() ? `/live?claim=${encodeURIComponent(draft.trim().slice(0, 500))}` : "/analyze"); }}>
