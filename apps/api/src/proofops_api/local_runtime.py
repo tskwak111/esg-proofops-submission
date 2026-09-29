@@ -60,7 +60,13 @@ _REQUIRED_TAGGING_FIELDS = frozenset(
     }
 )
 _OPTIONAL_TAGGING_FIELDS = frozenset(
-    {"max_tokens", "temperature", "extraction_epoch", "max_response_bytes"}
+    {
+        "max_tokens",
+        "temperature",
+        "extraction_epoch",
+        "max_response_bytes",
+        "wire_policy_version",
+    }
 )
 _TAGGING_FIELDS = _REQUIRED_TAGGING_FIELDS | _OPTIONAL_TAGGING_FIELDS
 _BINDING_FIELDS = frozenset({"binding_id", "role", "synthetic"})
@@ -173,6 +179,8 @@ def _tagging(value: object, *, synthetic: bool = True) -> TaggingSettings:
             options["max_tokens"] = _strict_int(options["max_tokens"], maximum=1_048_576)
         if "extraction_epoch" in options:
             options["extraction_epoch"] = _strict_int(options["extraction_epoch"])
+        if "wire_policy_version" in options:
+            options["wire_policy_version"] = _strict_int(options["wire_policy_version"], maximum=2)
         if "max_response_bytes" in options:
             options["max_response_bytes"] = _strict_int(
                 options["max_response_bytes"], maximum=1_048_576

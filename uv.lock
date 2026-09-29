@@ -978,6 +978,9 @@ wheels = [
 name = "proofops"
 version = "0.0.0"
 source = { editable = "packages/proofops" }
+dependencies = [
+    { name = "jsonschema" },
+]
 
 [package.optional-dependencies]
 auth = [
@@ -996,6 +999,7 @@ verification = [
 [package.metadata]
 requires-dist = [
     { name = "httpx", marker = "extra == 'auth'", specifier = "==0.28.1" },
+    { name = "jsonschema", specifier = ">=4.18,<5" },
     { name = "opendataloader-pdf", marker = "extra == 'parsing'", specifier = "==2.5.7" },
     { name = "pdfplumber", marker = "extra == 'parsing'", specifier = "==0.11.10" },
     { name = "pyjwt", extras = ["crypto"], marker = "extra == 'auth'", specifier = "==2.13.0" },

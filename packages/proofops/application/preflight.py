@@ -362,31 +362,63 @@ def _check_local_upstage_binding(
             and expires is not None
             and approved <= now < expires
             and profile.get("purpose") == "local_test"
-            and profile.get("provider") == "upstage",
+            and profile.get("provider") == binding.get("provider", "upstage")
+            and profile.get("provider") in ("upstage", "openrouter"),
         )
     model_id = binding.get("model_id")
-    models = ("document-parse-260128",) if document_parse else ("solar-pro3", "solar-pro4")
-    transport = "UpstageParseProbe" if document_parse else "UpstageProbe"
+    openrouter = not document_parse and binding.get("provider") == "openrouter"
+    models = (
+        ("document-parse-260128",)
+        if document_parse
+        else (("openai/gpt-6-luna",) if openrouter else ("solar-pro3", "solar-pro4"))
+    )
+    transport = (
+        "UpstageParseProbe"
+        if document_parse
+        else ("OpenRouterProbe" if openrouter else "UpstageProbe")
+    )
     endpoint = (
         "https://api.upstage.ai/v1/document-digitization"
         if document_parse
+        else "https://openrouter.ai/api/v1/chat/completions"
+        if openrouter
         else "https://api.upstage.ai/v1/chat/completions"
     )
     model_hash_ok = not document_parse and model_id == "solar-pro3"
     if model_sha256 is not None:
         expected = (
-            canonical_hash({"model": model_id, "provider": "upstage", "transport": transport})
+            canonical_hash(
+                {
+                    "model": model_id,
+                    "provider": "openrouter" if openrouter else "upstage",
+                    "transport": transport,
+                }
+            )
             if model_id in models
             else None
         )
-        model_hash_ok = expected is not None and model_sha256 == expected
+        accepted = {expected} if expected is not None else set()
+        if expected is not None and openrouter:
+            from proofops.adapters.local.openrouter import WIRE_POLICY
+
+            accepted.add(
+                canonical_hash(
+                    {
+                        "model": model_id,
+                        "provider": "openrouter",
+                        "transport": transport,
+                        "wire_policy": WIRE_POLICY,
+                    }
+                )
+            )
+        model_hash_ok = model_sha256 in accepted
     add(
         "model_binding",
         binding.get("role") == expected_role
         and binding.get("model_id") in models
         and model_hash_ok
         and binding.get("endpoint") == endpoint
-        and binding.get("budget_limit_usd") in ("10.00", "20.00")
+        and binding.get("budget_limit_usd") in (("5.00",) if openrouter else ("10.00", "20.00"))
         and binding.get("fallback_bindings", []) == [],
     )
     hashes = consent.get("allowed_source_sha256")
@@ -517,7 +549,13 @@ def check_local_upstage_tagger(
         source_sha256=source_sha256,
         include_live_model_probe=False,
         model_sha256=canonical_hash(
-            dict(model=settings.model_id, provider="upstage", transport="UpstageProbe")
+            dict(
+                model=settings.model_id,
+                provider="openrouter" if settings.model_id == "openai/gpt-6-luna" else "upstage",
+                transport="OpenRouterProbe"
+                if settings.model_id == "openai/gpt-6-luna"
+                else "UpstageProbe",
+            )
         ),
         expected_role="tagger",
     )

@@ -93,6 +93,8 @@ class ParserProfile:
     table_text_y_tolerance: float | None = None
     table_source_policy_sha256: str | None = None
     table_structure_repair: str | None = None
+    vision_parse: str = "off"
+    parser_mode: str = "local"
 
     def __post_init__(self):
         _require_uuid("parse_manifest_id", self.parse_manifest_id)
@@ -122,6 +124,10 @@ class ParserProfile:
             _hash(self.table_source_policy_sha256)
         if self.table_structure_repair not in (None, "odl_header_v1", "odl_header_v2"):
             raise ValueError("unsupported table structure repair")
+        if self.vision_parse not in ("auto", "all", "off"):
+            raise ValueError("unsupported vision parse mode")
+        if self.parser_mode not in ("upstage", "local"):
+            raise ValueError("unsupported parser mode")
         tolerance = self.table_text_y_tolerance
         if tolerance is not None and (
             isinstance(tolerance, bool)
@@ -140,6 +146,10 @@ class ParserProfile:
             values.pop("table_source_policy_sha256")
         if self.table_structure_repair is None:
             values.pop("table_structure_repair")
+        if self.vision_parse == "off":
+            values.pop("vision_parse")
+        if self.parser_mode == "local":
+            values.pop("parser_mode")
         return values
 
     def config_snapshot(self) -> dict:

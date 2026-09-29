@@ -11,8 +11,10 @@ import json
 from collections.abc import Callable
 from dataclasses import asdict
 from pathlib import Path
+from threading import Lock
 from time import monotonic_ns
 
+from proofops.adapters.local.openrouter import OpenRouterProbe
 from proofops.adapters.local.upstage import UPSTAGE_TRANSPORT_STOP_CODES, UpstageProbe
 from proofops.application.budget import TokenUsage
 from proofops.application.preflight import Preflight, PreflightBlocked
@@ -169,10 +171,14 @@ class UpstageTaggingTransport:
     ):
         _require_uuid("tenant_id", tenant_id)
         if (
-            not isinstance(probe, UpstageProbe)
+            not isinstance(probe, UpstageProbe | OpenRouterProbe)
             or not isinstance(settings, TaggingSettings)
             or settings.binding.synthetic
             or settings.model_id != probe.model
+            or (
+                isinstance(probe, OpenRouterProbe)
+                and settings.wire_policy_version != probe.wire_policy_version
+            )
             or settings.model_profile
             not in (
                 {MODEL_PROFILE, COVERAGE_PROFILE, QUOTE_PROFILE, QUOTE_V4_PROFILE, QUOTE_V5_PROFILE}
@@ -199,6 +205,13 @@ class UpstageTaggingTransport:
         self._resume = resume
         self._receipts = Path(receipts)
         self._receipts.mkdir(parents=True, exist_ok=True, mode=0o700)
+        self._init_operation_state()
+
+    def _init_operation_state(self):
+        self._operation_mutex = Lock()
+        self._operation_users = 0
+        self._operation_file = None
+        self._active_requests = set()
 
     def _stopped(self) -> bool:
         return (self._receipts / "transport-stop.json").exists() or any(
@@ -221,13 +234,25 @@ class UpstageTaggingTransport:
         import fcntl
 
         # One operation per receipt root; the shared USD ledger also fences all roots.
-        with (self._receipts / ".operation.lock").open("a") as lock:
-            try:
-                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            except BlockingIOError:
-                # Returns before _invoke, so no receipt directory is ever created.
-                return self._failed(SUPPRESSED_ERROR_CODE, 0)
+        with self._operation_mutex:
+            if self._operation_users == 0:
+                lock = (self._receipts / ".operation.lock").open("a")
+                try:
+                    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                except BlockingIOError:
+                    lock.close()
+                    return self._failed(SUPPRESSED_ERROR_CODE, 0)
+                self._operation_file = lock
+            self._operation_users += 1
+        try:
             return self._invoke(request)
+        finally:
+            with self._operation_mutex:
+                self._active_requests.discard(request["request_id"])
+                self._operation_users -= 1
+                if self._operation_users == 0:
+                    self._operation_file.close()
+                    self._operation_file = None
 
     def count_input_tokens(self, request: dict, *, counter: Callable[[str, str], int]) -> int:
         """Count exactly the sent messages, using a caller-pinned provider counter.
@@ -478,29 +503,29 @@ class UpstageTaggingTransport:
         wire_system, wire_user, refs, authorization = self._wire_request(request)
         stop = self._receipts / "transport-stop.json"
         # ponytail: bounded local operation; index receipts if ensembles grow large.
-        incomplete = any(
-            child.is_dir() and not (child / "response.json").exists()
-            for child in self._receipts.iterdir()
-        )
-        # A stopped root stays stopped unless an explicit acknowledged authorization
-        # re-arms it for a bounded number of new requests; the stop itself is never
-        # read as permission and never removed.
-        permitted = (
-            not self._stopped() if self._resume is None else self._resume.allows(self._receipts)
-        )
-        if incomplete or not permitted:
-            # Returns before directory.mkdir(), so no receipt directory is created
-            # and the provider is provably never contacted for this request_id.
-            return self._failed(SUPPRESSED_ERROR_CODE, 0)
-        if self._resume is not None:
-            # Count the new request before any receipt exists, so an exhausted
-            # allowance can never leave an incomplete receipt behind.
-            self._resume.consume(self._receipts, request["request_id"])
-        directory = self._receipts / request["request_id"]
-        try:
-            directory.mkdir(mode=0o700)
-        except FileExistsError:
-            raise ValueError("TAGGING_RECEIPT_EXISTS") from None
+        with self._operation_mutex:
+            incomplete = any(
+                child.is_dir()
+                and child.name not in self._active_requests
+                and not (child / "response.json").exists()
+                for child in self._receipts.iterdir()
+            )
+            # A stopped root stays stopped unless an explicit acknowledged authorization
+            # re-arms it for a bounded number of new requests; the stop itself is never
+            # read as permission and never removed.
+            permitted = (
+                not self._stopped() if self._resume is None else self._resume.allows(self._receipts)
+            )
+            if incomplete or not permitted:
+                return self._failed(SUPPRESSED_ERROR_CODE, 0)
+            if self._resume is not None:
+                self._resume.consume(self._receipts, request["request_id"])
+            directory = self._receipts / request["request_id"]
+            try:
+                directory.mkdir(mode=0o700)
+            except FileExistsError:
+                raise ValueError("TAGGING_RECEIPT_EXISTS") from None
+            self._active_requests.add(request["request_id"])
         write = UpstageClaimExtractor._write
         write(
             directory / "request.json",
@@ -527,6 +552,11 @@ class UpstageTaggingTransport:
                 request_id=request["request_id"],
                 max_tokens=request["max_tokens"],
                 json_mode=True,
+                **(
+                    {"schema_json": settings.schema_json}
+                    if isinstance(self._probe, OpenRouterProbe)
+                    else {}
+                ),
             )
         except Exception as error:
             code = str(error)
@@ -549,6 +579,8 @@ class UpstageTaggingTransport:
             response = self._failed(code, (monotonic_ns() - started) // 1_000_000)
         else:
             try:
+                if receipt.get("schema_valid") is False:
+                    raise ValueError("provider schema invalid")
                 payload = json.loads(receipt["content"])
                 for element in payload.get("elements", []):
                     selected = element["evidence_refs"]

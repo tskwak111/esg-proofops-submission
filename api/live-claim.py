@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import hmac
 import json
+import math
 import os
 import sys
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
-from datetime import UTC, datetime
 from hashlib import sha256
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
@@ -19,7 +19,6 @@ from uuid import uuid4
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "packages"))
 
-from proofops.adapters.local.upstage import PRICE_PRO4, PRICE_RECHECK_AT  # noqa: E402
 from proofops.application.tagging.consensus import (  # noqa: E402
     PARTIAL_FACTS_V1,
     reviewable_decision,
@@ -34,7 +33,7 @@ from proofops.domain.rules.engine import (  # noqa: E402
 )
 from proofops.domain.values import GRADE_LABEL_MAP, SourceRef  # noqa: E402
 
-MODEL = PRICE_PRO4.model_id
+MODEL = "openai/gpt-6-luna"
 CLASSIFY_PROMPT = (
     "Classify the main asserted predicate of one environmental claim, not its topic. "
     "goal=future company intention or commitment; performance=reported achieved result; "
@@ -47,9 +46,9 @@ CLASSIFY_PROMPT = (
 MAX_BODY = 8_192
 MAX_CLAIM = 500
 MAX_CONTEXT = 2_000
-MAX_ESTIMATE_USD = 0.02
-INPUT_RATE = float(PRICE_PRO4.input_per_million) / 1_000_000
-OUTPUT_RATE = float(PRICE_PRO4.output_per_million) / 1_000_000
+MAX_ESTIMATE_USD = 0.01
+INPUT_RATE = 0.10 / 1_000_000
+OUTPUT_RATE = 0.50 / 1_000_000
 PACK = RulePackSnapshot(**json.loads((ROOT / "api/rulepack.json").read_text(encoding="utf-8")))
 
 
@@ -116,9 +115,9 @@ def _explanation(decision: dict, definitions: dict) -> str:
 
 
 def _provider(system: str, user: dict, max_tokens: int) -> dict:
-    key = os.environ.get("UPSTAGE_API_KEY", "")
+    key = os.environ.get("OPENROUTER_API_KEY", "")
     if not key:
-        raise LiveError(503, "UPSTAGE_NOT_CONFIGURED")
+        raise LiveError(503, "OPENROUTER_NOT_CONFIGURED")
     body = json.dumps(
         {
             "model": MODEL,
@@ -127,13 +126,14 @@ def _provider(system: str, user: dict, max_tokens: int) -> dict:
                 {"role": "user", "content": json.dumps(user, ensure_ascii=False)},
             ],
             "temperature": 0,
+            "reasoning": {"effort": "none"},
             "max_tokens": max_tokens,
             "response_format": {"type": "json_object"},
         },
         ensure_ascii=False,
     ).encode("utf-8")
     request = urllib.request.Request(
-        "https://api.upstage.ai/v1/chat/completions",
+        "https://openrouter.ai/api/v1/chat/completions",
         body,
         {"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
         method="POST",
@@ -142,38 +142,83 @@ def _provider(system: str, user: dict, max_tokens: int) -> dict:
         with urllib.request.urlopen(request, timeout=20) as response:
             raw = response.read(65_537)
     except (urllib.error.URLError, TimeoutError) as exc:
-        raise LiveError(502, "UPSTAGE_UNAVAILABLE") from exc
+        raise LiveError(502, "OPENROUTER_UNAVAILABLE") from exc
     if len(raw) > 65_536:
-        raise LiveError(502, "UPSTAGE_RESPONSE_TOO_LARGE")
+        raise LiveError(502, "OPENROUTER_RESPONSE_TOO_LARGE")
     try:
         return json.loads(raw)
     except (ValueError, UnicodeError) as exc:
-        raise LiveError(502, "UPSTAGE_RESPONSE_INVALID") from exc
+        raise LiveError(502, "OPENROUTER_RESPONSE_INVALID") from exc
 
 
 def _step(call_model, system: str, user: dict, max_tokens: int, spent_estimate: float):
     # UTF-8 bytes + chat overhead conservatively bound input tokens for short text.
     estimate = _estimate(system, user, max_tokens)
-    if spent_estimate + estimate > MAX_ESTIMATE_USD:
+    if spent_estimate + 2 * estimate > MAX_ESTIMATE_USD:
         raise LiveError(400, "REQUEST_COST_CAP")
     started = monotonic()
-    data = call_model(system, user, max_tokens)
-    try:
-        message = json.loads(data["choices"][0]["message"]["content"])
-        usage = data["usage"]
-        tokens = {"input": usage["prompt_tokens"], "output": usage["completion_tokens"]}
-        if any(type(n) is not int or n < 0 for n in tokens.values()):
-            raise ValueError
-        if tokens["output"] > max_tokens:
-            raise ValueError
-        if not isinstance(message, dict):
-            raise ValueError
-    except (KeyError, IndexError, TypeError, ValueError) as exc:
-        raise LiveError(502, "UPSTAGE_RESPONSE_INVALID") from exc
-    actual = (tokens["input"] * INPUT_RATE + tokens["output"] * OUTPUT_RATE) * 1.1
-    if actual > MAX_ESTIMATE_USD:
-        raise LiveError(502, "ACTUAL_COST_CAP_EXCEEDED")
-    return message, tokens, round((monotonic() - started) * 1000), estimate, actual
+    actual = 0.0
+    for attempt in range(2):
+        try:
+            data = call_model(system, user, max_tokens)
+            usage = data["usage"]
+            tokens = {"input": usage["prompt_tokens"], "output": usage["completion_tokens"]}
+            cost = usage["cost"]
+            if (
+                any(type(n) is not int or n < 0 for n in tokens.values())
+                or type(cost) not in (int, float)
+                or not math.isfinite(cost)
+                or cost < 0
+            ):
+                raise ValueError
+            actual += cost
+            if actual > MAX_ESTIMATE_USD:
+                raise LiveError(502, "ACTUAL_COST_CAP_EXCEEDED")
+            message = json.loads(data["choices"][0]["message"]["content"])
+            if "sources" in user:
+                track = message.get("track")
+                category = message.get("safe_harbor_category")
+                valid = (
+                    {"claim_id", "track", "safe_harbor_category"} <= message.keys()
+                    and message.get("claim_id") == user["claim_id"]
+                    and track in (*MAPPINGS, None, "unknown", "unclear", "null", "none")
+                    and category
+                    in (
+                        None,
+                        "null",
+                        "none",
+                        "unknown",
+                        "forward_looking",
+                        "emissions_estimate",
+                        "third_party_information",
+                    )
+                )
+            else:
+                elements = message.get("elements")
+                valid = isinstance(elements, list | dict) and (
+                    all(
+                        isinstance(item, dict)
+                        and isinstance(item.get("name"), str)
+                        and isinstance(item.get("state"), str)
+                        and (item.get("quote") is None or isinstance(item.get("quote"), str))
+                        for item in elements
+                    )
+                    if isinstance(elements, list)
+                    else all(
+                        isinstance(name, str) and isinstance(item, dict)
+                        for name, item in elements.items()
+                    )
+                )
+            if not isinstance(message, dict) or not valid or tokens["output"] > max_tokens:
+                raise ValueError
+            return message, tokens, round((monotonic() - started) * 1000), estimate, actual
+        except LiveError as exc:
+            if exc.code != "OPENROUTER_RESPONSE_INVALID" or attempt:
+                raise
+        except (KeyError, IndexError, TypeError, ValueError, AttributeError) as exc:
+            if attempt:
+                raise LiveError(502, "OPENROUTER_RESPONSE_INVALID") from exc
+    raise LiveError(502, "OPENROUTER_RESPONSE_INVALID")
 
 
 def run_claim(payload: dict, *, access_code: str, call_model=None) -> dict:
@@ -182,8 +227,6 @@ def run_claim(payload: dict, *, access_code: str, call_model=None) -> dict:
         raise LiveError(503, "DEMO_NOT_CONFIGURED")
     if not hmac.compare_digest(access_code, required):
         raise LiveError(403, "ACCESS_DENIED")
-    if datetime.now(UTC) >= PRICE_RECHECK_AT:
-        raise LiveError(503, "PRICE_RECHECK_REQUIRED")
     call_model = call_model or _provider
     if not isinstance(payload, dict) or set(payload) - {"claim", "context", "page_label"}:
         raise LiveError(400, "INVALID_INPUT")
@@ -288,14 +331,18 @@ def run_claim(payload: dict, *, access_code: str, call_model=None) -> dict:
         },
     }
     tag_estimate = _estimate(tag_system, tag_user, 768)
-    replicas = 3 if ms1 <= 30_000 and est1 + 3 * tag_estimate <= MAX_ESTIMATE_USD else 1
-    if est1 + replicas * tag_estimate > MAX_ESTIMATE_USD:
+    replicas = 3 if ms1 <= 30_000 and 2 * (est1 + 3 * tag_estimate) <= MAX_ESTIMATE_USD else 1
+    if 2 * (est1 + replicas * tag_estimate) > MAX_ESTIMATE_USD:
         raise LiveError(400, "REQUEST_COST_CAP")
     with ThreadPoolExecutor(max_workers=replicas) as pool:
         tag_runs = list(
             pool.map(
                 lambda _: _step(
-                    call_model, tag_system, tag_user, 768, est1 + (replicas - 1) * tag_estimate
+                    call_model,
+                    tag_system,
+                    tag_user,
+                    768,
+                    2 * (est1 + (replicas - 1) * tag_estimate),
                 ),
                 range(replicas),
             )
@@ -336,8 +383,7 @@ def run_claim(payload: dict, *, access_code: str, call_model=None) -> dict:
     given_by_name = {}
     for name in names:
         votes = [
-            candidate.get(name, {"state": "unknown", "quote": None})
-            for candidate in candidates
+            candidate.get(name, {"state": "unknown", "quote": None}) for candidate in candidates
         ]
         state = next(
             (
@@ -397,15 +443,16 @@ def run_claim(payload: dict, *, access_code: str, call_model=None) -> dict:
                 "candidate_state": candidate_state,
                 "engine_state": facts[-1].state,
                 "quote": quote,
-                "quote_source": (
-                    "claim" if evidence_text == claim else "context"
-                ) if state == "present" else None,
+                "quote_source": ("claim" if evidence_text == claim else "context")
+                if state == "present"
+                else None,
                 "page_label": page if state == "present" else None,
             }
         )
     replica_hashes = tuple(
         _hash(json.dumps(tag_runs[index][0], sort_keys=True))
-        if index < replicas else _hash(f"not_run_replica_{index + 1}")
+        if index < replicas
+        else _hash(f"not_run_replica_{index + 1}")
         for index in range(3)
     )
     tags = ConfirmedTags(
@@ -431,9 +478,7 @@ def run_claim(payload: dict, *, access_code: str, call_model=None) -> dict:
         "review_status": "needs_review",
         "open_elements": list(decision.unresolved_elements),
     }
-    usage2 = {
-        key: sum(run[1][key] for run in tag_runs) for key in ("input", "output")
-    }
+    usage2 = {key: sum(run[1][key] for run in tag_runs) for key in ("input", "output")}
     ms2 = max(run[2] for run in tag_runs)
     steps.append(
         {

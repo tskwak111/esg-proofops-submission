@@ -64,11 +64,11 @@ const navDemo = renderToStaticMarkup(
     React.createElement(RunNav, { runId: "demo-run-123", isSavedDemo: true })
   )
 );
-assert.ok(navDemo.includes("[저장된 시연 모드]"), "RunNav demo banner");
-assert.ok(navDemo.includes("새 분석 없이 저장된 검토 초안"), "RunNav saved draft notice");
-assert.ok(navDemo.includes("1. 주장 확인"), "RunNav step 1");
-assert.ok(navDemo.includes("2. 원문 보기(상세)"), "RunNav step 2");
-assert.ok(navDemo.includes("3. 보고서 내보내기"), "RunNav step 3");
+assert.ok(navDemo.includes("기존 분석 결과"), "RunNav demo banner");
+for (const text of ["주장", "검토 큐", "보고서"]) {
+  assert.ok(navDemo.includes(text), `RunNav link ${text}`);
+}
+assert.ok(!/시연|테스트/.test(navDemo), "RunNav must not use demo/test wording");
 
 // 2. RunNav rendering in production mode (must not label production as demo)
 const navProd = renderToStaticMarkup(
@@ -76,10 +76,9 @@ const navProd = renderToStaticMarkup(
     React.createElement(RunNav, { runId: "prod-run-777", isSavedDemo: false })
   )
 );
-assert.ok(!navProd.includes("[저장된 시연 모드]"), "RunNav production must not show demo banner");
-assert.ok(!navProd.includes("새 분석 없이 저장된 검토 초안"),
-  "RunNav production must not show demo notice");
-assert.ok(!navProd.includes("시연 순서"), "RunNav production must not show demo steps");
+assert.ok(!navProd.includes("기존 분석 결과"),
+  "RunNav production must not show saved-result notice");
+assert.ok(!/시연|테스트/.test(navProd), "RunNav production must not use demo/test wording");
 
 // 3. DocumentFlow rendering in demo mode
 const docDemo = renderToStaticMarkup(
@@ -101,7 +100,8 @@ const docDemo = renderToStaticMarkup(
     })
   )
 );
-assert.ok(docDemo.includes("저장된 시연 모드"), "DocumentFlow demo notice");
+assert.ok(docDemo.includes("기존 분석 결과 보기"), "DocumentFlow saved-result notice");
+assert.ok(!/시연|테스트/.test(docDemo), "DocumentFlow must not use demo/test wording");
 assert.ok(docDemo.includes("/runs/demo-run-123/claims"), "DocumentFlow claims link");
 
 // 4. DocumentFlow rendering in production mode
@@ -124,8 +124,9 @@ const docProd = renderToStaticMarkup(
     })
   )
 );
-assert.ok(!docProd.includes("저장된 시연 모드"),
-  "DocumentFlow production must not show demo notice");
+assert.ok(!docProd.includes("기존 분석 결과 보기"),
+  "DocumentFlow production must not show saved-result notice");
+assert.ok(!/시연|테스트/.test(docProd), "DocumentFlow production must not use demo/test wording");
 
 console.log("ALL SUBMISSION DEMO UX ACCEPTANCE CHECKS PASSED");
 """.replace("REACT", json.dumps(str(ROOT / "apps/web/node_modules/react/index.js")))

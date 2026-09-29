@@ -30,6 +30,7 @@ import json
 from copy import deepcopy
 from pathlib import Path
 
+from proofops.adapters.local.openrouter import OpenRouterProbe
 from proofops.adapters.local.upstage import UpstageProbe
 from proofops.application.preflight import Preflight
 from proofops.application.tagging.preliminary import (
@@ -185,10 +186,14 @@ class UpstagePreliminaryTransport(UpstageTaggingTransport):
         else:
             raise ValueError("UPSTAGE_TAGGING_BINDING_INVALID")
         if (
-            not isinstance(probe, UpstageProbe)
+            not isinstance(probe, self._probe_type())
             or not isinstance(settings, TaggingSettings)
             or settings.binding.synthetic
             or settings.model_id != probe.model
+            or (
+                isinstance(probe, OpenRouterProbe)
+                and settings.wire_policy_version != probe.wire_policy_version
+            )
             or settings.region != "provider-managed-unverified"
             or settings.system_prompt != expected_prompt
         ):
@@ -222,12 +227,13 @@ class UpstagePreliminaryTransport(UpstageTaggingTransport):
         self._resume = resume
         self._receipts = Path(receipts)
         self._receipts.mkdir(parents=True, exist_ok=True, mode=0o700)
+        self._init_operation_state()
 
     @staticmethod
     def _probe_type():
-        from proofops.adapters.local.upstage import UpstageProbe
+        from proofops.adapters.local.openrouter import OpenRouterProbe
 
-        return UpstageProbe
+        return (UpstageProbe, OpenRouterProbe)
 
     def bound_context(self, packet: dict) -> dict:
         """Fit optional whole context blocks BEFORE packet hashing/authorization.

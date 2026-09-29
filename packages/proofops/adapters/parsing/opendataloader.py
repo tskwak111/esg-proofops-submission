@@ -1,7 +1,7 @@
-"""Actual OpenDataLoader + pdfplumber parsing in a bounded, no-model subprocess.
+"""Immutable parser artifacts with local ODL and optional grounded model candidates.
 
-Local immutable filesystem artifacts are synthetic storage, not an S3 adapter.
-The parsers themselves really execute. No hybrid/OCR/vision endpoint is invoked.
+OpenDataLoader/pdfplumber run in a bounded subprocess. Upstage and Gemini use
+explicit parser profiles and retain ungrounded text as unverified candidates.
 """
 
 from __future__ import annotations
@@ -256,11 +256,13 @@ def _batch(
     )
 
 
-def _with_quality_issues(graph, selected, profile):
+def _with_quality_issues(graph, selected, profile, vision_pages=()):
     issues = list(graph.issues)
     for page in selected:
         if not any(
-            block.page_num == page and any(s.raw_text for s in block.sources)
+            block.page_num == page
+            and any(s.raw_text for s in block.sources)
+            and (page not in vision_pages or block.bbox is not None)
             for block in graph.blocks
         ):
             issues.append(
@@ -274,7 +276,11 @@ def _with_quality_issues(graph, selected, profile):
                 )
             )
     for block in graph.blocks:
-        if block.kind == "table":
+        if (
+            block.kind == "table"
+            and block.page_num not in vision_pages
+            and profile.parser_mode == "local"
+        ):
             issues.append(
                 QualityIssue(
                     str(uuid5(UUID(block.source_id), "vision-not-run")),
@@ -289,8 +295,9 @@ def _with_quality_issues(graph, selected, profile):
 
 
 class OpenDataLoaderParser(ParserPort):
-    def __init__(self, artifact_root: Path):
+    def __init__(self, artifact_root: Path, *, upstage_probe=None):
         self.artifact_root = Path(artifact_root)
+        self.upstage_probe = upstage_probe
 
     def parse(
         self, source: SourceArtifact, profile: ParserProfile, *, tenant_id: str
@@ -358,6 +365,174 @@ class OpenDataLoaderParser(ParserPort):
                         _batch(auxiliary, geometries, source, profile, profile_hash, auxiliary=True)
                     )
                 fusion_version = 4 if profile.table_structure_repair == "odl_header_v2" else 3
+                vision_metrics = None
+                upstage_output = None
+                fallback_pages = tuple(selected)
+                if profile.parser_mode == "upstage":
+                    if self.upstage_probe is None:
+                        raise ParseFailure("UPSTAGE_RUNTIME_REQUIRED")
+                    from proofops.adapters.parsing.upstage_document import (
+                        MODEL as UPSTAGE_MODEL,
+                    )
+                    from proofops.adapters.parsing.upstage_document import (
+                        candidate_batch,
+                        selected_pdf,
+                    )
+                    from proofops.domain.provenance import canonical_hash
+
+                    def upstage_call(pages, mode):
+                        cache_dir = self.artifact_root / "upstage-cache" / tenant_id
+                        cache_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+                        key = sha256(_json(dict(source_sha256=source.sha256,
+                            pages=pages, model=UPSTAGE_MODEL, mode=mode))).hexdigest()
+                        path = cache_dir / (key + ".json")
+                        if path.exists():
+                            result = json.loads(path.read_bytes())
+                            if canonical_hash(result["raw_batches"]) != result["response_sha256"]:
+                                raise ParseFailure("UPSTAGE_CACHE_INTEGRITY_MISMATCH")
+                            return result, True
+                        result = self.upstage_probe.parse_async(
+                            selected_pdf(source.content, pages),
+                            request_id=str(uuid4()), mode=mode,
+                        )
+                        temporary = path.with_name(path.name + "." + uuid4().hex + ".tmp")
+                        temporary.write_bytes(_json(result))
+                        os.replace(temporary, path)
+                        return result, False
+
+                    standard, standard_hit = upstage_call(tuple(selected), "standard")
+                    upstage_batch, standard_metrics = candidate_batch(
+                        source,
+                        profile,
+                        tuple(selected),
+                        standard["raw_batches"],
+                        mode="standard",
+                        config_hash=profile_hash,
+                    )
+                    from proofops.adapters.parsing.gemini_vision import fragment
+
+                    local_prose = [block.source.raw_text for batch in candidates
+                        for block in batch.blocks if block.kind == "paragraph"
+                        and block.source.physical_page in selected]
+                    standard_metrics["fragment_rate_local"] = (
+                        sum(map(fragment, local_prose)) / max(1, len(local_prose))
+                    )
+                    upstage_batches = [upstage_batch]
+                    enhanced_records = []
+                    enhanced_pages = sorted(
+                        set(standard_metrics["html_failed_pages"])
+                        | set(standard_metrics["low_grounding_pages"])
+                    )
+                    completed_enhanced_pages = set()
+                    for start in range(0, len(enhanced_pages), 30):
+                        pages = tuple(enhanced_pages[start : start + 30])
+                        try:
+                            enhanced, enhanced_hit = upstage_call(pages, "enhanced")
+                        except ValueError as exc:
+                            if str(exc) != "BUDGET_EXHAUSTED":
+                                raise
+                            break
+                        improved, metrics = candidate_batch(
+                            source,
+                            profile,
+                            pages,
+                            enhanced["raw_batches"],
+                            mode="enhanced",
+                            config_hash=profile_hash,
+                        )
+                        upstage_batches.append(improved)
+                        completed_enhanced_pages.update(pages)
+                        enhanced_records.append(
+                            dict(
+                                receipt={k: v for k, v in enhanced.items() if k != "raw_batches"},
+                                metrics=metrics,
+                                cache_hit=enhanced_hit,
+                                raw_batches=enhanced["raw_batches"],
+                            )
+                        )
+                    if completed_enhanced_pages:
+                        kept = tuple(
+                            block
+                            for block in upstage_batch.blocks
+                            if block.source.physical_page not in completed_enhanced_pages
+                        )
+                        ids = {block.source.source_native_id for block in kept}
+                        upstage_batches[0] = replace(
+                            upstage_batch,
+                            blocks=kept,
+                            edges=tuple(
+                                edge
+                                for edge in upstage_batch.edges
+                                if edge.source_native_id in ids and edge.target_native_id in ids
+                            ),
+                        )
+                    fallback_pages = tuple(
+                        sorted(
+                        (set(standard_metrics["gemini_pages"]) - completed_enhanced_pages)
+                            | {
+                                p
+                                for record in enhanced_records
+                                for p in record["metrics"]["gemini_pages"]
+                            }
+                        )
+                    )
+                    upstage_output = dict(
+                        standard=dict(
+                            receipt={k: v for k, v in standard.items() if k != "raw_batches"},
+                            metrics=standard_metrics,
+                            cache_hit=standard_hit,
+                            raw_batches=standard["raw_batches"],
+                        ),
+                        enhanced=enhanced_records,
+                        enhanced_deferred_pages=sorted(
+                            set(enhanced_pages) - completed_enhanced_pages
+                        ),
+                        fallback_pages=fallback_pages,
+                    )
+                    candidates = [replace(batch, blocks=(), edges=()) for batch in candidates]
+                    candidates.extend(upstage_batches)
+                if profile.vision_parse != "off":
+                    from proofops.adapters.parsing.gemini_vision import parse_pages
+
+                    local_graph = fuse_candidates(
+                        tuple(candidates), tenant_id=tenant_id, fusion_version=fusion_version
+                    )
+                    vision_profile = (
+                        replace(profile, vision_parse="all")
+                        if profile.parser_mode == "upstage"
+                        else profile
+                    )
+                    vision, vision_metrics = parse_pages(
+                        source,
+                        vision_profile,
+                        local_graph,
+                        fallback_pages,
+                        self.artifact_root / "vision-cache",
+                        key=os.environ.get("OPENROUTER_API_KEY"),
+                    )
+                    if vision is not None:
+                        retained = []
+                        for batch in candidates:
+                            kept = tuple(
+                                block
+                                for block in batch.blocks
+                                if block.source.physical_page not in vision_metrics["pages_routed"]
+                            )
+                            ids = {block.source.source_native_id for block in kept}
+                            retained.append(
+                                replace(
+                                    batch,
+                                    blocks=kept,
+                                    edges=tuple(
+                                        edge
+                                        for edge in batch.edges
+                                        if edge.source_native_id in ids
+                                        and edge.target_native_id in ids
+                                    ),
+                                )
+                            )
+                        candidates = retained
+                        candidates.append(replace(vision, config_hash=profile_hash))
                 graph = fuse_candidates(
                     tuple(candidates), tenant_id=tenant_id, fusion_version=fusion_version
                 )
@@ -365,12 +540,21 @@ class OpenDataLoaderParser(ParserPort):
                 raise ParseFailure("PARSER_GEOMETRY_INVALID") from None
             except (KeyError, TypeError, json.JSONDecodeError):
                 raise ParseFailure("PARSER_SCHEMA_INVALID") from None
-            graph = _with_quality_issues(graph, selected, profile)
+            graph = _with_quality_issues(
+                graph,
+                selected,
+                profile,
+                () if vision_metrics is None else vision_metrics["pages_routed"],
+            )
             (work / "graph.json").write_bytes(_json(graph.to_dict()))
             (work / "quality.json").write_bytes(_json([issue.to_dict() for issue in graph.issues]))
             (work / "candidates.json").write_bytes(
                 _json([asdict(batch) for batch in graph.candidates])
             )
+            if vision_metrics is not None:
+                (work / "vision.json").write_bytes(_json(vision_metrics))
+            if upstage_output is not None:
+                (work / "upstage.json").write_bytes(_json(upstage_output))
             returned_graph = graph
             if profile.table_source_policy_sha256 is not None:
                 verifier = _table_verifier(profile.table_source_policy_sha256)
@@ -409,7 +593,27 @@ class OpenDataLoaderParser(ParserPort):
                 jar_sha256=sha256(jar.read_bytes()).hexdigest(),
                 selected_physical_pages=selected,
                 validation_profile="fast_preview",
-                vision_status="not_run",
+                vision_status="not_run" if vision_metrics is None else "candidate_only",
+                vision_parse=vision_metrics,
+                upstage_parse=None
+                if upstage_output is None
+                else dict(
+                    standard=dict(upstage_output["standard"]["metrics"],
+                        cost_usd=upstage_output["standard"]["receipt"].get(
+                            "cost_with_vat_reserve_usd"),
+                        duration_seconds=upstage_output["standard"]["receipt"].get(
+                            "duration_seconds"),
+                        response_sha256=upstage_output["standard"]["receipt"][
+                            "response_sha256"],
+                        cache_hit=upstage_output["standard"]["cache_hit"]),
+                    enhanced=[dict(item["metrics"],
+                        cost_usd=item["receipt"].get("cost_with_vat_reserve_usd"),
+                        duration_seconds=item["receipt"].get("duration_seconds"),
+                        response_sha256=item["receipt"]["response_sha256"],
+                        cache_hit=item["cache_hit"]) for item in upstage_output["enhanced"]],
+                    enhanced_deferred_pages=upstage_output["enhanced_deferred_pages"],
+                    fallback_pages=upstage_output["fallback_pages"],
+                ),
                 artifacts=artifacts,
                 parser_runs=[
                     dict(
@@ -478,7 +682,7 @@ class OpenDataLoaderParser(ParserPort):
                 parser_config_sha256=profile.config_hash(),
                 parser_config=profile.config_snapshot(),
                 validation_profile="fast_preview",
-                vision_status="not_run",
+                vision_status="not_run" if profile.vision_parse == "off" else "candidate_only",
             )
             if any(manifest.get(key) != value for key, value in expected.items()):
                 raise ValueError("manifest identity")
@@ -501,6 +705,10 @@ class OpenDataLoaderParser(ParserPort):
                 required.add("table-source.json")
             elif "table-source.json" in artifacts:
                 raise ValueError("unconfigured table attestation")
+            if profile.vision_parse != "off":
+                required.add("vision.json")
+            if profile.parser_mode == "upstage":
+                required.add("upstage.json")
             if not required <= artifacts.keys():
                 raise ValueError("missing artifacts")
             values = {}
@@ -515,8 +723,41 @@ class OpenDataLoaderParser(ParserPort):
                 data = path.read_bytes()
                 if sha256(data).hexdigest() != digest:
                     raise ValueError("artifact hash")
-                if name in {"graph.json", "quality.json", "candidates.json", "table-source.json"}:
+                if name in {
+                    "graph.json",
+                    "quality.json",
+                    "candidates.json",
+                    "table-source.json",
+                    "vision.json",
+                    "upstage.json",
+                }:
                     values[name] = json.loads(data)
+            upstage_output = values.get("upstage.json")
+            if profile.parser_mode == "upstage":
+                from proofops.domain.provenance import canonical_hash
+
+                if not isinstance(upstage_output, dict) or not isinstance(
+                    upstage_output.get("standard"), dict
+                ):
+                    raise ValueError("upstage artifact missing")
+                for record in [upstage_output["standard"], *upstage_output.get("enhanced", [])]:
+                    if (
+                        canonical_hash(record["raw_batches"])
+                        != record["receipt"]["response_sha256"]
+                    ):
+                        raise ValueError("upstage response mismatch")
+            vision_metrics = values.get("vision.json")
+            if profile.vision_parse != "off":
+                from proofops.adapters.parsing.gemini_vision import MODEL, PROMPT_HASH
+
+                if (
+                    vision_metrics != manifest.get("vision_parse")
+                    or vision_metrics.get("mode")
+                    != ("all" if profile.parser_mode == "upstage" else profile.vision_parse)
+                    or vision_metrics.get("model") != MODEL
+                    or vision_metrics.get("prompt_sha256") != PROMPT_HASH
+                ):
+                    raise ValueError("vision manifest mismatch")
             candidates = candidates_from_snapshot(values["candidates.json"])
             # Existing immutable manifests predate fusion versioning.
             fusion_version = manifest.get("fusion_version", 1)
@@ -540,7 +781,12 @@ class OpenDataLoaderParser(ParserPort):
                 QualityIssue(**{**issue, "source_ids": tuple(issue["source_ids"])})
                 for issue in values["quality.json"]
             )
-            restored = _with_quality_issues(graph, selected, profile)
+            restored = _with_quality_issues(
+                graph,
+                selected,
+                profile,
+                () if vision_metrics is None else vision_metrics["pages_routed"],
+            )
             if restored.issues != issues:
                 raise ValueError("quality issue mismatch")
             from importlib.resources import files
@@ -551,6 +797,22 @@ class OpenDataLoaderParser(ParserPort):
             expected_parsers = {"opendataloader": ("2.5.7", "opendataloader")}
             if profile.table_auxiliary:
                 expected_parsers["pdfplumber"] = (version("pdfplumber"), "pdfminer")
+            if profile.vision_parse != "off":
+                from proofops.adapters.parsing.gemini_vision import MODEL
+
+                expected_parsers["gemini_vision"] = (MODEL, "vision")
+            if profile.parser_mode == "upstage":
+                from proofops.adapters.parsing.upstage_document import MODEL as UPSTAGE_MODEL
+
+                expected_parsers["upstage_async_standard"] = (
+                    UPSTAGE_MODEL,
+                    "upstage-document-parse",
+                )
+                if upstage_output["enhanced"]:
+                    expected_parsers["upstage_async_enhanced"] = (
+                        UPSTAGE_MODEL,
+                        "upstage-document-parse",
+                    )
             if {
                 batch.parser_name: (batch.parser_version, batch.parser_family)
                 for batch in candidates

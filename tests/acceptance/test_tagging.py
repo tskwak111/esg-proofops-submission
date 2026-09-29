@@ -1,8 +1,10 @@
 """AT-010: synthetic corpus/transport/prices; real cache, budget and source guards."""
 
 import json
+import time
 from dataclasses import asdict, replace
 from pathlib import Path
+from threading import Lock
 from uuid import UUID
 
 import pytest
@@ -148,6 +150,31 @@ def execute(inputs):
     from proofops.application.tagging.service import tag_replicates
 
     return tag_replicates(**inputs)
+
+
+def test_parallel_replicas_keep_order_and_reserve_before_send(tmp_path):
+    inputs = setup(tmp_path)
+    original = inputs["invoke"]
+    lock = Lock()
+    active = peak = 0
+
+    def slow(request):
+        nonlocal active, peak
+        with lock:
+            active += 1
+            peak = max(peak, active)
+        time.sleep(0.03 if request["replicate_id"] == 1 else 0.01)
+        try:
+            return original(request)
+        finally:
+            with lock:
+                active -= 1
+
+    inputs.update(invoke=slow, max_workers=3)
+    runs = execute(inputs)
+    assert peak == 3
+    assert [run.replicate_id for run in runs] == [1, 2, 3]
+    assert all(run.usage is not None for run in runs)
 
 
 def consensus(runs, inputs):

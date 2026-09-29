@@ -39,13 +39,13 @@ def tagging_settings(snapshot, *, preliminary=False, relation=False):
 
         runtime = snapshot[prefix + "_runtime"]
         if (
-            canonical_hash(asdict(settings)) != snapshot[prefix + "_settings_hash"]
+            canonical_hash(raw) != snapshot[prefix + "_settings_hash"]
             or artifact_sha256(runtime) != snapshot[prefix + "_runtime_artifact_hash"]
             or settings.binding.synthetic is not False
             or settings.binding.binding_id != runtime["runtime_binding_id"]
             or settings.binding.role != "tagger"
             or settings.model_id != runtime["model_id"]
-            or runtime.get("tagging_settings_sha256") != canonical_hash(asdict(settings))
+            or runtime.get("tagging_settings_sha256") != canonical_hash(raw)
             or runtime.get("input_reservation_policy_sha256")
             != snapshot["input_reservation_policy_hash"]
             or canonical_hash(snapshot["input_reservation_policy"])
@@ -62,7 +62,7 @@ def tagging_settings(snapshot, *, preliminary=False, relation=False):
         raise ValueError("PRELIMINARY_PROFILE_UNSUPPORTED")
     runtime = snapshot["runtime"]
     if (
-        canonical_hash(asdict(settings)) != snapshot["tagging_settings_hash"]
+        canonical_hash(raw) != snapshot["tagging_settings_hash"]
         or snapshot["tagging_mode"] != "local_synthetic"
         or not settings.binding.synthetic
         or settings.binding.binding_id != runtime["runtime_binding_id"]

@@ -409,7 +409,9 @@ class LocalParserRunner:
                         stage_status="completed",
                         downstream_status="pending",
                         validation_profile="fast_preview",
-                        vision_status="not_run",
+                        vision_status=manifest.get("vision_status", "not_run"),
+                        vision_parse=manifest.get("vision_parse"),
+                        upstage_parse=manifest.get("upstage_parse"),
                         coverage=coverage,
                     )
                     if pinned_notes:

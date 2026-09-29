@@ -168,6 +168,7 @@ _RULE_DESCRIPTOR = [
 ]
 
 _PROVIDER_METADATA_KEYS = (
+    "provider",
     "model",
     "provider_request_id",
     "provider_model",
@@ -175,17 +176,29 @@ _PROVIDER_METADATA_KEYS = (
     "output_tokens",
     "price_snapshot",
     "cost_with_vat_reserve_usd",
+    "cost_source",
+    "attempts",
+    "schema_valid",
     "response_sha256",
     "response_format",
+    "wire_policy",
+    "cached_tokens",
+    "cache_write_tokens",
 )
 
 
 def _profile(model: str = UPSTAGE_MODEL) -> ExtractionProfile:
-    if model not in (UPSTAGE_MODEL, MODEL_PRO4):
+    from proofops.adapters.local.openrouter import MODEL as LUNA_MODEL
+
+    if model not in (UPSTAGE_MODEL, MODEL_PRO4, LUNA_MODEL):
         raise ValueError("UPSTAGE_MODEL_MISMATCH")
     return ExtractionProfile(
         model_sha256=canonical_hash(
-            {"model": model, "provider": "upstage", "transport": "UpstageProbe"}
+            {
+                "model": model,
+                "provider": "openrouter" if model == LUNA_MODEL else "upstage",
+                "transport": "OpenRouterProbe" if model == LUNA_MODEL else "UpstageProbe",
+            }
         ),
         prompt_sha256=canonical_hash(SYSTEM_PROMPT),
         rule_sha256=canonical_hash(_RULE_DESCRIPTOR),
@@ -369,6 +382,7 @@ def _profile_with_options(
     complete_selection: bool = False,
     extraction_content_bounds: bool = False,
     position_order: bool = False,
+    wire_policy_version: int = 1,
 ) -> ExtractionProfile:
     """Versioned extraction profile for an explicit option combination.
 
@@ -387,7 +401,9 @@ def _profile_with_options(
     ``assertion_prompt`` and pins its own rule entry and prompt suffix, so a
     complete-selection run can never replay an assertion-only receipt.
     """
-    if model not in (UPSTAGE_MODEL, MODEL_PRO4):
+    from proofops.adapters.local.openrouter import MODEL as LUNA_MODEL
+
+    if model not in (UPSTAGE_MODEL, MODEL_PRO4, LUNA_MODEL):
         raise ValueError("UPSTAGE_MODEL_MISMATCH")
     if any(
         type(value) is not bool
@@ -435,10 +451,19 @@ def _profile_with_options(
         from proofops.application.tagging.preliminary import CONTEXT_POSITION_ORDER
 
         descriptor.append(CONTEXT_POSITION_ORDER)
+    if model == LUNA_MODEL and wire_policy_version == 2 and extraction_context:
+        descriptor.append("luna-extraction-context-512-chars-v2")
+    model_identity = {
+        "model": model,
+        "provider": "openrouter" if model == LUNA_MODEL else "upstage",
+        "transport": "OpenRouterProbe" if model == LUNA_MODEL else "UpstageProbe",
+    }
+    if model == LUNA_MODEL and wire_policy_version == 2:
+        from proofops.adapters.local.openrouter import WIRE_POLICY
+
+        model_identity["wire_policy"] = WIRE_POLICY
     return ExtractionProfile(
-        model_sha256=canonical_hash(
-            {"model": model, "provider": "upstage", "transport": "UpstageProbe"}
-        ),
+        model_sha256=canonical_hash(model_identity),
         prompt_sha256=canonical_hash(
             _system_prompt(
                 extraction_context=extraction_context,
@@ -512,6 +537,7 @@ class UpstageClaimExtractor:
             complete_selection=extraction_complete_selection,
             extraction_content_bounds=extraction_content_bounds,
             position_order=position_order,
+            wire_policy_version=getattr(probe, "wire_policy_version", 1),
         )
         if type(max_tokens) is not int or not 1 <= max_tokens <= 4096:
             raise ValueError("UPSTAGE_MAX_TOKENS_INVALID")
@@ -529,6 +555,7 @@ class UpstageClaimExtractor:
         self._complete_selection = extraction_complete_selection
         self._content_bounds = extraction_content_bounds
         self._position_order = position_order
+        self._context_chars = 512 if getattr(probe, "wire_policy_version", 1) == 2 else 2000
         self._request_ids: list[tuple[str, str]] = []
 
     def _validate_spans(self, payload: dict, text: str):
@@ -657,14 +684,58 @@ class UpstageClaimExtractor:
             return self._replay_receipt(directory, packet, packet_sha, request_id, context_graph)
         self._write(directory / "packet.json", canonical_json(packet))
         self._write(directory / "request.json", canonical_json(request_body))
+        from proofops.adapters.local.openrouter import OpenRouterProbe
+
+        if isinstance(self._probe, OpenRouterProbe):
+            from proofops.adapters.local.openrouter import WIRE_POLICY
+
+            self._write(
+                directory / "identity.json",
+                canonical_json(
+                    {
+                        "provider": "openrouter",
+                        "model": self._probe.model,
+                        "model_sha256": self._profile.model_sha256,
+                        "prompt_sha256": self._profile.prompt_sha256,
+                        **(
+                            {
+                                "wire_policy": WIRE_POLICY,
+                                "context_budget_chars": self._context_chars,
+                            }
+                            if self._probe.wire_policy_version == 2
+                            else {}
+                        ),
+                    }
+                ),
+            )
         self._request_ids.append((packet["parse_manifest_id"], request_id))
         try:
+            schema = (
+                {
+                    "type": "object",
+                    "properties": {"sentence_ids": {"type": "array", "items": {"type": "string"}}},
+                    "required": ["sentence_ids"],
+                    "additionalProperties": False,
+                }
+                if self._source_ids
+                else {
+                    "type": "object",
+                    "properties": {"claims": {"type": "array", "items": {"type": "string"}}},
+                    "required": ["claims"],
+                    "additionalProperties": False,
+                }
+            )
             result = self._probe.complete(
                 system_prompt,
                 user_json,
                 request_id=request_id,
                 max_tokens=self._max_tokens,
                 json_mode=True,
+                **(
+                    {"schema_json": json.dumps(schema)}
+                    if isinstance(self._probe, OpenRouterProbe)
+                    else {}
+                ),
             )
         except Exception as error:
             code = str(error) if isinstance(error, ValueError) else ""
@@ -678,7 +749,7 @@ class UpstageClaimExtractor:
                 "PROBE_REQUEST_TOO_LARGE",
                 "INVALID_PROBE_REQUEST",
             }:
-                self._request_ids.pop()
+                self._request_ids.remove((packet["parse_manifest_id"], request_id))
             self._fail(directory, packet_sha, request_id, code, transport=True)
         metadata = (
             {key: result[key] for key in (*_PROVIDER_METADATA_KEYS, "content") if key in result}
@@ -686,6 +757,8 @@ class UpstageClaimExtractor:
             else {"invalid_transport_type": type(result).__name__}
         )
         self._write(directory / "raw_response.json", canonical_json(metadata))
+        if isinstance(result, dict) and result.get("schema_valid") is False:
+            self._fail(directory, packet_sha, request_id, "MODEL_SPAN_OR_SCHEMA_INVALID")
         if not isinstance(result, dict) or not isinstance(result.get("content"), str):
             self._fail(directory, packet_sha, request_id, "MODEL_SPAN_OR_SCHEMA_INVALID")
         try:
@@ -1258,7 +1331,7 @@ class UpstageClaimExtractor:
         neighbours, omitted = _bounded_context_blocks(
             context_graph,
             (focal.source_ref(),),
-            max_context_chars=2000,
+            max_context_chars=self._context_chars,
             max_context_blocks=4,
             position_order=self._position_order,
         )
@@ -1290,7 +1363,7 @@ class UpstageClaimExtractor:
             if entry["source_id"] in selected_ids:
                 continue
             size = len(entry["text"])
-            if len(selected) >= 8 or used + size > 2000:
+            if len(selected) >= 8 or used + size > self._context_chars:
                 omitted.append(entry["source_id"])
                 continue
             selected.append({**entry, "context_index": len(selected)})

@@ -11,7 +11,7 @@
     "properties": [
       {
         "name": "proofops:uv.lock:sha256",
-        "value": "e7ad6e8aa73b10f2d21521d0650e9bdbecc4ea382b2833eeac2b37adc4e3dfe7"
+        "value": "9dcb919a3ab8d0a157965ab82776d525d1c7ba45287858da8fd471bb34478954"
       },
       {
         "name": "proofops:pnpm-lock.yaml:sha256",

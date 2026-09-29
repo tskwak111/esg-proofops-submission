@@ -1,9 +1,9 @@
 [project]
 name = "proofops"
 version = "0.0.0"
-description = "ESG ProofOps domain package (TASK-000 baseline): typed immutable values, no third-party runtime deps"
+description = "ESG ProofOps domain and local adapters"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = ["jsonschema>=4.18,<5"]
 
 [project.optional-dependencies]
 parsing = [

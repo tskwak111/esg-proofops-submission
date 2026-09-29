@@ -1,10 +1,12 @@
 """Scoped local Upstage composition; immutable receipts, no implicit rule approval."""
 
 import json
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import nullcontext
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
+from threading import Lock
 from uuid import UUID, uuid5
 
 from proofops.adapters.local.tag_store import tagging_settings
@@ -119,6 +121,7 @@ class LiveTaggingRuntime:
             tagging_settings(snapshot, relation=True) if "relation_settings" in snapshot else None
         )
         self.request_ids = set()
+        self._account_lock = Lock()
         self.previously_accounted = {
             identifier
             for row in runner.store.jobs.list_usage(graph.tenant_id, snapshot["run_id"])
@@ -154,6 +157,14 @@ class LiveTaggingRuntime:
         self._capacity(self.settings.model_id)
 
     def _capacity(self, model_id):
+        if model_id == "openai/gpt-6-luna":
+            from proofops.adapters.local.openrouter import (
+                validate_capacity_policy as validate_luna_capacity,
+            )
+
+            return validate_luna_capacity(
+                self.snapshot["input_reservation_policy"], model_id=model_id
+            )
         return validate_capacity_policy(
             self.snapshot["input_reservation_policy"],
             model_id=model_id,
@@ -242,10 +253,11 @@ class LiveTaggingRuntime:
         )
 
     def account(self, request_id):
-        if request_id not in self.previously_accounted:
-            self.request_ids.add(request_id)
-        self.usage.update(request_usage(self.ledger, sorted(self.request_ids)))
-        self.usage["tag_request_ids"] = sorted(self.request_ids)
+        with self._account_lock:
+            if request_id not in self.previously_accounted:
+                self.request_ids.add(request_id)
+            self.usage.update(request_usage(self.ledger, sorted(self.request_ids)))
+            self.usage["tag_request_ids"] = sorted(self.request_ids)
 
     def invoke(self, request):
         try:
@@ -498,160 +510,195 @@ class LiveTaggingRuntime:
     ):
         packet_hash = canonical_hash(packet)
         self.allow_packet(claim.claim_id, packet_hash)
-        records, results, signatures, provider_ids = [], [], [], []
-        record_store[claim.claim_id] = records
-        for replica in (1, 2, 3):
-            self._check_heartbeat()
-            request_id = str(
-                uuid5(UUID(self.lease.message.job_id), f"{prefix}:{claim.claim_id}:{replica}")
-            )
-            request = dict(
-                tenant_id=self.auth.tenant_id,
-                claim_id=claim.claim_id,
-                packet_sha256=packet_hash,
-                replicate_id=replica,
-                request_id=request_id,
-                binding=asdict(settings.binding),
-                model_id=settings.model_id,
-                model_profile=settings.model_profile,
-                region=settings.region,
-                system_prompt=settings.rendered_system,
-                user_json=canonical_json(packet),
-                temperature=settings.temperature,
-                max_tokens=settings.max_tokens,
-                input_reservation_policy_sha256=self.snapshot["input_reservation_policy_hash"],
-            )
-            if retrieval_packet_sha256 is not None:
-                request["retrieval_packet_sha256"] = retrieval_packet_sha256
-            request["request_signature"] = canonical_hash(request)
-            call = BudgetCall(
-                self.auth.tenant_id,
-                self.snapshot["run_id"],
-                self.graph.document_version_id,
-                request_id,
-                1,
-                "tagger",
-                settings.model_id,
-                settings.region,
-                settings.model_sha256,
-                request["request_signature"],
-                replica,
-            )
-            directory = self.receipts / prefix / request_id
-            record = dict(request_id=request_id, replicate_id=replica, status="unresolved")
-            records.append(record)
-            response = None
-            try:
-                capacity = transport.count_input_tokens(
-                    request, counter=lambda system, user: self._capacity(settings.model_id)
+        record_store[claim.claim_id] = []
+
+        def run_one(replica):
+            records, results, signatures, provider_ids = [], [], [], []
+            for replica in (replica,):
+                self._check_heartbeat()
+                request_id = str(
+                    uuid5(UUID(self.lease.message.job_id), f"{prefix}:{claim.claim_id}:{replica}")
                 )
-                if directory.exists():
-                    retained = json.loads((directory / "request.json").read_text())
-                    if (
-                        retained["request"] != request
-                        or not (directory / "response.json").is_file()
-                    ):
-                        raise ValueError(prefix.upper() + "_RECEIPT_INCOMPLETE_OR_MISMATCH")
-                    raw = json.loads((directory / "response.json").read_text())
-                    response = RawTagResponse(**(raw | {"usage": TokenUsage(**raw["usage"])}))
-                else:
-                    # A withdrawn or exhausted recovery allowance stops before the
-                    # reservation, so no budget is held and no ledger row settles
-                    # for a request this operation is no longer authorized to send.
-                    if not transport.may_dispatch():
-                        raise ValueError(prefix.upper() + "_RECOVERY_ALLOWANCE_EXHAUSTED")
-                    self._fence()
-                    lock = (
-                        self.heartbeat_state.lock
-                        if self.heartbeat_state is not None
-                        else nullcontext()
+                request = dict(
+                    tenant_id=self.auth.tenant_id,
+                    claim_id=claim.claim_id,
+                    packet_sha256=packet_hash,
+                    replicate_id=replica,
+                    request_id=request_id,
+                    binding=asdict(settings.binding),
+                    model_id=settings.model_id,
+                    model_profile=settings.model_profile,
+                    region=settings.region,
+                    system_prompt=settings.rendered_system,
+                    user_json=canonical_json(packet),
+                    temperature=settings.temperature,
+                    max_tokens=settings.max_tokens,
+                    input_reservation_policy_sha256=self.snapshot["input_reservation_policy_hash"],
+                )
+                if retrieval_packet_sha256 is not None:
+                    request["retrieval_packet_sha256"] = retrieval_packet_sha256
+                request["request_signature"] = canonical_hash(request)
+                call = BudgetCall(
+                    self.auth.tenant_id,
+                    self.snapshot["run_id"],
+                    self.graph.document_version_id,
+                    request_id,
+                    1,
+                    "tagger",
+                    settings.model_id,
+                    settings.region,
+                    settings.model_sha256,
+                    request["request_signature"],
+                    replica,
+                )
+                directory = self.receipts / prefix / request_id
+                record = dict(request_id=request_id, replicate_id=replica, status="unresolved")
+                records.append(record)
+                response = None
+                try:
+                    capacity = transport.count_input_tokens(
+                        request, counter=lambda system, user: self._capacity(settings.model_id)
                     )
-                    with lock:
-                        self._check_heartbeat()
-                        if not self.runner.store.usage.reserve_budget(
-                            call,
-                            input_tokens=capacity,
-                            max_output_tokens=settings.max_tokens,
-                            pricing=None,
-                            now=int(self.runner.clock()),
+                    if directory.exists():
+                        retained = json.loads((directory / "request.json").read_text())
+                        if (
+                            retained["request"] != request
+                            or not (directory / "response.json").is_file()
                         ):
-                            raise ValueError(prefix.upper() + "_PENDING_CALL")
-                    self._fence()
-                    with lock:
+                            raise ValueError(prefix.upper() + "_RECEIPT_INCOMPLETE_OR_MISMATCH")
+                        raw = json.loads((directory / "response.json").read_text())
+                        response = RawTagResponse(**(raw | {"usage": TokenUsage(**raw["usage"])}))
+                    else:
+                        # A withdrawn or exhausted recovery allowance stops before the
+                        # reservation, so no budget is held and no ledger row settles
+                        # for a request this operation is no longer authorized to send.
+                        if not transport.may_dispatch():
+                            raise ValueError(prefix.upper() + "_RECOVERY_ALLOWANCE_EXHAUSTED")
+                        self._fence()
+                        lock = (
+                            self.heartbeat_state.lock
+                            if self.heartbeat_state is not None
+                            else nullcontext()
+                        )
+                        with lock:
+                            self._check_heartbeat()
+                            if not self.runner.store.usage.reserve_budget(
+                                call,
+                                input_tokens=capacity,
+                                max_output_tokens=settings.max_tokens,
+                                pricing=None,
+                                now=int(self.runner.clock()),
+                            ):
+                                raise ValueError(prefix.upper() + "_PENDING_CALL")
+                        self._fence()
+                        with lock:
+                            self._check_heartbeat()
+                            if not self.runner.store.usage.mark_dispatched(call):
+                                raise ValueError(prefix.upper() + "_PENDING_CALL")
                         self._check_heartbeat()
-                        if not self.runner.store.usage.mark_dispatched(call):
-                            raise ValueError(prefix.upper() + "_PENDING_CALL")
-                    self._check_heartbeat()
-                    response = transport.invoke(request)
-                self.runner.store.usage.record_usage(
-                    call, response.usage, now=int(self.runner.clock())
-                )
-                if (
-                    response.synthetic
-                    or response.usage.status != "succeeded"
-                    or not response.raw_response_json
-                ):
-                    raise ValueError(prefix.upper() + "_PROVIDER_FAILED")
-                result, values = validate(json.loads(response.raw_response_json))
-                record.update(
-                    status="validated_candidate",
-                    values=values,
-                    raw_response_sha256=canonical_hash(response.raw_response_json),
-                )
-                if not response.usage.provider_request_id:
-                    raise ValueError(prefix.upper() + "_PROVIDER_ID_REQUIRED")
-                results.append(result)
-                signatures.append(canonical_hash(values))
-                provider_ids.append(response.usage.provider_request_id)
-            except LeaseLost:
-                raise
-            except (ValueError, OSError, KeyError, TypeError, BudgetExceeded) as error:
-                # Never collapse the actual outcome to a bare "needs_review": a
-                # provider error_code (e.g. UPSTREAM_UNAVAILABLE) means this specific
-                # attempt was never actually sent (locally suppressed, latency 0ms,
-                # no provider_request_id); that is a distinct, stable fact from a
-                # real settled provider failure or a local/authorization/budget stop
-                # raised before any transport call. Both are surfaced here so a
-                # never-sent attempt is never misread as an unknown model outcome.
-                usage = getattr(response, "usage", None)
-                settled_code = getattr(usage, "error_code", None)
-                record.update(
-                    status="needs_review",
-                    stable_reason=dict(
-                        # "never_sent" requires the transport's own explicitly
-                        # known local-suppression code, not merely a zero latency:
-                        # a fast real failure can also round to 0ms and lack a
-                        # provider id. The durable proof that no call happened is
-                        # the absent receipt directory, checked by the recovery
-                        # classifier; this label only reports the transport's
-                        # settled code without reinterpreting it.
-                        category="never_sent"
-                        if usage is not None
-                        and usage.status == "failed"
-                        and settled_code in NEVER_SENT_ERROR_CODES
-                        and usage.provider_request_id is None
-                        and usage.latency_ms == 0
-                        else "provider_failed"
-                        if usage is not None and usage.status == "failed"
-                        else "local_stop",
-                        # Stable internal codes only. An unrecognized exception
-                        # never leaks its message text into a durable record.
-                        error_code=settled_code
-                        or (
-                            error.code
-                            if prefix == "relation" and isinstance(error, RelationValidationError)
-                            else _local_stop_code(prefix, error)
+                        response = transport.invoke(request)
+                    self.runner.store.usage.record_usage(
+                        call, response.usage, now=int(self.runner.clock())
+                    )
+                    if (
+                        response.synthetic
+                        or response.usage.status != "succeeded"
+                        or not response.raw_response_json
+                    ):
+                        raise ValueError(prefix.upper() + "_PROVIDER_FAILED")
+                    result, values = validate(json.loads(response.raw_response_json))
+                    record.update(
+                        status="validated_candidate",
+                        values=values,
+                        raw_response_sha256=canonical_hash(response.raw_response_json),
+                    )
+                    if not response.usage.provider_request_id:
+                        raise ValueError(prefix.upper() + "_PROVIDER_ID_REQUIRED")
+                    results.append(result)
+                    signatures.append(canonical_hash(values))
+                    provider_ids.append(response.usage.provider_request_id)
+                except LeaseLost:
+                    raise
+                except (ValueError, OSError, KeyError, TypeError, BudgetExceeded) as error:
+                    # Never collapse the actual outcome to a bare "needs_review": a
+                    # provider error_code (e.g. UPSTREAM_UNAVAILABLE) means this specific
+                    # attempt was never actually sent (locally suppressed, latency 0ms,
+                    # no provider_request_id); that is a distinct, stable fact from a
+                    # real settled provider failure or a local/authorization/budget stop
+                    # raised before any transport call. Both are surfaced here so a
+                    # never-sent attempt is never misread as an unknown model outcome.
+                    usage = getattr(response, "usage", None)
+                    settled_code = getattr(usage, "error_code", None)
+                    record.update(
+                        status="needs_review",
+                        stable_reason=dict(
+                            # "never_sent" requires the transport's own explicitly
+                            # known local-suppression code, not merely a zero latency:
+                            # a fast real failure can also round to 0ms and lack a
+                            # provider id. The durable proof that no call happened is
+                            # the absent receipt directory, checked by the recovery
+                            # classifier; this label only reports the transport's
+                            # settled code without reinterpreting it.
+                            category="never_sent"
+                            if usage is not None
+                            and usage.status == "failed"
+                            and settled_code in NEVER_SENT_ERROR_CODES
+                            and usage.provider_request_id is None
+                            and usage.latency_ms == 0
+                            else "provider_failed"
+                            if usage is not None and usage.status == "failed"
+                            else "local_stop",
+                            # Stable internal codes only. An unrecognized exception
+                            # never leaks its message text into a durable record.
+                            error_code=settled_code
+                            or (
+                                error.code
+                                if prefix == "relation"
+                                and isinstance(error, RelationValidationError)
+                                else _local_stop_code(prefix, error)
+                            ),
+                            detail=(
+                                error.field
+                                if prefix == "relation"
+                                and isinstance(error, RelationValidationError)
+                                else None
+                            ),
                         ),
-                        detail=(
-                            error.field
-                            if prefix == "relation" and isinstance(error, RelationValidationError)
-                            else None
-                        ),
-                    ),
-                )
-                return None
-            finally:
-                self.account(request_id)
+                    )
+                    return records, results, signatures, provider_ids, True
+                finally:
+                    self.account(request_id)
+            return records, results, signatures, provider_ids, False
+
+        workers = (
+            min(getattr(self, "replica_workers", getattr(self.runner, "max_workers", 1)), 3)
+            if settings.model_id == "openai/gpt-6-luna" and settings.wire_policy_version == 2
+            else 1
+        )
+        if workers == 1 or self.resume is not None:
+            outcomes = []
+            for replica in (1, 2, 3):
+                outcome = run_one(replica)
+                outcomes.append(outcome)
+                if outcome[-1]:
+                    break
+        else:
+            with ThreadPoolExecutor(max_workers=workers) as pool:
+                outcomes = list(pool.map(run_one, (1, 2, 3)))
+        records, results, signatures, provider_ids = [], [], [], []
+        failed = False
+        for outcome in outcomes:
+            replica_records, replica_results, replica_signatures, replica_ids, replica_failed = (
+                outcome
+            )
+            records.extend(replica_records)
+            results.extend(replica_results)
+            signatures.extend(replica_signatures)
+            provider_ids.extend(replica_ids)
+            failed |= replica_failed
+        record_store[claim.claim_id] = records
+        if failed:
+            return None
         if len(set(provider_ids)) != 3 or (require_consensus and len(set(signatures)) != 1):
             return None
         return results

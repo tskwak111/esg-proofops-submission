@@ -25,7 +25,7 @@ const render=(decision,projection=null,items=elements)=>renderToStaticMarkup(
  {decision,projection,elements:items,rawCandidates:[],onSourceOpen:()=>{}}));
 for(const decision of [null,{decision_status:'not_run',missing_elements:[]}]) {
  const html=render(decision);
- for(const text of ['검토 초안','2040년','G6','G4','원문 48쪽','검토 후보','&lt;b&gt;'])
+ for(const text of ['검토 중인 내용','2040년','G6','G4','원문 48쪽','검토 후보','&lt;b&gt;'])
  assert.ok(html.includes(text),text);
  assert.ok(!html.includes('요건 미충족'));
  assert.ok(!html.includes('<b>조달</b>'));

@@ -90,6 +90,7 @@ def extraction_budget_settings(batch_calls: int, total_calls: int | None = None)
 def live_tagging_settings(
     max_calls: int,
     *,
+    model_id: str = "solar-pro4",
     relations: bool = False,
     preliminary_context: bool = False,
     preliminary_table_context: bool = False,
@@ -295,15 +296,23 @@ def live_tagging_settings(
         settings[prefix + "_settings"] = asdict(
             TaggingSettings(
                 ModelBinding(str(uuid4()), "tagger", False),
-                "solar-pro4",
+                model_id,
                 profile,
                 "provider-managed-unverified",
                 prompt,
                 schema,
                 max_tokens=output,
+                wire_policy_version=2 if model_id == "openai/gpt-6-luna" else 1,
             )
         )
-    settings["input_reservation_policy"] = solar_pro4_capacity_policy(refreshed=capacity_refresh)
+    if model_id == "openai/gpt-6-luna":
+        from proofops.adapters.local.openrouter import CAPACITY_POLICY
+
+        settings["input_reservation_policy"] = CAPACITY_POLICY.copy()
+    else:
+        settings["input_reservation_policy"] = solar_pro4_capacity_policy(
+            refreshed=capacity_refresh
+        )
     return settings
 
 
@@ -392,7 +401,10 @@ def apply_resume_metadata(args, saved: dict) -> None:
     if requested_output_limit is not None and requested_output_limit != saved_output_limit:
         raise ValueError("--resume cannot change parser-max-output-bytes; create a new run")
     args.parser_max_output_bytes = parser_output_limit(saved_output_limit)
+    args.vision_parse = saved.get("vision_parse", "off")
+    args.parser = saved.get("parser_mode", "local")
     args.model = saved.get("model", args.model)
+    args.llm_provider = "openrouter" if args.model == "openai/gpt-6-luna" else "upstage"
     args.verify_paragraphs = bool(saved.get("verify_paragraphs", False))
     args.verify_tables = bool(saved.get("verify_tables", False))
     args.verify_merged_tables = bool(saved.get("verify_merged_tables", False))
@@ -443,8 +455,9 @@ def run_live_stages(args, *, tenant_id: str, run_id: str) -> dict:
     from proofops_worker.composition import build_composition
 
     tenant = tenant_id
-    result = dict(stage=None, status="not_run", exit_code=0)
+    result = dict(stage=None, status="not_run", exit_code=0, stage_seconds={})
     for stage in ("parse", "extract", "tag"):
+        stage_started = time.monotonic()
         worker = build_composition(
             stage=stage,
             verify_paragraphs=args.verify_paragraphs and stage == "parse",
@@ -506,6 +519,7 @@ def run_live_stages(args, *, tenant_id: str, run_id: str) -> dict:
                 result["exit_code"] = 1
                 break
         finally:
+            result["stage_seconds"][stage] = round(time.monotonic() - stage_started, 2)
             worker.uploads.close()
             worker.uploads.registry.close()
     return result
@@ -523,8 +537,10 @@ def main():
     # sha256 integrity check against the recorded PDF path is still enforced.
     parser.add_argument("--pdf", type=Path)
     parser.add_argument("--state", type=Path, required=True)
-    parser.add_argument("--key-file", type=Path, default=ROOT / ".env.upstage.local")
+    parser.add_argument("--key-file", type=Path)
     parser.add_argument("--pages", default="1")
+    parser.add_argument("--vision-parse", choices=("auto", "all", "off"))
+    parser.add_argument("--parser", choices=("upstage", "local"), default="upstage")
     parser.add_argument("--report-year", type=int)
     parser.add_argument("--period-start")
     parser.add_argument("--period-end")
@@ -557,7 +573,8 @@ def main():
         "from. Parse/evidence/retrieval still cover all --pages; omit to keep the "
         "legacy behaviour where claims are discovered across every selected page.",
     )
-    parser.add_argument("--model", choices=["solar-pro3", "solar-pro4"], default="solar-pro3")
+    parser.add_argument("--llm-provider", choices=["upstage", "openrouter"], default="openrouter")
+    parser.add_argument("--model", choices=["solar-pro3", "solar-pro4"])
     parser.add_argument("--verify-paragraphs", action="store_true")
     parser.add_argument("--native-quote-typography", action="store_true")
     table_checks = parser.add_mutually_exclusive_group()
@@ -758,6 +775,17 @@ def main():
     )
     parser.add_argument("--port", type=int, default=8766)
     args = parser.parse_args()
+    if args.vision_parse is None:
+        args.vision_parse = "auto" if args.parser == "upstage" else "off"
+    if args.parser == "upstage" and args.vision_parse == "all":
+        parser.error("--vision-parse all requires --parser local")
+    if not args.resume:
+        if args.llm_provider == "openrouter":
+            if args.model is not None:
+                parser.error("--model requires --llm-provider upstage")
+            args.model = "openai/gpt-6-luna"
+        else:
+            args.model = args.model or "solar-pro3"
     if args.serve_worker and not args.serve:
         parser.error("--serve-worker requires --serve")
     if args.serve:
@@ -854,6 +882,10 @@ def main():
         or (args.period_end is None)
     ):
         parser.error("--pdf, --report-year, --period-start and --period-end are required")
+    if args.key_file is None:
+        args.key_file = ROOT / (
+            ".env.openrouter.local" if args.llm_provider == "openrouter" else ".env.upstage.local"
+        )
     if args.live_relations and not args.live_tagging:
         parser.error("--live-relations requires --live-tagging")
     if args.compact_element_wire and not args.live_tagging:
@@ -930,7 +962,7 @@ def main():
     digest = sha256(source).hexdigest()
     origin = f"http://localhost:{args.port}"
     from proofops.application.ingest.graph_fusion import ParserProfile
-    from proofops_agent.upstage_extraction import _profile
+    from proofops_agent.upstage_extraction import _profile_with_options
 
     if not manifest_path.exists():
         from proofops.adapters.local.table_source_verification import policy_sha256 as table_policy
@@ -955,6 +987,8 @@ def main():
                 else None
             ),
             table_structure_repair="odl_header_v2" if args.repair_table_headers else None,
+            vision_parse=args.vision_parse,
+            parser_mode=args.parser,
         )
         (state / "parser.json").write_text(json.dumps(config.config_snapshot()))
         if (
@@ -964,8 +998,6 @@ def main():
             or args.extraction_source_ids
             or args.extraction_content_bounds
         ):
-            from proofops_agent.upstage_extraction import _profile_with_options
-
             extraction_profile = asdict(
                 _profile_with_options(
                     args.model,
@@ -977,10 +1009,16 @@ def main():
                     complete_selection=args.extraction_complete_selection,
                     extraction_content_bounds=args.extraction_content_bounds,
                     position_order=args.position_context_order,
+                    wire_policy_version=2 if args.model == "openai/gpt-6-luna" else 1,
                 )
             )
         else:
-            extraction_profile = asdict(_profile(args.model))
+            extraction_profile = asdict(
+                _profile_with_options(
+                    args.model,
+                    wire_policy_version=2 if args.model == "openai/gpt-6-luna" else 1,
+                )
+            )
         settings = dict(
             build_root=str(ROOT),
             extraction_profile=extraction_profile,
@@ -1016,6 +1054,9 @@ def main():
             settings.update(
                 live_tagging_settings(
                     args.tagging_max_calls,
+                    model_id="openai/gpt-6-luna"
+                    if args.llm_provider == "openrouter"
+                    else "solar-pro4",
                     relations=args.live_relations,
                     preliminary_context=args.preliminary_context,
                     preliminary_table_context=args.preliminary_table_context,
@@ -1050,6 +1091,7 @@ def main():
         LOCAL_RUN_SETTINGS_PATH=str(state / "settings.json"),
         LOCAL_EXTRACTION_MODE="upstage_probe",
         LOCAL_TAGGING_MODE="upstage_local" if args.live_tagging else "",
+        LOCAL_LLM_PROVIDER=args.llm_provider,
     )
     from fastapi.testclient import TestClient
     from proofops.adapters.local.auth_store import hash_token, new_session_id
@@ -1102,7 +1144,7 @@ def main():
             approved_by=user,
             approved_at=approved_at,
             purpose="local_test",
-            provider="upstage",
+            provider=args.llm_provider,
             expires_at=expires_at,
         )
         profiles = [
@@ -1124,8 +1166,10 @@ def main():
                     runtime_binding_id=runtime,
                     role="extractor",
                     model_id=args.model,
-                    endpoint="https://api.upstage.ai/v1/chat/completions",
-                    budget_limit_usd="20.00",
+                    endpoint="https://openrouter.ai/api/v1/chat/completions"
+                    if args.llm_provider == "openrouter"
+                    else "https://api.upstage.ai/v1/chat/completions",
+                    budget_limit_usd="5.00" if args.llm_provider == "openrouter" else "20.00",
                 ),
             ),
             (
@@ -1141,6 +1185,8 @@ def main():
                 ),
             ),
         ]
+        if args.vision_parse != "off" or args.parser == "upstage":
+            profiles[-1][2]["allow_raster_upload"] = True
         if args.raster_ocr:
             from proofops.domain.provenance import canonical_hash
 
@@ -1151,6 +1197,7 @@ def main():
                     raster["raster_runtime_binding_id"],
                     dict(
                         common,
+                        provider="upstage",
                         runtime_binding_id=raster["raster_runtime_binding_id"],
                         schema="local_upstage_raster_binding_v1",
                         role="vision",
@@ -1183,9 +1230,15 @@ def main():
                             common,
                             runtime_binding_id=identifier,
                             role="tagger",
-                            model_id="solar-pro4",
-                            endpoint="https://api.upstage.ai/v1/chat/completions",
-                            budget_limit_usd="20.00",
+                            model_id="openai/gpt-6-luna"
+                            if args.llm_provider == "openrouter"
+                            else "solar-pro4",
+                            endpoint="https://openrouter.ai/api/v1/chat/completions"
+                            if args.llm_provider == "openrouter"
+                            else "https://api.upstage.ai/v1/chat/completions",
+                            budget_limit_usd="5.00"
+                            if args.llm_provider == "openrouter"
+                            else "20.00",
                             schema="local_upstage_tagger_binding_v1",
                             tagging_settings_sha256=canonical_hash(pinned),
                             input_reservation_policy_sha256=canonical_hash(
@@ -1295,6 +1348,8 @@ def main():
             selected_pages=pages,
             claim_pages=claim_pages,
             parser_max_output_bytes=parser_output_limit(args.parser_max_output_bytes),
+            vision_parse=args.vision_parse,
+            parser_mode=args.parser,
             extraction_batch_calls=args.max_calls,
             extraction_total_calls=args.extraction_total_calls,
             rulepack_approval="ai_delegated_review" if args.ai_project_review else None,
@@ -1361,6 +1416,10 @@ def main():
             json.dump(manifest, stream, ensure_ascii=False, indent=2)
     else:
         manifest = json.loads(manifest_path.read_text())
+        if manifest.get("vision_parse", "off") != args.vision_parse:
+            raise ValueError("pilot vision parse policy changed; create a new state directory")
+        if manifest.get("parser_mode", "local") != args.parser:
+            raise ValueError("pilot parser mode changed; create a new state directory")
         if manifest.get("capacity_refresh", False) != getattr(args, "capacity_refresh", False):
             raise ValueError("pilot capacity refresh policy changed; create a new state directory")
         if args.extraction_total_calls is not None and (
@@ -1450,16 +1509,33 @@ def main():
     pipeline_outcome = dict(stage=None, status="not_run", exit_code=0)
     if args.invoke:
         key_lines = args.key_file.read_text().splitlines()
+        key_name = "OPENROUTER_API_KEY" if args.llm_provider == "openrouter" else "UPSTAGE_API_KEY"
         key = next(
             line.split("=", 1)[1].strip().strip('"').strip("'")
             for line in key_lines
-            if line.startswith("UPSTAGE_API_KEY=")
+            if line.startswith(key_name + "=")
         )
-        os.environ["UPSTAGE_API_KEY"] = key
+        os.environ[key_name] = key
+        if args.parser == "upstage" and key_name != "UPSTAGE_API_KEY":
+            os.environ["UPSTAGE_API_KEY"] = next(
+                line.split("=", 1)[1].strip().strip('"').strip("'")
+                for line in (ROOT / ".env.upstage.local").read_text().splitlines()
+                if line.startswith("UPSTAGE_API_KEY=")
+            )
+        if args.vision_parse != "off" and key_name != "OPENROUTER_API_KEY":
+            os.environ["OPENROUTER_API_KEY"] = next(
+                line.split("=", 1)[1].strip().strip('"').strip("'")
+                for line in (ROOT / ".env.openrouter.local").read_text().splitlines()
+                if line.startswith("OPENROUTER_API_KEY=")
+            )
         try:
             pipeline_outcome = run_live_stages(args, tenant_id=tenant, run_id=run_id)
         finally:
-            os.environ.pop("UPSTAGE_API_KEY", None)
+            os.environ.pop(key_name, None)
+            if key_name != "OPENROUTER_API_KEY":
+                os.environ.pop("OPENROUTER_API_KEY", None)
+            if key_name != "UPSTAGE_API_KEY":
+                os.environ.pop("UPSTAGE_API_KEY", None)
     # run_live_stages can run for hours (many extraction/tagging batches); the
     # fixture session minted at process start has a fixed absolute+idle TTL
     # (see SessionRecord above) and can expire well before inspection. Re-mint
@@ -1568,11 +1644,26 @@ def main():
             # Paid consent: reuse the same Upstage key + shared USD20 ledger the
             # one-shot --invoke path uses; the loop mints no new allowance.
             key_lines = args.key_file.read_text().splitlines()
-            os.environ["UPSTAGE_API_KEY"] = next(
+            key_name = (
+                "OPENROUTER_API_KEY" if args.llm_provider == "openrouter" else "UPSTAGE_API_KEY"
+            )
+            os.environ[key_name] = next(
                 line.split("=", 1)[1].strip().strip('"').strip("'")
                 for line in key_lines
-                if line.startswith("UPSTAGE_API_KEY=")
+                if line.startswith(key_name + "=")
             )
+            if args.parser == "upstage" and key_name != "UPSTAGE_API_KEY":
+                os.environ["UPSTAGE_API_KEY"] = next(
+                    line.split("=", 1)[1].strip().strip('"').strip("'")
+                    for line in (ROOT / ".env.upstage.local").read_text().splitlines()
+                    if line.startswith("UPSTAGE_API_KEY=")
+                )
+            if args.vision_parse != "off" and key_name != "OPENROUTER_API_KEY":
+                os.environ["OPENROUTER_API_KEY"] = next(
+                    line.split("=", 1)[1].strip().strip('"').strip("'")
+                    for line in (ROOT / ".env.openrouter.local").read_text().splitlines()
+                    if line.startswith("OPENROUTER_API_KEY=")
+                )
             from proofops_worker.composition import build_composition
 
             from evaluation.serve_worker import start_background
@@ -1599,7 +1690,7 @@ def main():
             if worker_stop is not None:
                 worker_stop.set()
                 worker_thread.join(timeout=10)
-                os.environ.pop("UPSTAGE_API_KEY", None)
+                os.environ.pop(key_name, None)
 
     return pipeline_outcome["exit_code"]
 

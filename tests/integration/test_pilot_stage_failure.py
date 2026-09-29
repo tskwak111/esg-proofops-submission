@@ -160,6 +160,7 @@ def test_single_batch_resume_requires_a_published_extract(monkeypatch, outcome):
     )
     result = run_live_stages(args, tenant_id="tenant", run_id="run")
     assert visited == ["parse", "extract"]
+    assert set(result.pop("stage_seconds")) == {"parse", "extract"}
     assert result == {"stage": "extract", "status": "no_revision", "exit_code": 1}
 
 

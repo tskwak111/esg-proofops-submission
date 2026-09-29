@@ -45,9 +45,8 @@ const errors: Record<string, string> = {
   ACCESS_DENIED: "접근 키를 확인해 주세요.", DEMO_NOT_CONFIGURED: "분석 서비스를 사용할 수 없습니다.",
   INVALID_INPUT: "입력을 확인해 주세요. 주장은 500자, 문맥은 2,000자 이하여야 합니다.",
   BODY_TOO_LARGE: "입력 길이가 허용 범위를 넘었습니다.",
-  UPSTAGE_NOT_CONFIGURED: "분석 서비스를 사용할 수 없습니다.",
-  UPSTAGE_UNAVAILABLE: "모델 서비스에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.",
-  PRICE_RECHECK_REQUIRED: "운영자가 모델 가격을 재확인해야 다시 실행할 수 있습니다.",
+  OPENROUTER_NOT_CONFIGURED: "분석 서비스를 사용할 수 없습니다.",
+  OPENROUTER_UNAVAILABLE: "모델 서비스에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.",
   REQUEST_COST_CAP: "이 입력의 예상 처리 비용이 허용 한도를 넘었습니다.",
 };
 

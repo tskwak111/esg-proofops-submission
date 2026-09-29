@@ -3,6 +3,7 @@
 import importlib.util
 import json
 import threading
+import urllib.error
 import urllib.request
 from http.server import HTTPServer
 from pathlib import Path
@@ -58,7 +59,7 @@ def test_fake_pipeline_and_guards(monkeypatch):
             }
         return {
             "choices": [{"message": {"content": json.dumps(content)}}],
-            "usage": {"prompt_tokens": 100, "completion_tokens": 40},
+            "usage": {"prompt_tokens": 100, "completion_tokens": 40, "cost": 0.0001},
         }
 
     claim = "2030년 온실가스 배출량을 줄이겠습니다."
@@ -69,7 +70,7 @@ def test_fake_pipeline_and_guards(monkeypatch):
     assert len(called) == 4
     assert result["replicas"] == 3
     assert result["steps"][1]["replicas"] == 3
-    assert result["steps"][1]["model"] == "solar-pro4"
+    assert result["steps"][1]["model"] == "openai/gpt-6-luna"
     assert result["decision"]["decision_status"] == "blocked_evidence"
     assert result["decision"]["evidence_grade"] is None
     assert result["decision"]["label"] is None
@@ -105,7 +106,7 @@ def test_unmatched_quote_stays_unknown(monkeypatch):
         )
         return {
             "choices": [{"message": {"content": json.dumps(content)}}],
-            "usage": {"prompt_tokens": 100, "completion_tokens": 40},
+            "usage": {"prompt_tokens": 100, "completion_tokens": 40, "cost": 0.0001},
         }
 
     result = live.run_claim(
@@ -139,7 +140,7 @@ def test_context_quote_and_majority_vote(monkeypatch):
         )
         return {
             "choices": [{"message": {"content": json.dumps(content)}}],
-            "usage": {"prompt_tokens": 100, "completion_tokens": 40},
+            "usage": {"prompt_tokens": 100, "completion_tokens": 40, "cost": 0.0001},
         }
 
     result = live.run_claim(
@@ -181,7 +182,7 @@ def test_object_tags_and_rule_gap(monkeypatch):
         )
         return {
             "choices": [{"message": {"content": json.dumps(content)}}],
-            "usage": {"prompt_tokens": 100, "completion_tokens": 40},
+            "usage": {"prompt_tokens": 100, "completion_tokens": 40, "cost": 0.0001},
         }
 
     result = live.run_claim(
@@ -216,7 +217,7 @@ def test_omitted_elements_remain_unknown(monkeypatch):
         )
         return {
             "choices": [{"message": {"content": json.dumps(content)}}],
-            "usage": {"prompt_tokens": 100, "completion_tokens": 40},
+            "usage": {"prompt_tokens": 100, "completion_tokens": 40, "cost": 0.0001},
         }
 
     result = live.run_claim(
@@ -258,7 +259,7 @@ def test_local_quote_cannot_prove_bound_assurance(monkeypatch):
         )
         return {
             "choices": [{"message": {"content": json.dumps(content)}}],
-            "usage": {"prompt_tokens": 100, "completion_tokens": 40},
+            "usage": {"prompt_tokens": 100, "completion_tokens": 40, "cost": 0.0001},
         }
 
     result = live.run_claim(
@@ -278,11 +279,12 @@ def test_http_handler_with_fake_model(monkeypatch):
     def fake(system, user, max_tokens):
         content = (
             {"claim_id": user["claim_id"], "track": None, "safe_harbor_category": None}
-            if "sources" in user else {"elements": []}
+            if "sources" in user
+            else {"elements": []}
         )
         return {
             "choices": [{"message": {"content": json.dumps(content)}}],
-            "usage": {"prompt_tokens": 100, "completion_tokens": 40},
+            "usage": {"prompt_tokens": 100, "completion_tokens": 40, "cost": 0.0001},
         }
 
     monkeypatch.setattr(live, "_provider", fake)
@@ -318,11 +320,12 @@ def test_slow_classification_uses_one_tagging_replica(monkeypatch):
         calls.append(user)
         content = (
             {"claim_id": user["claim_id"], "track": "goal", "safe_harbor_category": None}
-            if "sources" in user else {"elements": []}
+            if "sources" in user
+            else {"elements": []}
         )
         return {
             "choices": [{"message": {"content": json.dumps(content)}}],
-            "usage": {"prompt_tokens": 100, "completion_tokens": 40},
+            "usage": {"prompt_tokens": 100, "completion_tokens": 40, "cost": 0.0001},
         }
 
     def slow_step(*args):
@@ -337,3 +340,60 @@ def test_slow_classification_uses_one_tagging_replica(monkeypatch):
     )
     assert len(calls) == 2
     assert result["replicas"] == 1
+
+
+def test_openrouter_request_and_secret_stays_private(monkeypatch):
+    secret = "private-openrouter-key"
+    monkeypatch.setenv("OPENROUTER_API_KEY", secret)
+    seen = []
+
+    def fake_urlopen(request, timeout):
+        seen.append(request)
+        assert timeout == 20
+        raise urllib.error.URLError("offline")
+
+    monkeypatch.setattr(live.urllib.request, "urlopen", fake_urlopen)
+    with pytest.raises(live.LiveError) as error:
+        live._provider("system", {"claim": "text"}, 384)
+    request = seen[0]
+    body = json.loads(request.data)
+    assert request.full_url == "https://openrouter.ai/api/v1/chat/completions"
+    assert body["model"] == "openai/gpt-6-luna"
+    assert body["reasoning"] == {"effort": "none"}
+    assert body["temperature"] == 0
+    assert body["response_format"] == {"type": "json_object"}
+    assert request.get_header("Authorization") == f"Bearer {secret}"
+    assert secret not in error.value.code
+    assert error.value.code == "OPENROUTER_UNAVAILABLE"
+
+
+@pytest.mark.parametrize("invalid", ["{", '{"claim_id":"id","track":"goal"}', "provider"])
+def test_invalid_json_or_schema_retries_once_and_counts_both_costs(invalid):
+    calls = []
+
+    def fake(system, user, max_tokens):
+        calls.append(max_tokens)
+        if len(calls) == 1 and invalid == "provider":
+            raise live.LiveError(502, "OPENROUTER_RESPONSE_INVALID")
+        content = (
+            invalid
+            if len(calls) == 1
+            else json.dumps(
+                {
+                    "claim_id": user["claim_id"],
+                    "track": "goal",
+                    "safe_harbor_category": None,
+                }
+            )
+        )
+        return {
+            "choices": [{"message": {"content": content}}],
+            "usage": {"prompt_tokens": 100, "completion_tokens": 40, "cost": 0.0002},
+        }
+
+    message, _, _, _, cost = live._step(
+        fake, live.CLASSIFY_PROMPT, {"claim_id": "id", "sources": []}, 384, 0
+    )
+    assert message["track"] == "goal"
+    assert len(calls) == 2
+    assert cost == pytest.approx(0.0002 if invalid == "provider" else 0.0004)

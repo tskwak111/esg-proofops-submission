@@ -116,6 +116,84 @@ def test_parse_success_enhanced(tmp_path, monkeypatch):
     assert Decimal(client.summary()["committed_usd"]) == Decimal("0.099")
 
 
+def test_async_parse_uses_one_shared_reservation_and_checks_batches(tmp_path, monkeypatch):
+    client = UpstageParseProbe("test-secret-parse", tmp_path / "budget.sqlite3")
+    pdf = make_pdf(12)
+    posted = []
+
+    def submit(content, mode, path):
+        posted.append((mode, path, content == pdf))
+        return {"request_id": "provider-id"}
+
+    monkeypatch.setattr(client, "_post_parse", submit)
+    monkeypatch.setattr(client, "_async_status", lambda provider_id: {
+        "status": "completed", "model": PARSE_MODEL_PINNED,
+        "total_pages": 12, "completed_pages": 12,
+        "batches": [{"download_url": "https://kr.files.upstage.ai/a"},
+                    {"download_url": "https://kr.files.upstage.ai/b"}],
+    })
+    monkeypatch.setattr(client, "_async_download", lambda url: {
+        "model": PARSE_MODEL_PINNED, "elements": [],
+        "usage": {"pages": 10 if url.endswith("a") else 2,
+                  "standard": list(range(1, 11)) if url.endswith("a") else [11, 12]},
+    })
+    result = client.parse_async(pdf, request_id="async-12")
+    assert posted == [("standard", "/v1/document-digitization/async", True)]
+    assert len(result["raw_batches"]) == 2
+    assert Decimal(client.summary()["committed_usd"]) == Decimal("0.132")
+
+
+def test_async_parse_rejects_cost_above_one_reservation(tmp_path, monkeypatch):
+    client = UpstageParseProbe("test-secret-parse", tmp_path / "budget.sqlite3")
+    monkeypatch.setattr(client, "_post_parse", lambda *_: pytest.fail("network dispatch"))
+    with pytest.raises(ValueError, match="UPSTAGE_ASYNC_RESERVATION_LIMIT"):
+        client.parse_async(make_pdf(91), request_id="too-expensive")
+    assert client.summary()["calls"] == 0
+    with pytest.raises(ValueError, match="UPSTAGE_DOWNLOAD_URL_INVALID"):
+        client._async_download("https://evil.example/result")
+
+
+def test_parser_routes_bad_standard_html_to_enhanced_without_promoting_blank_text(tmp_path):
+    from uuid import uuid4
+
+    from proofops.adapters.parsing.opendataloader import OpenDataLoaderParser
+    from proofops.application.ingest.graph_fusion import ParserProfile, SourceArtifact
+
+    pdf = make_pdf(1)
+    source = SourceArtifact(str(uuid4()), str(uuid4()), str(uuid4()),
+                            hashlib.sha256(pdf).hexdigest(), "v1", pdf)
+    profile = ParserProfile(str(uuid4()), physical_pages=(1,),
+                            java_executable="/opt/homebrew/opt/openjdk@21/bin/java",
+                            timeout_seconds=120, table_auxiliary=False,
+                            parser_mode="upstage", vision_parse="off")
+    coords = [{"x": .1, "y": .1}, {"x": .9, "y": .1},
+              {"x": .9, "y": .9}, {"x": .1, "y": .9}]
+
+    class Fake:
+        def parse_async(self, pdf_bytes, *, request_id, mode):
+            html = "<table>" if mode == "standard" else (
+                "<table><tr><td>2035</td></tr></table>"
+            )
+            batches = [{"model": PARSE_MODEL_PINNED,
+                        "usage": {"pages": 1, mode: [1]},
+                        "elements": [{"page": 1, "category": "table",
+                                      "coordinates": coords,
+                                      "content": {"text": "2035", "html": html}}]}]
+            return {"raw_batches": batches, "response_sha256": canonical_hash(batches),
+                    "model": PARSE_MODEL_PINNED, "pages": 1}
+
+    parser = OpenDataLoaderParser(tmp_path / "artifacts", upstage_probe=Fake())
+    graph = parser.parse(source, profile, tenant_id=source.tenant_id)
+    assert any(b.kind == "table_cell" for b in graph.blocks)
+    assert all(b.quality == "unlocated" for b in graph.blocks)
+    loaded = parser.load_verified(source, profile, tenant_id=source.tenant_id)
+    assert loaded.to_dict() == graph.to_dict()
+    manifest = json.loads((parser.artifact_root / source.tenant_id /
+        source.document_version_id / profile.parse_manifest_id / "manifest.json").read_text())
+    assert manifest["upstage_parse"]["standard"]["html_failed_pages"] == [1]
+    assert manifest["upstage_parse"]["enhanced"][0]["grounded_cells"] == 0
+
+
 def test_budget_sharing_and_exhaustion_across_probes(tmp_path, monkeypatch):
     path = tmp_path / "budget.sqlite3"
     text_client = upstage.UpstageProbe("test-secret", path)
