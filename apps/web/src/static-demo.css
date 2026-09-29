@@ -410,3 +410,13 @@ main.landing > section.hero { padding: 96px 40px 110px }
 .live-report-sections p, .live-report-selection { color: var(--muted) !important; font-size: 12px !important; line-height: 1.7; overflow-wrap: anywhere }
 .live-report-selection { margin-top: 12px !important }
 .hero h1.hero-brand { font-size: clamp(64px, 9vw, 128px); line-height: 1.02; letter-spacing: -.035em; margin-top: 8px }
+/* Element glossary: three aligned columns instead of one long list */
+.decision-guide > h3 { font-size: 17px; margin: 44px 0 16px; padding-top: 18px; border-top: 1px solid var(--line-2) }
+.guide-elements { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 40px; margin-top: 0 }
+.guide-elements h4 { font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: .04em; margin: 0 0 8px }
+.guide-elements dl { margin: 0; display: grid; gap: 0 }
+.guide-elements dl > div { display: grid; grid-template-columns: 34px 1fr; align-items: baseline; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line) }
+.guide-elements dt { font: 600 12.5px var(--mono); color: var(--green); margin: 0 }
+.guide-elements dd { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); word-break: keep-all }
+.guide-grid { gap: 24px 56px; margin-top: 32px }
+@media (max-width: 860px) { .guide-elements { grid-template-columns: 1fr } }

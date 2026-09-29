@@ -103,7 +103,7 @@ function Analyze({ data }: { data: Snapshot }) {
     <section className="analyze-heading"><p className="eyebrow">REPORT ANALYSIS</p><h1>보고서 분석 시작</h1><p>지속가능경영보고서 PDF를 올리면 분석할 쪽을 골라 바로 분석합니다. 이미 분석한 보고서는 저장된 결과도 함께 볼 수 있습니다.</p></section>
     <section className="analyze-grid"><div className="surface analyze-upload"><h2>PDF 보고서 선택</h2><p>파일을 놓거나 눌러 선택하세요.</p><label className="drop-zone" onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); void inspect(event.dataTransfer.files[0]); }}><span aria-hidden="true">↥</span><strong>{busy ? "파일 지문 계산 중…" : "PDF 파일을 여기에 놓기"}</strong><small>또는 클릭해 파일 선택 · PDF는 이 브라우저 안에서만 읽습니다</small><input type="file" accept=".pdf,application/pdf" aria-label="분석할 PDF 선택" disabled={busy} onChange={event => { void inspect(event.target.files?.[0]); event.target.value = ""; }} /></label>
       {result && <div className={`analyze-result ${result.matched ? "match" : "no-match"}`} role="status"><small>{result.name}</small><h3>{result.message}</h3>{result.matched ? <><Link to="/analyze/replay">분석 과정 보기 ↗</Link><small>아래에서 실시간 분석도 선택할 수 있습니다.</small></> : <p>아래에서 분석할 쪽을 선택해 주세요.</p>}</div>}
-    </div><aside className="surface analyze-info"><p className="eyebrow">ANALYSIS</p><h2>모든 기업 보고서 분석</h2><p>글자를 선택할 수 있는 지속가능경영보고서 PDF라면 기업과 관계없이 분석합니다.</p><div><span>쪽 선택</span><strong style={{ fontFamily: "inherit", fontSize: 15 }}>목차 기반 자동 · 수정 가능</strong></div><div><span>기본 범위</span><strong style={{ fontFamily: "inherit", fontSize: 15 }}>환경(E) + 부록</strong></div><div><span>최대 분량</span><strong style={{ fontFamily: "inherit", fontSize: 15 }}>60쪽 · 10쪽씩 순차 처리</strong></div><p className="analyze-note">결과에는 주장별 인용·쪽수·원문 대조 여부·등급 또는 보류 사유가 표시됩니다. 실시간 분석에는 접근 코드가 필요합니다. 분석 사례: <Link to="/demo">NAVER</Link> · <Link to="/demo/kia">기아</Link></p></aside></section>
+    </div><aside className="surface analyze-info"><p className="eyebrow">ANALYSIS</p><h2>모든 기업 보고서 분석</h2><p>글자를 선택할 수 있는 지속가능경영보고서 PDF라면 기업과 관계없이 분석합니다.</p><div><span>쪽 선택</span><strong style={{ fontFamily: "inherit", fontSize: 15 }}>목차 기반 자동 · 수정 가능</strong></div><div><span>기본 범위</span><strong style={{ fontFamily: "inherit", fontSize: 15 }}>환경(E) + 부록</strong></div><div><span>최대 분량</span><strong style={{ fontFamily: "inherit", fontSize: 15 }}>60쪽 · 10쪽씩 순차 처리</strong></div><p className="analyze-note">결과에는 주장별 인용·쪽수·원문 대조 여부·등급 또는 보류 사유가 표시됩니다. 실시간 분석에는 접근 코드가 필요합니다. 분석 사례: <Link to="/demo">NAVER 2025</Link></p></aside></section>
     {file && <LiveReport key={file.name + file.lastModified} file={file} />}
   </main>;
 }
@@ -157,7 +157,7 @@ function Landing() {
   const tools: [string, string, string, string][] = [
     ["/analyze", "보고서 분석", "어떤 기업 보고서든 선택한 쪽을 바로 분석합니다", "t-upload"],
     ["/demo", "분석 사례 · NAVER", "NAVER 2025 보고서의 주장·근거·판정", "t-results"],
-    ["/demo/kia", "분석 사례 · 기아", "수치 검산과 검증의견서 연결", "t-kia"],
+    ["/guide", "서비스 가이드라인", "작동 방식·기능·판정 기준 안내", "t-kia"],
   ];
   return <main className="landing">
     <section className="hero">
@@ -167,7 +167,7 @@ function Landing() {
       <Link className="pill pill-dark" to="/analyze">보고서 분석 시작 <span aria-hidden="true">→</span></Link>
       <form className="prompt" onSubmit={event => { event.preventDefault(); navigate("/analyze"); }}>
         <textarea aria-label="분석 요청" value={draft} onChange={event => setDraft(event.target.value)} placeholder={example} rows={3} />
-        <div className="prompt-bar"><div className="chips"><Link to="/analyze" className="chip"><span className="ic">⬆</span>PDF 업로드</Link><Link to="/demo" className="chip"><span className="ic">◎</span>분석 사례</Link><Link to="/demo/kia" className="chip"><span className="ic">◇</span>기아 사례</Link></div><button type="submit" className="send" aria-label="보고서 분석">↑</button></div>
+        <div className="prompt-bar"><div className="chips"><Link to="/analyze" className="chip"><span className="ic">⬆</span>PDF 업로드</Link><Link to="/demo" className="chip"><span className="ic">◎</span>분석 사례</Link><Link to="/guide" className="chip"><span className="ic">◇</span>서비스 가이드라인</Link></div><button type="submit" className="send" aria-label="보고서 분석">↑</button></div>
       </form>
       <p className="hero-note">PDF를 올리면 분석할 쪽을 골라 바로 분석합니다</p>
     </section>
@@ -333,7 +333,7 @@ function Demo({ data }: { data: Snapshot }) {
   const selected = explicit || (typeof window !== "undefined" && window.innerWidth > 1024 ? filtered[0] || null : null);
   const counts = { decided: data.claims.filter(c => queueFor(c) === "decided").length, range: data.claims.filter(c => queueFor(c) === "estimated").length, pending: data.claims.filter(c => queueFor(c) === "unverified" || queueFor(c) === "unclassified").length };
   const queueCounts = Object.fromEntries(queues.map(name => [name, data.claims.filter(claim => queueFor(claim) === name).length])) as Record<Queue, number>;
-  return <main className="static-main demo-main"><div className="breadcrumb"><Link to="/">홈</Link><span>/</span> 분석 결과</div><CompanyTabs selected="naver" />
+  return <main className="static-main demo-main"><div className="breadcrumb"><Link to="/">홈</Link><span>/</span> 분석 결과</div>
     <section className="demo-heading"><div><p className="eyebrow">ANALYSIS · 2025</p><h1>분석 사례 · NAVER 2025</h1><p>실제 보고서에서 추출한 주장과 원문 근거, 규칙 판정을 탐색할 수 있습니다.</p><div className="badges"><span className="badge amber">분석 범위: {data.coverage.pages_processed}/{data.coverage.pages_total}쪽</span><span className="badge blue">{confirmationText}</span></div><Link className="report-link" to="/report/naver">검토 보고서 보기 ↗</Link></div><div className="heading-side"><span>REVIEW STATUS</span><strong>검토 기록 27건 <i /></strong><small>검토일 {new Date(data.generated_at).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })}</small></div></section>
     <section className="metrics" aria-label="분석 요약"><div><span>추출 주장</span><strong><CountUp value={data.coverage.claims_discovered} /><small>건</small></strong><p>공시 문장</p></div><div><span>원문 검증</span><strong><CountUp value={data.funnel[1].count} /><small>건</small></strong><p>원문 대조 완료</p></div><div><span>확정 판정</span><strong><CountUp value={counts.decided} /><small>건</small></strong><p>규칙 판정</p></div><div><span>예비 등급</span><strong><CountUp value={counts.range} /><small>건</small></strong><p>근거 확인 필요</p></div></section>
     <section className="overview-grid"><div className="surface funnel-card"><div className="card-heading"><div><p className="eyebrow">PROCESS FUNNEL</p><h2>처리 흐름</h2></div><span>추출 → 태깅 → 판정</span></div><div className="funnel-list">{data.funnel.map((step, index) => <div className="funnel-row" key={step.label}><span className="step-name"><b>{String(index + 1).padStart(2, "0")}</b>{["추출 주장", "원문 검증", "예비 분류", "관계 분석", "요소 분석", "등급 표시"][index] || step.label}</span><div className="bar-track"><div style={{ width: `${Math.max(step.count / data.coverage.claims_discovered * 100, 3)}%` }} /></div><strong>{step.count}</strong></div>)}</div></div>
