@@ -409,3 +409,4 @@ main.landing > section.hero { padding: 96px 40px 110px }
 .live-report-sections small { color: var(--muted) }
 .live-report-sections p, .live-report-selection { color: var(--muted) !important; font-size: 12px !important; line-height: 1.7; overflow-wrap: anywhere }
 .live-report-selection { margin-top: 12px !important }
+.hero h1.hero-brand { font-size: clamp(64px, 9vw, 128px); line-height: 1.02; letter-spacing: -.035em; margin-top: 8px }

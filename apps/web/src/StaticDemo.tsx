@@ -71,7 +71,7 @@ export function StaticDemo() {
     </div></header>
     {isLive ? <LiveClaim /> : error ? <main className="static-main"><section className="surface"><h1>분석 결과를 불러오지 못했습니다</h1><p>잠시 후 새로고침해 주세요.</p></section></main> :
       !data ? <main className="static-main loading-main" role="status" aria-label="검토 결과 불러오는 중"><div className="skeleton skeleton-title" /><div className="skeleton skeleton-card" /><div className="skeleton skeleton-card" /></main> :
-      <Routes><Route path="/" element={<Landing data={data} />} /><Route path="/analyze" element={<Analyze data={data} />} /><Route path="/guide" element={<Guide />} /><Route path={replayPath} element={<ReplayPage snapshot={data} />} /><Route path="/demo" element={<Demo data={data} />} /><Route path="/demo/:claimId" element={<Demo data={data} />} /><Route path={kiaRoute.path} element={<><div className="kia-route-toolbar"><CompanyTabs selected="kia" /><Link to="/report/kia">기아 검토 보고서 ↗</Link></div><kiaRoute.Component /></>} /><Route path={reviewRoutePath} element={<ReviewPage claims={data.claims} />} /><Route path={auditReportRoute.path} element={<AuditReportPage />} /><Route path="*" element={<NotFound />} /></Routes>}
+      <Routes><Route path="/" element={<Landing data={data} />} /><Route path="/analyze" element={<Analyze data={data} />} /><Route path="/guide" element={<Guide data={data} />} /><Route path={replayPath} element={<ReplayPage snapshot={data} />} /><Route path="/demo" element={<Demo data={data} />} /><Route path="/demo/:claimId" element={<Demo data={data} />} /><Route path={kiaRoute.path} element={<><div className="kia-route-toolbar"><CompanyTabs selected="kia" /><Link to="/report/kia">기아 검토 보고서 ↗</Link></div><kiaRoute.Component /></>} /><Route path={reviewRoutePath} element={<ReviewPage claims={data.claims} />} /><Route path={auditReportRoute.path} element={<AuditReportPage />} /><Route path="*" element={<NotFound />} /></Routes>}
     <footer className="site-footer"><div className="wrap footer-inner"><div><strong>ProofOps</strong><p>본 서비스는 공시 발간 전 근거 점검을 돕는 도구이며, 제3자 보증, 기업 성과 진위, 법률·회계 판단을 대신하지 않습니다.</p></div><nav aria-label="바닥글"><Link to="/analyze">분석</Link><Link to="/demo">분석 사례</Link><Link to="/report/naver">보고서 예시</Link><Link to="/live">문장 분석</Link><Link to="/guide">서비스 가이드라인</Link><a href="https://github.com/tskwak111/esg-proofops-submission" target="_blank" rel="noopener noreferrer">GitHub</a></nav><span>© 2026 ProofOps</span></div></footer>
   </div>;
 }
@@ -154,7 +154,6 @@ function ReportPreview({ data }: { data: Snapshot }) {
 function Landing({ data }: { data: Snapshot }) {
   const navigate = useNavigate();
   const [draft, setDraft] = useState("");
-  const verified = data.funnel[1]?.count ?? 0;
   const reviewTarget = data.claims.find(claim => claim.decision.grade === "E3")?.id || data.claims[0]?.id;
   const example = "업로드 한 보고서 및 재무제표를 기반으로, 그린워싱으로 판별된 리스크가 높은 문장과 그 원인을 분석해줘.";
   const tools: [string, string, string, string][] = [
@@ -168,7 +167,7 @@ function Landing({ data }: { data: Snapshot }) {
   return <main className="landing">
     <section className="hero">
       <p className="eyebrow-c">ESG · 지속가능경영보고서 공시 검증</p>
-      <h1>ProofOps</h1>
+      <h1 className="hero-brand">ProofOps</h1>
       <p className="hero-sub">기업 보고서 내 환경 주장의 근거를 공시 안에서 찾으며, 규칙엔진을 기반으로 근거 수준을 판정합니다. 근거에 대한 쪽수·원문 인용 또는 확인 범위가 함께 표시됩니다.</p>
       <Link className="pill pill-dark" to="/analyze">보고서 분석 시작 <span aria-hidden="true">→</span></Link>
       <form className="prompt" onSubmit={event => { event.preventDefault(); navigate(draft.trim() ? `/live?claim=${encodeURIComponent(draft.trim().slice(0, 500))}` : "/analyze"); }}>
@@ -176,27 +175,6 @@ function Landing({ data }: { data: Snapshot }) {
         <div className="prompt-bar"><div className="chips"><Link to="/analyze" className="chip"><span className="ic">⬆</span>PDF 업로드</Link><Link to="/demo" className="chip"><span className="ic">◎</span>분석 사례</Link><Link to="/report/naver" className="chip"><span className="ic">▤</span>보고서</Link><Link to="/demo/kia" className="chip"><span className="ic">◇</span>기아 사례</Link></div><button type="submit" className="send" aria-label="문장 분석">↑</button></div>
       </form>
       <p className="hero-note">문장을 입력하면 분류 → 요소 태깅 → 규칙엔진 판정을 바로 실행합니다</p>
-    </section>
-
-    <section className="sec sec-beige" id="how">
-      <p className="eyebrow-c center">작동 방식</p><h2 className="serif center">단 몇 분 만에 핵심 근거 확인</h2>
-      <div className="steps">{steps.map(([title, body], index) => <article className="card" key={title}><span className="num">{index + 1}</span><h3>{title}</h3><p>{body}</p></article>)}</div>
-      <div className="proof"><p className="proof-kicker">분석 사례 · NAVER 2025 통합보고서</p><h3 className="serif center">공개된 실제 보고서로 전체 흐름을 검증했습니다.</h3>
-        <dl><div><dt>분석 쪽수</dt><dd><CountUp value={data.coverage.pages_total} /></dd></div><div><dt>추출 주장</dt><dd><CountUp value={data.coverage.claims_discovered} /></dd></div><div><dt>원문 대조</dt><dd><CountUp value={verified} /></dd></div><div><dt>확정 판정</dt><dd><CountUp value={data.coverage.claims_decided} /></dd></div></dl></div>
-    </section>
-
-    <section className="sec sec-cream">
-      <p className="eyebrow-c center">기능</p><h2 className="serif center">검증에 필요한 모든 기능</h2>
-      <div className="features">{features.map(([title, body]) => <article className="card" key={title}><h3>{title}</h3><p>{body}</p></article>)}</div>
-    </section>
-
-    <section className="sec sec-beige">
-      <p className="eyebrow-c">활용 사례</p><h2 className="serif">실무를 위한 설계</h2>
-      <div className="uses">
-        <div className="use"><div className="use-copy"><h3>문장마다 근거 경로를 추적</h3><p>주장 하나에 필요한 입증 요소를 원문 쪽수와 인용으로 연결합니다. 이행 주체, 적용 범위, 외부 검증이 모두 확인되면 규칙엔진이 E3로 판정합니다.</p><Link className="more" to="/demo">분석 결과 보기 →</Link></div><EvidenceTrace /></div>
-        <div className="use reverse"><div className="use-copy"><h3>보고서 한 권의 처리 과정을 한눈에</h3><p>파싱부터 판정까지 단계별 처리량과 시간, 모델 호출 수를 기록합니다. 어디서 막혔는지, 무엇이 확인되지 않았는지 숨기지 않습니다.</p><Link className="more" to="/analyze/replay">처리 과정 보기 →</Link></div><FunnelPreview data={data} /></div>
-        <div className="use"><div className="use-copy"><h3>감사 보고서로 바로 공유</h3><p>판정 분포, 핵심 발견, 주장별 근거를 담은 보고서를 A4 PDF와 JSON·CSV로 내보내 검토 조직과 공유합니다.</p><Link className="more" to="/report/naver">감사 보고서 보기 →</Link></div><ReportPreview data={data} /></div>
-      </div>
     </section>
 
     <section className="sec sec-cream">
@@ -215,7 +193,7 @@ function Landing({ data }: { data: Snapshot }) {
   </main>;
 }
 
-function Guide() {
+function Guide({ data }: { data: Snapshot }) {
   const tracks: [string, string][] = [
     ["목표형", "목표연도·수치, 기준값·적용범위, 진척·이행수단을 확인합니다."],
     ["성과형", "수치·단위, 비교기준·산정방법·경계, 외부 검증 연결을 확인합니다."],
@@ -245,6 +223,14 @@ function Guide() {
       <p className="eyebrow-c center">판정 기준</p><h2 className="serif center">주장 유형과 근거 수준</h2>
       <div className="features">{tracks.map(([title, body]) => <article className="card" key={title}><h3>{title}</h3><p>{body}</p></article>)}</div>
       <div className="features">{grades.map(([grade, label, body]) => <article className="card" key={grade}><h3>{grade}</h3><p><strong>{label}</strong></p><p>{body}</p></article>)}</div>
+    </section>
+    <section className="sec sec-beige">
+      <p className="eyebrow-c">활용 사례</p><h2 className="serif">실무를 위한 설계</h2>
+      <div className="uses">
+        <div className="use"><div className="use-copy"><h3>문장마다 근거 경로를 추적</h3><p>주장 하나에 필요한 입증 요소를 원문 쪽수와 인용으로 연결합니다. 이행 주체, 적용 범위, 외부 검증이 모두 확인되면 규칙엔진이 E3로 판정합니다.</p><Link className="more" to="/demo">분석 결과 보기 →</Link></div><EvidenceTrace /></div>
+        <div className="use reverse"><div className="use-copy"><h3>보고서 한 권의 처리 과정을 한눈에</h3><p>파싱부터 판정까지 단계별 처리량과 시간, 모델 호출 수를 기록합니다. 어디서 막혔는지, 무엇이 확인되지 않았는지 숨기지 않습니다.</p><Link className="more" to="/analyze/replay">처리 과정 보기 →</Link></div><FunnelPreview data={data} /></div>
+        <div className="use"><div className="use-copy"><h3>감사 보고서로 바로 공유</h3><p>판정 분포, 핵심 발견, 주장별 근거를 담은 보고서를 A4 PDF와 JSON·CSV로 내보내 검토 조직과 공유합니다.</p><Link className="more" to="/report/naver">감사 보고서 보기 →</Link></div><ReportPreview data={data} /></div>
+      </div>
     </section>
     <section className="sec sec-cream faq">
       <div className="faq-inner">
