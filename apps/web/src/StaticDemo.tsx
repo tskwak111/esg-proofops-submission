@@ -67,7 +67,6 @@ export function StaticDemo() {
       <Link className="brand" to="/" aria-label="ProofOps 홈"><span className="brand-dot" aria-hidden="true" />ProofOps</Link>
       <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="site-menu" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? "닫기" : "메뉴"}<span aria-hidden="true">{menuOpen ? "×" : "☰"}</span></button>
       <nav id="site-menu" className={menuOpen ? "open" : ""} aria-label="주요 메뉴" onClick={() => setMenuOpen(false)}><Link to="/">서비스</Link><Link to="/analyze">분석</Link><Link to="/demo">분석 사례</Link><Link to="/report/naver">보고서 예시</Link><Link to="/live">문장 분석</Link><Link to="/guide">서비스 가이드라인</Link></nav>
-      <div className="header-actions"><Link className="pill pill-line" to="/demo">분석 사례</Link><Link className="pill pill-dark" to="/analyze">분석 시작</Link></div>
     </div></header>
     {isLive ? <LiveClaim /> : error ? <main className="static-main"><section className="surface"><h1>분석 결과를 불러오지 못했습니다</h1><p>잠시 후 새로고침해 주세요.</p></section></main> :
       !data ? <main className="static-main loading-main" role="status" aria-label="검토 결과 불러오는 중"><div className="skeleton skeleton-title" /><div className="skeleton skeleton-card" /><div className="skeleton skeleton-card" /></main> :
