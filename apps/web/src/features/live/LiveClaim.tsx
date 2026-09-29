@@ -106,7 +106,7 @@ export function LiveClaim() {
     <div className="live-grid"><section className="surface live-form-card"><div className="card-heading"><div><p className="eyebrow">INPUT</p><h2>분석할 문장</h2></div></div>
       <form onSubmit={submit} className="live-form">
         <label>접근 키<input type="password" autoComplete="off" value={code} onChange={e => setCode(e.target.value)} required placeholder="접근 키" /></label>
-        <div className="live-examples"><span>NAVER 2025 보고서 문장</span>{examples.map(example => <button type="button" key={example.title} onClick={() => choose(example)}><strong>{example.title}</strong><small>{example.claim}</small></button>)}</div>
+        <div className="live-examples"><span>N사 2025 보고서 문장</span>{examples.map(example => <button type="button" key={example.title} onClick={() => choose(example)}><strong>{example.title}</strong><small>{example.claim}</small></button>)}</div>
         <label>주장 <small>최대 500자</small><textarea value={claim} onChange={e => { setClaim(e.target.value); setResult(null); }} maxLength={500} rows={3} required placeholder="환경 관련 주장 한 문장" /></label>
         <label>근거 문맥 <small>최대 2,000자 · 선택</small><textarea value={context} onChange={e => { setContext(e.target.value); setResult(null); }} maxLength={2000} rows={4} placeholder="같은 보고서의 관련 문단을 붙여 넣으세요." /></label>
         <label>페이지 <small>선택</small><input value={page} onChange={e => { setPage(e.target.value); setResult(null); }} maxLength={30} placeholder="예: 83" /></label>
@@ -124,7 +124,7 @@ export function LiveClaim() {
       </>}
       {!result && !busy && <div className="live-placeholder">보고서 문장을 선택하거나 직접 입력하면 결과가 여기에 표시됩니다.</div>}
     </section></div>
-    <p className="live-footer-note"><Link to="/demo">NAVER 보고서 분석 결과 보기 ↗</Link></p>
+    <p className="live-footer-note"><Link to="/demo">N사 보고서 분석 결과 보기 ↗</Link></p>
   </main>;
 }
 

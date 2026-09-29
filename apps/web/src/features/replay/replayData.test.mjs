@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { buildReplayModel, replayDuration, stageAt } from "./replayData.ts";
 
-test("saved NAVER run becomes a complete replay without inventing counts", () => {
+test("saved N사 run becomes a complete replay without inventing counts", () => {
   const snapshot = JSON.parse(readFileSync(new URL("../../../public/demo/naver-2025.json", import.meta.url), "utf8"));
   const model = buildReplayModel(snapshot);
   assert.equal(model.stages.length, 9);

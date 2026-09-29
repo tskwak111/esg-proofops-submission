@@ -77,7 +77,7 @@ export function StaticDemo() {
 
 function NotFound() { return <main className="static-main not-found"><p className="eyebrow">404 / PAGE NOT FOUND</p><h1>페이지를 찾을 수 없습니다.</h1><p>주소를 확인하거나 검토 결과로 돌아가세요.</p><Link className="primary-link" to="/demo">결과 보기 ↗</Link></main>; }
 
-function CompanyTabs({ selected }: { selected: "naver" | "kia" }) { return <nav className="company-tabs" aria-label="기업 선택"><Link to="/demo" aria-current={selected === "naver" ? "page" : undefined}>NAVER</Link><Link to="/demo/kia" aria-current={selected === "kia" ? "page" : undefined}>기아</Link></nav>; }
+function CompanyTabs({ selected }: { selected: "naver" | "kia" }) { return <nav className="company-tabs" aria-label="기업 선택"><Link to="/demo" aria-current={selected === "naver" ? "page" : undefined}>N사</Link><Link to="/demo/kia" aria-current={selected === "kia" ? "page" : undefined}>기아</Link></nav>; }
 
 
 function Analyze({ data }: { data: Snapshot }) {
@@ -101,9 +101,9 @@ function Analyze({ data }: { data: Snapshot }) {
 
   return <main className="static-main analyze-main"><div className="breadcrumb"><Link to="/">홈</Link><span>/</span> 보고서 분석</div>
     <section className="analyze-heading"><p className="eyebrow">REPORT ANALYSIS</p><h1>보고서 분석 시작</h1><p>지속가능경영보고서 PDF를 올리면 분석할 쪽을 골라 바로 분석합니다. 이미 분석한 보고서는 저장된 결과도 함께 볼 수 있습니다.</p></section>
-    <section className="analyze-grid"><div className="surface analyze-upload"><h2>PDF 보고서 선택</h2><p>파일을 놓거나 눌러 선택하세요.</p><label className="drop-zone" onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); void inspect(event.dataTransfer.files[0]); }}><span aria-hidden="true">↥</span><strong>{busy ? "파일 지문 계산 중…" : "PDF 파일을 여기에 놓기"}</strong><small>또는 클릭해 파일 선택 · PDF는 이 브라우저 안에서만 읽습니다</small><input type="file" accept=".pdf,application/pdf" aria-label="분석할 PDF 선택" disabled={busy} onChange={event => { void inspect(event.target.files?.[0]); event.target.value = ""; }} /></label>
+    <section className="analyze-grid"><div className="surface analyze-upload"><h2>PDF 보고서 선택</h2><p>파일을 놓거나 눌러 선택하세요.</p><label className="drop-zone" onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); void inspect(event.dataTransfer.files[0]); }}><span aria-hidden="true">↥</span><strong>{busy ? "파일 지문 계산 중…" : "PDF 업로드"}</strong><small>또는 클릭해 파일 선택 · PDF는 이 브라우저 안에서만 읽습니다</small><input type="file" accept=".pdf,application/pdf" aria-label="분석할 PDF 선택" disabled={busy} onChange={event => { void inspect(event.target.files?.[0]); event.target.value = ""; }} /></label>
       {result && <div className={`analyze-result ${result.matched ? "match" : "no-match"}`} role="status"><small>{result.name}</small><h3>{result.message}</h3>{result.matched ? <><Link to="/analyze/replay">분석 과정 보기 ↗</Link><small>아래에서 실시간 분석도 선택할 수 있습니다.</small></> : <p>아래에서 분석할 쪽을 선택해 주세요.</p>}</div>}
-    </div><aside className="surface analyze-info"><p className="eyebrow">ANALYSIS</p><h2>모든 기업 보고서 분석</h2><p>글자를 선택할 수 있는 지속가능경영보고서 PDF라면 기업과 관계없이 분석합니다.</p><div><span>쪽 선택</span><strong style={{ fontFamily: "inherit", fontSize: 15 }}>목차 기반 자동 · 수정 가능</strong></div><div><span>기본 범위</span><strong style={{ fontFamily: "inherit", fontSize: 15 }}>환경(E) + 부록</strong></div><div><span>최대 분량</span><strong style={{ fontFamily: "inherit", fontSize: 15 }}>60쪽 · 10쪽씩 순차 처리</strong></div><p className="analyze-note">결과에는 주장별 인용·쪽수·원문 대조 여부·등급 또는 보류 사유가 표시됩니다. 실시간 분석에는 접근 코드가 필요합니다. 분석 사례: <Link to="/demo">NAVER 2025</Link></p></aside></section>
+    </div><aside className="surface analyze-info"><p className="eyebrow">ANALYSIS</p><h2>모든 기업 보고서 분석</h2><p>글자를 선택할 수 있는 지속가능경영보고서 PDF라면 기업과 관계없이 분석합니다.</p><div><span>쪽 선택</span><strong style={{ fontFamily: "inherit", fontSize: 15 }}>목차 기반 자동 · 수정 가능</strong></div><div><span>기본 범위</span><strong style={{ fontFamily: "inherit", fontSize: 15 }}>환경(E) + 부록</strong></div><div><span>최대 분량</span><strong style={{ fontFamily: "inherit", fontSize: 15 }}>60쪽 · 10쪽씩 순차 처리</strong></div><p className="analyze-note">결과에는 주장별 인용·쪽수·원문 대조 여부·등급 또는 보류 사유가 표시됩니다. 실시간 분석에는 접근 코드가 필요합니다. 분석 사례: <Link to="/demo">N사 2025</Link></p></aside></section>
     {file && <LiveReport key={file.name + file.lastModified} file={file} />}
   </main>;
 }
@@ -126,11 +126,11 @@ const features: [string, string][] = [
 function EvidenceTrace() {
   const rows: [string, string, string][] = [
     ["M1 · 이행 주체", "p.84", "Operation(환경운영부서)과 내부탄소가격제 TF 운영"],
-    ["M2 · 적용 범위", "p.2", "네이버 주식회사 개별 기업을 기준으로 작성"],
+    ["M2 · 적용 범위", "p.2", "N사 주식회사 개별 기업을 기준으로 작성"],
     ["M3 · 외부 검증", "p.230 · 242", "GRI 3-3 중대 토픽 관리 · AA1000AS v3"],
   ];
   return <figure className="trace" aria-label="판정 경로 예시">
-    <div className="trace-head"><span className="dot" />NAVER 2025 · p.84 · 관리체계</div>
+    <div className="trace-head"><span className="dot" />N사 2025 · p.84 · 관리체계</div>
     <blockquote>“Operation(환경운영부서)과 Internal Carbon Pricing TF 운영”</blockquote>
     <ol className="trace-rows">{rows.map(([name, page, quote], index) => <li key={name} style={{ animationDelay: `${300 + index * 350}ms` }}><span className="check">✓</span><div><strong>{name}</strong><p>{quote}</p></div><span className="trace-page">{page}</span></li>)}</ol>
     <div className="trace-result"><span>규칙엔진 판정</span><strong>E3</strong><em>SUBSTANTIATED</em></div>
@@ -140,14 +140,14 @@ function EvidenceTrace() {
 function FunnelPreview({ data }: { data: Snapshot }) {
   const max = data.coverage.claims_discovered || 1;
   const rows: [string, number][] = [["추출 주장", data.coverage.claims_discovered], ["원문 대조", data.funnel[1]?.count ?? 0], ["등급 표시", data.claims.length], ["확정 판정", data.coverage.claims_decided]];
-  return <figure className="mini-card"><div className="mini-head"><span>처리 과정</span><span>NAVER 2025</span></div>{rows.map(([label, value], index) => <div className="mini-bar" key={label}><div><span>{label}</span><strong>{value}</strong></div><i><b style={{ width: `${Math.max(value / max * 100, 4)}%`, animationDelay: `${index * 120}ms` }} /></i></div>)}</figure>;
+  return <figure className="mini-card"><div className="mini-head"><span>처리 과정</span><span>N사 2025</span></div>{rows.map(([label, value], index) => <div className="mini-bar" key={label}><div><span>{label}</span><strong>{value}</strong></div><i><b style={{ width: `${Math.max(value / max * 100, 4)}%`, animationDelay: `${index * 120}ms` }} /></i></div>)}</figure>;
 }
 
 function ReportPreview({ data }: { data: Snapshot }) {
   const count = (grade: string) => data.claims.filter(claim => (claim.decision.grade || claim.decision.display_grade) === grade).length;
   const grades = ["E3", "E2", "E1", "E0"];
   const total = data.claims.length || 1;
-  return <figure className="mini-card report-mini"><div className="mini-head"><span>감사 보고서</span><span>PDF · JSON · CSV</span></div><h4>NAVER 공시 근거 검토 보고서</h4><div className="stack">{grades.map(grade => <i key={grade} className={grade.toLowerCase()} style={{ width: `${count(grade) / total * 100}%` }} />)}</div><ul>{grades.map(grade => <li key={grade}><span className={`sw ${grade.toLowerCase()}`} />{grade}<strong>{count(grade)}</strong></li>)}</ul></figure>;
+  return <figure className="mini-card report-mini"><div className="mini-head"><span>감사 보고서</span><span>PDF · JSON · CSV</span></div><h4>N사 공시 근거 검토 보고서</h4><div className="stack">{grades.map(grade => <i key={grade} className={grade.toLowerCase()} style={{ width: `${count(grade) / total * 100}%` }} />)}</div><ul>{grades.map(grade => <li key={grade}><span className={`sw ${grade.toLowerCase()}`} />{grade}<strong>{count(grade)}</strong></li>)}</ul></figure>;
 }
 
 function Landing() {
@@ -156,7 +156,7 @@ function Landing() {
   const example = "업로드 한 보고서 및 재무제표를 기반으로, 그린워싱으로 판별된 리스크가 높은 문장과 그 원인을 분석해줘.";
   const tools: [string, string, string, string][] = [
     ["/analyze", "보고서 분석", "어떤 기업 보고서든 선택한 쪽을 바로 분석합니다", "t-upload"],
-    ["/demo", "분석 사례 · NAVER", "NAVER 2025 보고서의 주장·근거·판정", "t-results"],
+    ["/demo", "분석 사례 · N사", "N사 2025 보고서의 주장·근거·판정", "t-results"],
     ["/guide", "서비스 가이드라인", "작동 방식·기능·판정 기준 안내", "t-kia"],
   ];
   return <main className="landing">
@@ -334,11 +334,10 @@ function Demo({ data }: { data: Snapshot }) {
   const counts = { decided: data.claims.filter(c => queueFor(c) === "decided").length, range: data.claims.filter(c => queueFor(c) === "estimated").length, pending: data.claims.filter(c => queueFor(c) === "unverified" || queueFor(c) === "unclassified").length };
   const queueCounts = Object.fromEntries(queues.map(name => [name, data.claims.filter(claim => queueFor(claim) === name).length])) as Record<Queue, number>;
   return <main className="static-main demo-main"><div className="breadcrumb"><Link to="/">홈</Link><span>/</span> 분석 결과</div>
-    <section className="demo-heading"><div><p className="eyebrow">ANALYSIS · 2025</p><h1>분석 사례 · NAVER 2025</h1><p>실제 보고서에서 추출한 주장과 원문 근거, 규칙 판정을 탐색할 수 있습니다.</p><div className="badges"><span className="badge amber">분석 범위: {data.coverage.pages_processed}/{data.coverage.pages_total}쪽</span><span className="badge blue">{confirmationText}</span></div><Link className="report-link" to="/report/naver">검토 보고서 보기 ↗</Link></div><div className="heading-side"><span>REVIEW STATUS</span><strong>검토 기록 27건 <i /></strong><small>검토일 {new Date(data.generated_at).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })}</small></div></section>
+    <section className="demo-heading"><div><p className="eyebrow">ANALYSIS · 2025</p><h1>분석 사례 · N사 2025</h1><p>실제 보고서에서 추출한 주장과 원문 근거, 규칙 판정을 탐색할 수 있습니다.</p><div className="badges"><span className="badge amber">분석 범위: {data.coverage.pages_processed}/{data.coverage.pages_total}쪽</span><span className="badge blue">{confirmationText}</span></div><Link className="report-link" to="/report/naver">검토 보고서 보기 ↗</Link></div><div className="heading-side"><span>REVIEW STATUS</span><strong>검토 기록 27건 <i /></strong><small>검토일 {new Date(data.generated_at).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })}</small></div></section>
     <section className="metrics" aria-label="분석 요약"><div><span>추출 주장</span><strong><CountUp value={data.coverage.claims_discovered} /><small>건</small></strong><p>공시 문장</p></div><div><span>원문 검증</span><strong><CountUp value={data.funnel[1].count} /><small>건</small></strong><p>원문 대조 완료</p></div><div><span>확정 판정</span><strong><CountUp value={counts.decided} /><small>건</small></strong><p>규칙 판정</p></div><div><span>예비 등급</span><strong><CountUp value={counts.range} /><small>건</small></strong><p>근거 확인 필요</p></div></section>
     <section className="overview-grid"><div className="surface funnel-card"><div className="card-heading"><div><p className="eyebrow">PROCESS FUNNEL</p><h2>처리 흐름</h2></div><span>추출 → 태깅 → 판정</span></div><div className="funnel-list">{data.funnel.map((step, index) => <div className="funnel-row" key={step.label}><span className="step-name"><b>{String(index + 1).padStart(2, "0")}</b>{["추출 주장", "원문 검증", "예비 분류", "관계 분석", "요소 분석", "등급 표시"][index] || step.label}</span><div className="bar-track"><div style={{ width: `${Math.max(step.count / data.coverage.claims_discovered * 100, 3)}%` }} /></div><strong>{step.count}</strong></div>)}</div></div>
       <div className="surface grade-card"><p className="eyebrow">DECISION DISTRIBUTION</p><h2>등급과 보류 <GuideHelp topic="grade" /><GuideHelp topic="range" /></h2><div className="grade-bars"><div><span><b>확정</b> 규칙 판정</span><strong>{counts.decided}</strong></div><div className="grade-line e3"><i style={{ width: `${counts.decided / data.claims.length * 100}%` }} /></div><div><span><b>예비 등급</b> <GuideHelp topic="estimated" /></span><strong>{counts.range}</strong></div><div className="grade-line range"><i style={{ width: `${counts.range / data.claims.length * 100}%` }} /></div><div><span><b>나머지</b> 확인 대기</span><strong>{counts.pending}</strong></div><div className="grade-line pending"><i style={{ width: `${counts.pending / data.claims.length * 100}%` }} /></div></div><p className="caption">전체 {data.claims.length}건 중 확정 판정과 예비 등급을 구분해 표시합니다.</p></div></section>
-    <section className="notice"><a href="https://www.navercorp.com/esg/esgReports" target="_blank" rel="noopener noreferrer">NAVER 원문 보고서 ↗</a></section>
     <section className="claims-section" id="claims"><div className="card-heading"><div><p className="eyebrow">CLAIM REVIEW</p><h2>문장별 결과</h2><p>상태를 선택하고 문장을 열어 원문과 요소별 근거를 확인하세요.</p></div><span>{filtered.length} / {data.claims.length}건</span></div>
       <div className="queue-tabs" role="tablist" aria-label="검토 상태">{queues.map(name => <button type="button" role="tab" aria-selected={queue === name} key={name} onClick={() => { setQueue(name); setGrade("all"); setStatus("all"); setLimit(25); }}>{queueLabels[name]} <span>{queueCounts[name]}</span></button>)}</div>
       <div className="filters"><label>검색<input value={search} onChange={event => { setSearch(event.target.value); setLimit(25); }} placeholder="문장, 페이지 검색" /></label><label>트랙 <GuideHelp topic="track" /><select value={track} onChange={event => { setTrack(event.target.value); setLimit(25); }}><option value="all">전체 트랙</option><option value="management">관리체계</option><option value="goal">목표</option><option value="performance">성과</option><option value="unknown">분류 미합의</option></select></label><label>등급 <GuideHelp topic="grade" /><select value={grade} onChange={event => { setGrade(event.target.value); setLimit(25); }}><option value="all">전체 등급</option>{["E3", "E2", "E1", "E0"].map(value => <option key={value} value={value}>{value}</option>)}<option value="range">추정</option><option value="none">미판정</option></select></label><label>상태 <GuideHelp topic="state" /><select value={status} onChange={event => { setStatus(event.target.value); setLimit(25); }}><option value="all">전체 상태</option><option value="decided">규칙 판정</option><option value="blocked_evidence">근거 보류</option><option value="not_run">미판정</option></select></label></div>

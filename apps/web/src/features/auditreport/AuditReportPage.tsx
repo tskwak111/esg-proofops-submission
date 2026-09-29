@@ -61,7 +61,7 @@ type ReportRow = {
   estimated: boolean;
 };
 
-const companies = { naver: "NAVER", kia: "KIA" } as const;
+const companies = { naver: "N사", kia: "KIA" } as const;
 const tracks: Record<string, string> = { management: "관리체계", performance: "성과", goal: "목표" };
 const grades = ["E3", "E2", "E1", "E0"] as const;
 const gradeMeaning: Record<string, string> = {
