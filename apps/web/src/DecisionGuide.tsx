@@ -16,7 +16,7 @@ export function GuideHelp({ topic }: { topic: keyof typeof help }) {
 
 export function DecisionGuide() {
   return <section className="surface decision-guide" id="guide" aria-labelledby="guide-title">
-    <p className="eyebrow">READING THE RESULT</p><h2 id="guide-title">등급과 라벨, 이렇게 읽으세요</h2>
+    <p className="eyebrow">READING THE RESULT</p><h2 id="guide-title">등급 및 라벨 분류 기준</h2>
     <p className="guide-lead">이 결과는 공시 문장을 뒷받침하는 <strong>원문 근거의 수준</strong>을 보여줍니다. 기업 성과의 진위나 법 위반 여부를 판정하지 않습니다.</p>
     <div className="guide-grid">
       <div><h3>근거 수준 · E0 → E3</h3><p><b>E0</b> 해당 규칙에서 필요한 핵심 근거가 없다고 확인된 단계</p><p><b>E1</b> 첫 핵심 요소가 확인된 단계</p><p><b>E2</b> 범위·비교 기준까지 연결된 단계</p><p><b>E3</b> 해당 트랙의 검증·진척·보증 요건까지 연결된 단계</p><small>요건은 트랙마다 다릅니다. 미확인 상태는 자동으로 E0가 되지 않습니다.</small></div>
