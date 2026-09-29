@@ -6,9 +6,10 @@
 .static-main { max-width: var(--wrap); margin: 0 auto; padding: 0 32px 140px }
 
 /* reveal */
-.motion .demo-site main > section:not(.hero):not(.live-report), .motion .demo-site .flow li, .motion .demo-site .hero-stats > div { opacity: 0; transform: translateY(14px); transition: opacity .8s var(--ease), transform .8s var(--ease) }
-.motion .demo-site main > section.in-view, .motion .demo-site .flow.in-view li, .motion .demo-site .hero-stats.in-view > div { opacity: 1; transform: none }
-.motion .demo-site .hero-stats > div:nth-child(2) { transition-delay: .08s } .motion .demo-site .hero-stats > div:nth-child(3) { transition-delay: .16s } .motion .demo-site .hero-stats > div:nth-child(4) { transition-delay: .24s }
+/* Entrance motion only ever ends visible; content never waits on scroll observers. */
+.demo-site main > section:not(.hero), .demo-site .flow li, .demo-site .hero-stats > div { animation: appear .7s var(--ease) both }
+.demo-site .hero-stats > div:nth-child(2) { animation-delay: .08s } .demo-site .hero-stats > div:nth-child(3) { animation-delay: .16s } .demo-site .hero-stats > div:nth-child(4) { animation-delay: .24s }
+
 
 /* labels */
 .eyebrow, .tiny-label, .kicker { display: inline-flex; align-items: center; gap: 10px; font: 500 12px/1.4 var(--font); letter-spacing: .12em; text-transform: uppercase; color: var(--coral) }
