@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { getElementLabel } from "../labels";
 import type { PageInfo, Section } from "./sectionPicker";
 
@@ -29,6 +29,8 @@ function parsePages(value: string, total: number): number[] {
 }
 
 export function LiveReport({ file }: { file: File }) {
+  const panel = useRef<HTMLElement>(null);
+  const results = useRef<HTMLDivElement>(null);
   const [range, setRange] = useState("");
   const [code, setCode] = useState("");
   const [stage, setStage] = useState("");
@@ -52,6 +54,8 @@ export function LiveReport({ file }: { file: File }) {
       .catch(() => { if (!cancelled) { setStage(""); setError("구역을 자동으로 찾지 못했습니다. 쪽 번호를 직접 입력해 주세요."); } });
     return () => { cancelled = true; };
   }, [file]);
+  useEffect(() => { panel.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }, [file]);
+  useEffect(() => { if (result) results.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }, [result]);
 
   function chooseSection(section: Section) {
     const next = checked.includes(section) ? checked.filter(item => item !== section) : [...checked, section];
@@ -100,7 +104,7 @@ export function LiveReport({ file }: { file: File }) {
   }
 
   const detectedBy = [...new Set(info.filter(item => selectedPages.includes(item.page)).map(item => item.source))].join("·");
-  return <section className="surface live-report" aria-label="실시간 보고서 분석">
+  return <section ref={panel} className="surface live-report" aria-label="실시간 보고서 분석">
     <p className="eyebrow">LIVE REPORT</p><h2>실시간 분석</h2>
     <p>선택한 쪽만 분석 서비스로 전송합니다. 원본 PDF는 이 브라우저에 남습니다.</p>
     {info.length > 0 && <div className="live-report-sections"><strong>분석할 구역</strong><div>{sections.map(([id, label]) =>
@@ -116,7 +120,7 @@ export function LiveReport({ file }: { file: File }) {
     {selectedPages.length > 0 && <p className="live-report-selection">선택: {selectedPages.length}쪽 · {selectedPages.join(", ")}</p>}
     {error && <p className="live-report-error" role="alert">{error}</p>}
     {stage && <p className="live-report-stage" role="status">{stage}</p>}
-    {result && <div className="live-report-results"><h3>선택한 쪽의 분석 결과</h3><p>{result.pages.length}쪽 · {result.claims.length}건 · {(result.duration_ms / 1000).toFixed(1)}초 · 처리 비용 ${result.cost_usd.toFixed(4)} · 사용자 최종 검토 전</p><p>묶음당 환경 관련 문단 최대 16개에서 주장 최대 5건을 추출합니다.</p>
+    {result && <div ref={results} className="live-report-results"><h3>선택한 쪽의 분석 결과</h3><p>{result.pages.length}쪽 · {result.claims.length}건 · {(result.duration_ms / 1000).toFixed(1)}초 · 처리 비용 ${result.cost_usd.toFixed(4)} · 사용자 최종 검토 전</p><p>묶음당 환경 관련 문단 최대 16개에서 주장 최대 5건을 추출합니다.</p>
       {result.claims.length === 0 && <p>검토한 문단에서 확인 가능한 환경 주장을 찾지 못했습니다. 다른 쪽을 선택해 주세요.</p>}
       <ol>{result.claims.map((claim, index) => <li key={`${claim.page}-${index}`}>
         <div className="live-report-claim-head"><strong>{claim.page}쪽 · {claim.track ? tracks[claim.track] || claim.track : "분류 검토 필요"}</strong><span>{claim.source_verified ? "원문 확인" : "원문 대조 필요"}</span></div>
