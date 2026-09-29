@@ -420,3 +420,10 @@ main.landing > section.hero { padding: 96px 40px 110px }
 .guide-elements dd { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); word-break: keep-all }
 .guide-grid { gap: 24px 56px; margin-top: 32px }
 @media (max-width: 860px) { .guide-elements { grid-template-columns: 1fr } }
+/* Analyze: upload and live controls side by side, results full width below */
+.analyze-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: start }
+.analyze-grid > .live-report { margin-top: 0; max-width: none }
+.analyze-grid .live-report-form { grid-template-columns: 1fr; }
+.analyze-results { grid-column: 1 / -1; margin-top: 0; padding: 32px; border-top: 0 }
+.live-placeholder { color: var(--ink-2) }
+.live-steps { margin: 20px 0 0; padding-left: 20px; display: grid; gap: 8px; font-size: 14px; color: var(--ink-2) }
