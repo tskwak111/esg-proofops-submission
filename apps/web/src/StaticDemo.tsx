@@ -239,7 +239,7 @@ function Guide({ data }: { data: Snapshot }) {
           <li>확인하지 못한 근거를 “근거 없음”으로 처리하지 않습니다.</li>
           <li>결과는 보고서 안의 주장과 근거의 연결을 보여 줄 뿐, 기업의 실제 환경 성과나 법 위반 여부를 판단하지 않습니다.</li>
         </ul>
-        <p><Link className="pill pill-dark" to="/analyze">보고서 분석 시작 <span aria-hidden="true">→</span></Link></p>
+        <p className="guide-cta"><Link className="pill pill-dark" to="/analyze">보고서 분석 시작 <span aria-hidden="true">→</span></Link></p>
       </div>
     </section>
   </main>;

@@ -438,3 +438,5 @@ main.landing > section.hero { padding: 96px 40px 110px }
 .criteria-card dd { margin: 0; font-size: 14px; color: var(--ink-2); line-height: 1.6 }
 .criteria-note { max-width: 1060px; margin: 22px auto 0 !important; font-size: 14px; color: var(--ink-2); line-height: 1.7; text-align: left }
 @media (max-width: 860px) { .criteria { grid-template-columns: 1fr } .criteria-card dl > div { grid-template-columns: 1fr } }
+.guide-main > section.faq:last-child { padding-bottom: 8px !important }
+.guide-cta { margin: 48px 0 0 !important }
