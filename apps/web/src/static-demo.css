@@ -272,7 +272,7 @@ a.card:hover, .features .card:hover, .steps .card:hover { transform: translateY(
 /* analyze */
 .analyze-heading { padding: 64px 0 56px }
 .analyze-heading h1 { margin: 16px 0 18px; font: 400 clamp(36px, 4.2vw, 56px)/1.25 var(--serif); letter-spacing: -.02em }
-.analyze-heading p:not(.eyebrow) { color: var(--ink-2); font-size: 17px; max-width: 560px }
+.analyze-heading p:not(.eyebrow) { color: var(--ink-2); font-size: 17px; line-height: 1.75; max-width: 780px }
 .analyze-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 64px }
 .analyze-upload h2, .analyze-info h2 { font-size: 24px; letter-spacing: -.04em; margin-bottom: 8px }
 .analyze-upload > p { color: var(--muted); font-size: 14px }

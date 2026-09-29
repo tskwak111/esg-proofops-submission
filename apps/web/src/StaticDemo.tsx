@@ -100,7 +100,7 @@ function Analyze({ data }: { data: Snapshot }) {
   }
 
   return <main className="static-main analyze-main"><div className="breadcrumb"><Link to="/">홈</Link><span>/</span> 보고서 분석</div>
-    <section className="analyze-heading"><p className="eyebrow">REPORT ANALYSIS</p><h1>보고서 분석 시작</h1><p>지속가능경영보고서 PDF를 올리면 분석할 쪽을 골라 바로 분석합니다. 이미 분석한 보고서는 저장된 결과도 함께 볼 수 있습니다.</p></section>
+    <section className="analyze-heading"><p className="eyebrow">REPORT ANALYSIS</p><h1>보고서 분석 시작</h1><p>지속가능경영보고서 PDF를 올리면 목차와 북마크를 읽어 환경(E)과 부록 쪽을 기본으로 골라 드립니다. 고른 쪽은 구역 선택이나 쪽 번호 입력으로 자유롭게 바꿀 수 있고, 한 번에 최대 60쪽까지 10쪽씩 나눠 차례로 분석합니다. 결과에는 주장별 인용과 쪽수, 원문 대조 여부, 등급 또는 보류 사유가 함께 표시됩니다. 이미 분석한 보고서는 저장된 결과도 볼 수 있습니다.</p></section>
     <section className="analyze-grid"><div className="surface analyze-upload"><h2>PDF 보고서 선택</h2><p>파일을 놓거나 눌러 선택하세요.</p><label className="drop-zone" onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); void inspect(event.dataTransfer.files[0]); }}><span aria-hidden="true">↥</span><strong>{busy ? "파일 지문 계산 중…" : "PDF 업로드"}</strong><small>또는 클릭해 파일 선택 · PDF는 이 브라우저 안에서만 읽습니다</small><input type="file" accept=".pdf,application/pdf" aria-label="분석할 PDF 선택" disabled={busy} onChange={event => { void inspect(event.target.files?.[0]); event.target.value = ""; }} /></label>
       {result && <div className={`analyze-result ${result.matched ? "match" : "no-match"}`} role="status"><small>{result.name}</small><h3>{result.message}</h3>{result.matched ? <><Link to="/analyze/replay">분석 과정 보기 ↗</Link><small>오른쪽에서 실시간 분석도 할 수 있습니다.</small></> : <p>오른쪽에서 분석할 쪽을 확인해 주세요.</p>}</div>}
     </div>
