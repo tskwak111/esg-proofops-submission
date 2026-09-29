@@ -441,3 +441,6 @@ main.landing > section.hero { padding: 96px 40px 110px }
 .guide-main > section.faq:last-child { padding-bottom: 8px !important }
 .guide-cta { margin: 48px 0 0 !important }
 .analyze-heading p.analyze-lead { max-width: none; font-size: 14.5px; line-height: 1.85; letter-spacing: -.025em; white-space: normal }
+/* Landing hero fills the first screen; the next section starts below the fold */
+main.landing > section.hero { min-height: calc(100vh - var(--header-h, 69px)); min-height: calc(100svh - var(--header-h, 69px)); display: flex; flex-direction: column; justify-content: center; align-items: center; padding-top: 48px; padding-bottom: 56px }
+main.landing > section.hero .prompt { width: 100%; margin-top: 56px }
