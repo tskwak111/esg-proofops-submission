@@ -140,8 +140,7 @@ export function LiveReport({ file, renderClaims }: { file: File; renderClaims?: 
     {error && <p className="live-report-error" role="alert">{error}</p>}
     {stage && <p className="live-report-stage" role="status">{stage}</p>}
   </section>
-    {result && <section ref={results} className="surface live-report-results analyze-results" aria-label="분석 결과"><h3>선택한 쪽의 분석 결과</h3><p>{result.pages.length}쪽 · {result.claims.length}건 · {(result.duration_ms / 1000).toFixed(1)}초 · 처리 비용 ${result.cost_usd.toFixed(4)} · 사용자 최종 검토 전</p><p>묶음당 환경 관련 문단 최대 16개에서 주장 최대 5건을 추출합니다.</p>
-      {result.claims.length === 0 && <p>검토한 문단에서 확인 가능한 환경 주장을 찾지 못했습니다. 다른 쪽을 선택해 주세요.</p>}
+    {result && <section ref={results} className="surface live-report-results analyze-results" aria-label="분석 결과"><h3>선택한 쪽의 분석 결과</h3>
       {renderClaims ? renderClaims(result.claims) : <ol>{result.claims.map((claim, index) => <li key={`${claim.page}-${index}`}>
         <div className="live-report-claim-head"><strong>{claim.page}쪽 · {claim.track ? tracks[claim.track] || claim.track : "분류 검토 필요"}</strong><span>{claim.source_verified ? "원문 확인" : "원문 대조 필요"}</span></div>
         <blockquote>{claim.quote}</blockquote>
