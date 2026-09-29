@@ -101,7 +101,7 @@ def test_the_table_profile_accepts_its_own_envelope_and_pins_its_transport_versi
     adapter, request, envelope, _, _ = configured_with_table(tmp_path, monkeypatch)
     assert adapter.TRANSPORT_VERSION == TABLE_TRANSPORT_VERSION
     assert envelope["schema"] == TABLE_SCHEMA
-    system, wire_user, _, _ = adapter._wire_request(request)
+    system, wire_user, _, _, _ = adapter._wire_request(request)
     assert system == adapter._settings.rendered_system
     assert TABLE_SYSTEM_PROMPT in system
     # tuple bboxes become lists on the wire; compare the JSON projection.
@@ -166,7 +166,7 @@ def test_candidate_only_axes_travel_as_prefixed_context_roles(tmp_path, monkeypa
         "table_row_qualifier",
     }
     assert envelope["untrusted_document_data"]["sources"] == [{"source_index": 0, "text": "900"}]
-    system, wire_user, _, _ = adapter._wire_request(request)
+    system, wire_user, _, _, _ = adapter._wire_request(request)
     # tuple bboxes become lists on the wire; compare the JSON projection.
     assert json.loads(wire_user) == json.loads(json.dumps(envelope))
 

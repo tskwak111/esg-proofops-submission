@@ -34,7 +34,7 @@ class UpstageRelationsTransport(UpstageTaggingTransport):
     MODEL_PROFILE = MODEL_PROFILE
     TRANSPORT_VERSION = TRANSPORT_VERSION
 
-    def _wire_request(self, request: dict) -> tuple[str, str, dict[str, dict], Preflight]:
+    def _wire_request(self, request: dict) -> tuple[str, str, dict[str, dict], Preflight, str]:
         settings = self._settings
         if settings.system_prompt != SYSTEM_PROMPT:
             raise ValueError("UPSTAGE_RELATIONS_PROMPT_INVALID")
@@ -90,4 +90,5 @@ class UpstageRelationsTransport(UpstageTaggingTransport):
             json.dumps(user, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
             {},
             authorization,
+            settings.schema_json,
         )

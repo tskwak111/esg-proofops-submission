@@ -194,6 +194,145 @@ def test_parser_routes_bad_standard_html_to_enhanced_without_promoting_blank_tex
     assert manifest["upstage_parse"]["enhanced"][0]["grounded_cells"] == 0
 
 
+def test_upstage_glyph_boxes_cover_exact_native_ink_without_changing_legacy_profile():
+    from uuid import uuid4
+
+    import pdfplumber
+    from proofops.adapters.local.claim_source_verification import _read_paragraph
+    from proofops.adapters.local.native_glyph_geometry import native_word_ink_geometry
+    from proofops.adapters.parsing.upstage_document import candidate_batch
+    from proofops.application.ingest.graph_fusion import (
+        ParserProfile,
+        SourceArtifact,
+        fuse_candidates,
+    )
+    from pypdf import PdfWriter
+    from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
+
+    writer = PdfWriter()
+    page = writer.add_blank_page(width=400, height=200)
+    font = DictionaryObject({
+        NameObject("/Type"): NameObject("/Font"),
+        NameObject("/Subtype"): NameObject("/Type1"),
+        NameObject("/BaseFont"): NameObject("/Helvetica"),
+    })
+    page[NameObject("/Resources")] = DictionaryObject({
+        NameObject("/Font"): DictionaryObject({NameObject("/F1"): font})
+    })
+    content = DecodedStreamObject()
+    content.set_data(b"BT /F1 12 Tf 40 100 Td (Energy use fell 20% in 2025.) Tj ET")
+    page[NameObject("/Contents")] = writer._add_object(content)
+    stream = io.BytesIO()
+    writer.write(stream)
+    pdf = stream.getvalue()
+    source = SourceArtifact(
+        str(uuid4()), str(uuid4()), str(uuid4()), hashlib.sha256(pdf).hexdigest(), "v1", pdf
+    )
+    coords = [
+        {"x": .05, "y": .4}, {"x": .95, "y": .4},
+        {"x": .95, "y": .6}, {"x": .05, "y": .6},
+    ]
+    response = [{
+        "model": PARSE_MODEL_PINNED, "usage": {"pages": 1, "standard": [1]},
+        "elements": [{"page": 1, "category": "paragraph", "coordinates": coords,
+                      "content": {"text": "Energy use fell 20% in 2025."}}],
+    }]
+    legacy = ParserProfile(str(uuid4()), parser_mode="upstage")
+    modern = ParserProfile(str(uuid4()), parser_mode="upstage", upstage_glyph_boxes=True)
+    assert "upstage_glyph_boxes" not in legacy.config_snapshot()
+    assert modern.config_hash() != legacy.config_hash()
+    old = candidate_batch(source, legacy, (1,), response, mode="standard",
+                          config_hash=legacy.config_hash())[0].blocks[0]
+    new_batch = candidate_batch(source, modern, (1,), response, mode="standard",
+                                config_hash=modern.config_hash())[0]
+    new = new_batch.blocks[0]
+    with pdfplumber.open(io.BytesIO(pdf)) as doc:
+        words = doc.pages[0].extract_words()
+        graph = fuse_candidates((new_batch,), tenant_id=source.tenant_id)
+        reading = _read_paragraph(doc, pdf, graph.blocks[0], False, {})
+    assert reading["reason"] not in {"clipped_or_rotated_words", "text_mismatch"}
+    assert new.source.raw_text == " ".join(word["text"] for word in words)
+    proof = native_word_ink_geometry(pdf, 1, list(range(len(words))))
+    ink = [entry["ink_bbox"] for entry in proof["matched_words"]]
+    assert old.bbox != new.bbox
+    assert new.bbox[0] <= min(box[0] for box in ink)
+    assert new.bbox[1] <= min(box[1] for box in ink)
+    assert new.bbox[2] >= max(box[2] for box in ink)
+    assert new.bbox[3] >= max(box[3] for box in ink)
+    assert "native_glyph_ink_box" in new.context
+
+
+def test_upstage_region_words_ground_multiline_paragraph_in_two_column_page():
+    from uuid import uuid4
+
+    import pdfplumber
+    from proofops.adapters.local.claim_source_verification import _read_paragraph
+    from proofops.adapters.parsing.upstage_document import candidate_batch
+    from proofops.application.ingest.graph_fusion import (
+        ParserProfile,
+        SourceArtifact,
+        fuse_candidates,
+    )
+    from pypdf import PdfWriter
+    from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
+
+    writer = PdfWriter()
+    page = writer.add_blank_page(width=400, height=200)
+    font = DictionaryObject({
+        NameObject("/Type"): NameObject("/Font"),
+        NameObject("/Subtype"): NameObject("/Type1"),
+        NameObject("/BaseFont"): NameObject("/Helvetica"),
+    })
+    page[NameObject("/Resources")] = DictionaryObject({
+        NameObject("/Font"): DictionaryObject({NameObject("/F1"): font})
+    })
+    content = DecodedStreamObject()
+    # Two columns whose lines share baselines: page-wide word order interleaves them.
+    content.set_data(
+        b"BT /F1 12 Tf 20 120 Td (Energy use fell) Tj ET "
+        b"BT /F1 12 Tf 220 120 Td (Water reuse rose) Tj ET "
+        b"BT /F1 12 Tf 20 100 Td (20% in 2025.) Tj ET "
+        b"BT /F1 12 Tf 220 100 Td (8% in 2024.) Tj ET"
+    )
+    page[NameObject("/Contents")] = writer._add_object(content)
+    stream = io.BytesIO()
+    writer.write(stream)
+    pdf = stream.getvalue()
+    source = SourceArtifact(
+        str(uuid4()), str(uuid4()), str(uuid4()), hashlib.sha256(pdf).hexdigest(), "v1", pdf
+    )
+    coords = [
+        {"x": .03, "y": .3}, {"x": .45, "y": .3},
+        {"x": .45, "y": .55}, {"x": .03, "y": .55},
+    ]
+    response = [{
+        "model": PARSE_MODEL_PINNED, "usage": {"pages": 1, "standard": [1]},
+        "elements": [{"page": 1, "category": "paragraph", "coordinates": coords,
+                      "content": {"text": "Energy use fell\n20% in 2025."}}],
+    }]
+    glyph = ParserProfile(str(uuid4()), parser_mode="upstage", upstage_glyph_boxes=True)
+    region = ParserProfile(
+        str(uuid4()), parser_mode="upstage", upstage_glyph_boxes=True, upstage_region_words=True
+    )
+    assert "upstage_region_words" not in glyph.config_snapshot()
+    assert region.config_hash() != glyph.config_hash()
+    with pytest.raises(ValueError):
+        ParserProfile(str(uuid4()), upstage_region_words=True)
+    old = candidate_batch(source, glyph, (1,), response, mode="standard",
+                          config_hash=glyph.config_hash())[0].blocks[0]
+    assert old.bbox is None
+    batch = candidate_batch(source, region, (1,), response, mode="standard",
+                            config_hash=region.config_hash())[0]
+    new = batch.blocks[0]
+    assert new.bbox is not None
+    assert new.source.raw_text == "Energy use fell 20% in 2025."
+    assert "native_glyph_ink_box" in new.context
+    with pdfplumber.open(io.BytesIO(pdf)) as doc:
+        graph = fuse_candidates((batch,), tenant_id=source.tenant_id)
+        reading = _read_paragraph(doc, pdf, graph.blocks[0], False, {})
+    assert reading["reason"] not in {"clipped_or_rotated_words", "text_mismatch"}
+
+
 def test_budget_sharing_and_exhaustion_across_probes(tmp_path, monkeypatch):
     path = tmp_path / "budget.sqlite3"
     text_client = upstage.UpstageProbe("test-secret", path)

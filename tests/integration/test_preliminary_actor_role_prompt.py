@@ -220,7 +220,7 @@ def test_actor_profile_accepts_own_envelope_and_pins_transport_version(tmp_path,
         actor_role=True,
     )
     assert adapter.TRANSPORT_VERSION == ACTOR_TRANSPORT_VERSION
-    system, wire_user, _, _ = adapter._wire_request(request)
+    system, wire_user, _, _, _ = adapter._wire_request(request)
     assert ACTOR_ROLE_SYSTEM_PROMPT in system
     assert json.loads(wire_user) == json.loads(json.dumps(envelope))
 

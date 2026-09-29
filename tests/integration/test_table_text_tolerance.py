@@ -20,6 +20,8 @@ def test_optional_tolerance_preserves_legacy_identity_and_binds_explicit_value()
     legacy.pop("table_structure_repair", None)
     assert legacy.pop("vision_parse") == "off"
     assert legacy.pop("parser_mode") == "local"
+    assert legacy.pop("upstage_glyph_boxes") is False
+    assert legacy.pop("upstage_region_words") is False
     assert profile.invocation_snapshot() == legacy
     config = {k: v for k, v in legacy.items() if k not in {"parse_manifest_id", "physical_pages"}}
     assert profile.config_snapshot() == config

@@ -260,7 +260,7 @@ class UpstageTaggingTransport:
         The counter must include model chat framing; no character/byte estimate
         or tokenizer from another model is supplied here. No receipt or paid call.
         """
-        system, user, _, _ = self._wire_request(request)
+        system, user, _, _, _ = self._wire_request(request)
         self._probe.request_body(
             system,
             user,
@@ -309,7 +309,7 @@ class UpstageTaggingTransport:
             raise ValueError("UPSTAGE_TAGGING_REQUEST_INVALID")
         return authorization
 
-    def _wire_request(self, request: dict) -> tuple[str, str, dict[str, dict], Preflight]:
+    def _wire_request(self, request: dict) -> tuple[str, str, dict[str, dict], Preflight, str]:
         settings = self._settings
         authorization = self._authorize_request(request)
         system = request["system_prompt"]
@@ -437,7 +437,7 @@ class UpstageTaggingTransport:
                 "neither a count nor a hash is evidence or proof of absence."
             )
         wire_user = json.dumps(user, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-        return wire_system, wire_user, refs, authorization
+        return wire_system, wire_user, refs, authorization, canonical_json(schema)
 
     def _restore_ref(self, selection, refs: dict[str, dict]) -> dict:
         if self._settings.model_profile not in (QUOTE_PROFILE, QUOTE_V4_PROFILE, QUOTE_V5_PROFILE):
@@ -500,7 +500,7 @@ class UpstageTaggingTransport:
     def _invoke(self, request: dict) -> RawTagResponse:
         settings = self._settings
         system = request["system_prompt"]
-        wire_system, wire_user, refs, authorization = self._wire_request(request)
+        wire_system, wire_user, refs, authorization, wire_schema = self._wire_request(request)
         stop = self._receipts / "transport-stop.json"
         # ponytail: bounded local operation; index receipts if ensembles grow large.
         with self._operation_mutex:
@@ -553,7 +553,7 @@ class UpstageTaggingTransport:
                 max_tokens=request["max_tokens"],
                 json_mode=True,
                 **(
-                    {"schema_json": settings.schema_json}
+                    {"schema_json": wire_schema}
                     if isinstance(self._probe, OpenRouterProbe)
                     else {}
                 ),

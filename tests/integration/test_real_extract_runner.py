@@ -388,6 +388,15 @@ def test_valid_and_absent_claim_pages_accepted():
     assert claim_pages_for(None, [1, 2, 3]) == [1, 2, 3]
 
 
+def test_frozen_extraction_batch_limits():
+    from proofops.application.claim_scope import validate_extraction_limits
+
+    for calls in (20, 256):
+        validate_extraction_limits({"max_calls": calls, "max_output_tokens": 1024}, [1])
+    with pytest.raises(ValueError, match="EXTRACTION_LIMITS_INVALID"):
+        validate_extraction_limits({"max_calls": 257, "max_output_tokens": 1024}, [1])
+
+
 def test_expired_authorization_blocks_transport(tmp_path, monkeypatch):
     service, run_id, runner, now, probe = real_setup(tmp_path, monkeypatch)
     inject_graph(monkeypatch, service, run_id, ["paragraph"])

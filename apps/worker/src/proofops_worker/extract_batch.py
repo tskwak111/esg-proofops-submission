@@ -31,6 +31,7 @@ import logging
 import sys
 from uuid import UUID
 
+from proofops.application.claim_scope import MAX_EXTRACTION_BATCH_CALLS
 from proofops.application.telemetry import SafeRuntimeFormatter
 
 from proofops_worker.composition import build_composition
@@ -52,7 +53,9 @@ def run_batches(
     """Run at most ``batches`` continuation batches, stopping on the first halt."""
     if type(batches) is not int or not 1 <= batches <= 100:
         raise ValueError("EXTRACTION_BATCH_COUNT_INVALID")
-    if max_calls is not None and (type(max_calls) is not int or not 1 <= max_calls <= 20):
+    if max_calls is not None and (
+        type(max_calls) is not int or not 1 <= max_calls <= MAX_EXTRACTION_BATCH_CALLS
+    ):
         raise ValueError("EXTRACTION_INPUT_INVALID")
     results = []
     for index in range(batches):

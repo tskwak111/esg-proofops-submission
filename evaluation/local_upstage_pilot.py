@@ -61,12 +61,14 @@ def pilot_company_body(legal_name, registration_identifier, *, existing: bool) -
 
 
 def extraction_budget_settings(batch_calls: int, total_calls: int | None = None) -> dict:
-    """Freeze a finite run allowance independently of each 1..20-source batch.
+    """Freeze a finite run allowance independently of each bounded batch.
 
     Omitting total_calls preserves the legacy one-batch allowance. This grants
     no money: the shared USD20 ledger still fences every provider dispatch.
     """
-    if type(batch_calls) is not int or not 1 <= batch_calls <= 20:
+    from proofops.application.claim_scope import MAX_EXTRACTION_BATCH_CALLS
+
+    if type(batch_calls) is not int or not 1 <= batch_calls <= MAX_EXTRACTION_BATCH_CALLS:
         raise ValueError("invalid extraction batch call limit")
     total = batch_calls if total_calls is None else total_calls
     if type(total) is not int or not batch_calls <= total <= 2000:
@@ -935,7 +937,9 @@ def main():
         else {}
     )
     pages = sorted(set(int(p) for p in args.pages.split(",")))
-    if not 1 <= args.max_calls <= 20 or not pages or min(pages) < 1:
+    from proofops.application.claim_scope import MAX_EXTRACTION_BATCH_CALLS
+
+    if not 1 <= args.max_calls <= MAX_EXTRACTION_BATCH_CALLS or not pages or min(pages) < 1:
         parser.error("invalid declared pages/call limit")
     try:
         extraction_budget = extraction_budget_settings(args.max_calls, args.extraction_total_calls)
@@ -989,6 +993,8 @@ def main():
             table_structure_repair="odl_header_v2" if args.repair_table_headers else None,
             vision_parse=args.vision_parse,
             parser_mode=args.parser,
+            upstage_glyph_boxes=args.parser == "upstage",
+            upstage_region_words=args.parser == "upstage",
         )
         (state / "parser.json").write_text(json.dumps(config.config_snapshot()))
         if (

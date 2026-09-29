@@ -11,6 +11,7 @@ from typing import Any
 from uuid import UUID
 
 from proofops.application.budget import BudgetLimits, RoleLimit
+from proofops.application.claim_scope import MAX_EXTRACTION_BATCH_CALLS
 from proofops.application.claims import ExtractionProfile
 from proofops.application.ingest.graph_fusion import ParserProfile
 from proofops.application.ports.models import ModelBinding
@@ -395,7 +396,7 @@ def load_local_runtime(env: Mapping[str, str]) -> dict[str, Any]:
         ):
             raise _invalid()
         runtime["extraction_limits"] = {
-            "max_calls": _strict_int(limits["max_calls"], maximum=20),
+            "max_calls": _strict_int(limits["max_calls"], maximum=MAX_EXTRACTION_BATCH_CALLS),
             "max_output_tokens": _strict_int(limits["max_output_tokens"], maximum=1024),
         }
         if "claim_pages" in limits:

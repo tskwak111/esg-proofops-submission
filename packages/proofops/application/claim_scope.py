@@ -17,6 +17,7 @@ from __future__ import annotations
 
 _LEGACY_KEYS = {"max_calls", "max_output_tokens"}
 _SCOPED_KEYS = {"max_calls", "max_output_tokens", "claim_pages"}
+MAX_EXTRACTION_BATCH_CALLS = 256
 
 
 def validate_extraction_limits(limits: object, selected_pages: list[int]) -> None:
@@ -29,7 +30,7 @@ def validate_extraction_limits(limits: object, selected_pages: list[int]) -> Non
         not isinstance(limits, dict)
         or set(limits) not in (_LEGACY_KEYS, _SCOPED_KEYS)
         or type(limits["max_calls"]) is not int
-        or not 1 <= limits["max_calls"] <= 20
+        or not 1 <= limits["max_calls"] <= MAX_EXTRACTION_BATCH_CALLS
         or type(limits["max_output_tokens"]) is not int
         or not 1 <= limits["max_output_tokens"] <= 1024
     ):

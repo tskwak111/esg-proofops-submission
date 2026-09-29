@@ -370,7 +370,7 @@ def test_archived_element_wire_is_byte_identical_for_existing_profile():
         transport = object.__new__(UpstageTaggingTransport)
         transport._settings = TaggingSettings(**settings)
         transport._authorize_request = lambda request: None
-        system, user, _, _ = transport._wire_request(item["request"])
+        system, user, _, _, _ = transport._wire_request(item["request"])
         assert user.encode() == item["wire_user_json"].encode()
         assert system.encode() == item["wire_system"].encode()
 
@@ -394,13 +394,58 @@ def test_element_wire_compacts_provenance_before_size_check(tmp_path, monkeypatc
     ]
     request["user_json"] = json.dumps(user, ensure_ascii=False)
     adapter.count_input_tokens(request, counter=lambda *_: 100)
-    _, wire, refs, _ = adapter._wire_request(request)
+    _, wire, refs, _, _ = adapter._wire_request(request)
     sent = json.loads(wire)["untrusted_document_data"]
     assert sent["claim_source_refs"] == [
         {"quote": original["quote"], "page_num": original["page_num"]}
     ]
     assert all("source_id" not in candidate for candidate in sent["evidence_candidates"])
     assert len(refs) == 20 and not calls and probe.summary()["calls"] == 0
+
+
+def test_openrouter_validates_compact_quote_wire_before_restoring_provenance(tmp_path, monkeypatch):
+    from jsonschema import Draft202012Validator
+    from proofops.adapters.local.openrouter import OpenRouterProbe
+
+    adapter, _, _, request = configured(tmp_path, monkeypatch, QUOTE_V5_PROFILE)
+    original = setup(tmp_path)["packet"].to_dict()["evidence_candidates"][0]["source_refs"][0]
+    original.update(quote="회사A는 배출량 40% 감축", char_start=100, char_end=115)
+    user = json.loads(request["user_json"])
+    user["untrusted_document_data"]["evidence_candidates"] = [dict(source_refs=[original])]
+    request["user_json"] = json.dumps(user)
+    payload = dict(
+        claim_id=request["claim_id"],
+        packet_sha256=request["packet_sha256"],
+        replicate_id=1,
+        track="performance",
+        safe_harbor_category=None,
+        elements=[
+            dict(
+                element_id=f"P{index}",
+                state="present" if index == 1 else "unknown",
+                evidence_refs=[{"id": "e0", "quote": "40%"}] if index == 1 else [],
+                normalized_value="40%" if index == 1 else None,
+                credited_from=None,
+                reason_code=None if index == 1 else "unresolved",
+            )
+            for index in range(1, 7)
+        ],
+        superlative_quote=None,
+        warnings=[],
+    )
+    adapter._probe = OpenRouterProbe("test-key", tmp_path / "openrouter.sqlite3")
+
+    def complete(*args, schema_json, **kwargs):
+        Draft202012Validator(json.loads(schema_json)).validate(payload)
+        return dict(
+            content=json.dumps(payload), schema_valid=True, input_tokens=1, output_tokens=1,
+            provider_request_id="fixture-provider",
+        )
+
+    monkeypatch.setattr(adapter._probe, "complete", complete)
+    response = adapter.invoke(request)
+    restored = json.loads(response.raw_response_json)["elements"][0]["evidence_refs"][0]
+    assert restored == original | dict(quote="40%", char_start=109, char_end=112)
 
 
 def test_compact_element_profile_has_distinct_cache_request_identity(tmp_path, monkeypatch):
@@ -594,7 +639,7 @@ def test_coverage_summary_preserves_unknown_and_original_request(tmp_path, monke
     user["untrusted_document_data"]["search_coverage"] = coverage
     request["user_json"] = json.dumps(user)
     before = request["user_json"]
-    system, wire, _, _ = adapter._wire_request(request)
+    system, wire, _, _, _ = adapter._wire_request(request)
     summary = json.loads(wire)["untrusted_document_data"]["search_coverage"]
     assert summary["not_found_state"] == "unknown"
     assert summary["unprocessed_source_count"] == 400

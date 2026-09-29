@@ -265,7 +265,7 @@ class UpstagePreliminaryTransport(UpstageTaggingTransport):
                 data["omitted_source_ids"].append(removed["source_id"])
         return bounded
 
-    def _wire_request(self, request: dict) -> tuple[str, str, dict[str, dict], Preflight]:
+    def _wire_request(self, request: dict) -> tuple[str, str, dict[str, dict], Preflight, str]:
         settings = self._settings
         actor_role_v2 = settings.model_profile == ACTOR_ROLE_MODEL_PROFILE_V2
         actor_role = settings.model_profile == ACTOR_ROLE_MODEL_PROFILE or actor_role_v2
@@ -384,7 +384,7 @@ class UpstagePreliminaryTransport(UpstageTaggingTransport):
         if is_context:
             self._validate_context_shape(user, data, table=is_table)
         wire_user = json.dumps(user, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-        return system, wire_user, {}, authorization
+        return system, wire_user, {}, authorization, settings.schema_json
 
     @staticmethod
     def _validate_context_shape(user: dict, data: dict, *, table: bool = False) -> None:

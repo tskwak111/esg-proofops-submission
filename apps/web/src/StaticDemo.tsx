@@ -65,13 +65,13 @@ export function StaticDemo() {
     <header className="site-header"><div className="site-header-inner">
       <Link className="brand" to="/" aria-label="ProofOps 홈"><span className="brand-dot" aria-hidden="true" />ProofOps</Link>
       <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="site-menu" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? "닫기" : "메뉴"}<span aria-hidden="true">{menuOpen ? "×" : "☰"}</span></button>
-      <nav id="site-menu" className={menuOpen ? "open" : ""} aria-label="주요 메뉴" onClick={() => setMenuOpen(false)}><Link to="/">서비스</Link><Link to="/analyze">분석</Link><Link to="/demo">결과</Link><Link to="/report/naver">보고서</Link><Link to="/live">문장 분석</Link></nav>
+      <nav id="site-menu" className={menuOpen ? "open" : ""} aria-label="주요 메뉴" onClick={() => setMenuOpen(false)}><Link to="/">서비스</Link><Link to="/analyze">분석</Link><Link to="/demo">결과</Link><Link to="/report/naver">보고서</Link><Link to="/live">문장 분석</Link><Link to="/guide">서비스 가이드라인</Link></nav>
       <div className="header-actions"><Link className="pill pill-line" to="/demo">결과 보기</Link><Link className="pill pill-dark" to="/analyze">분석 시작</Link></div>
     </div></header>
     {isLive ? <LiveClaim /> : error ? <main className="static-main"><section className="surface"><h1>분석 결과를 불러오지 못했습니다</h1><p>잠시 후 새로고침해 주세요.</p></section></main> :
       !data ? <main className="static-main loading-main" role="status" aria-label="검토 결과 불러오는 중"><div className="skeleton skeleton-title" /><div className="skeleton skeleton-card" /><div className="skeleton skeleton-card" /></main> :
-      <Routes><Route path="/" element={<Landing data={data} />} /><Route path="/analyze" element={<Analyze data={data} />} /><Route path={replayPath} element={<ReplayPage snapshot={data} />} /><Route path="/demo" element={<Demo data={data} />} /><Route path="/demo/:claimId" element={<Demo data={data} />} /><Route path={kiaRoute.path} element={<><div className="kia-route-toolbar"><CompanyTabs selected="kia" /><Link to="/report/kia">기아 검토 보고서 ↗</Link></div><kiaRoute.Component /></>} /><Route path={reviewRoutePath} element={<ReviewPage claims={data.claims} />} /><Route path={auditReportRoute.path} element={<AuditReportPage />} /><Route path="*" element={<NotFound />} /></Routes>}
-    <footer className="site-footer"><div className="wrap footer-inner"><div><strong>ProofOps</strong><p>공시 문장을 원문 근거로 검증합니다.</p></div><nav aria-label="바닥글"><Link to="/analyze">분석</Link><Link to="/demo">결과</Link><Link to="/report/naver">보고서</Link><Link to="/live">문장 분석</Link><a href="https://github.com/tskwak111/esg-proofops-submission" target="_blank" rel="noopener noreferrer">GitHub</a></nav><span>© 2026 ProofOps</span></div></footer>
+      <Routes><Route path="/" element={<Landing data={data} />} /><Route path="/analyze" element={<Analyze data={data} />} /><Route path="/guide" element={<Guide />} /><Route path={replayPath} element={<ReplayPage snapshot={data} />} /><Route path="/demo" element={<Demo data={data} />} /><Route path="/demo/:claimId" element={<Demo data={data} />} /><Route path={kiaRoute.path} element={<><div className="kia-route-toolbar"><CompanyTabs selected="kia" /><Link to="/report/kia">기아 검토 보고서 ↗</Link></div><kiaRoute.Component /></>} /><Route path={reviewRoutePath} element={<ReviewPage claims={data.claims} />} /><Route path={auditReportRoute.path} element={<AuditReportPage />} /><Route path="*" element={<NotFound />} /></Routes>}
+    <footer className="site-footer"><div className="wrap footer-inner"><div><strong>ProofOps</strong><p>본 서비스는 공시 발간 전 근거 점검을 돕는 도구이며, 제3자 보증, 기업 성과 진위, 법률·회계 판단을 대신하지 않습니다.</p></div><nav aria-label="바닥글"><Link to="/analyze">분석</Link><Link to="/demo">결과</Link><Link to="/report/naver">보고서</Link><Link to="/live">문장 분석</Link><Link to="/guide">서비스 가이드라인</Link><a href="https://github.com/tskwak111/esg-proofops-submission" target="_blank" rel="noopener noreferrer">GitHub</a></nav><span>© 2026 ProofOps</span></div></footer>
   </div>;
 }
 
@@ -105,7 +105,7 @@ function Analyze({ data }: { data: Snapshot }) {
   }
 
   return <main className="static-main analyze-main"><div className="breadcrumb"><Link to="/">홈</Link><span>/</span> 보고서 분석</div>
-    <section className="analyze-heading"><p className="eyebrow">REPORT ANALYSIS</p><h1>보고서에서 근거까지,<br />분석을 시작하세요.</h1><p>PDF를 선택하면 기존 분석 결과를 확인합니다. 파일은 브라우저 안에서만 읽습니다.</p></section>
+    <section className="analyze-heading"><p className="eyebrow">REPORT ANALYSIS</p><h1>보고서 분석 시작</h1><p>PDF를 선택하면 기존 분석 결과를 확인합니다. 파일은 브라우저 안에서만 읽습니다.</p></section>
     <section className="analyze-grid"><div className="surface analyze-upload"><h2>PDF 보고서 선택</h2><p>파일을 놓거나 눌러 선택하세요.</p><label className="drop-zone" onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); void inspect(event.dataTransfer.files[0]); }}><span aria-hidden="true">↥</span><strong>{busy ? "파일 지문 계산 중…" : "PDF 파일을 여기에 놓기"}</strong><small>또는 클릭해 파일 선택 · PDF는 이 브라우저 안에서만 읽습니다</small><input type="file" accept=".pdf,application/pdf" aria-label="분석할 PDF 선택" disabled={busy} onChange={event => { void inspect(event.target.files?.[0]); event.target.value = ""; }} /></label>
       {result && <div className={`analyze-result ${result.matched ? "match" : "no-match"}`} role="status"><small>{result.name}</small><h3>{result.message}</h3>{result.matched ? <><Link to="/analyze/replay">분석 과정 보기 ↗</Link><small>잠시 후 분석 과정으로 이동합니다.</small></> : <><p>새 보고서의 분석은 현재 준비 중입니다.</p><Link to="/live">문장 분석하기 ↗</Link></>}</div>}
     </div><aside className="surface analyze-info"><p className="eyebrow">ANALYSIS</p><h2>NAVER 2025 통합보고서</h2><p>보고서의 공시 문장과 원문 근거를 연결한 분석 결과입니다.</p><div><span>원자 주장</span><strong>{data.coverage.claims_discovered}건</strong></div><div><span>규칙 판정</span><strong>{data.coverage.claims_decided}건</strong></div><p className="analyze-note">일치하는 보고서의 분석 결과를 불러옵니다.</p></aside></section>
@@ -159,7 +159,7 @@ function Landing({ data }: { data: Snapshot }) {
   const [draft, setDraft] = useState("");
   const verified = data.funnel[1]?.count ?? 0;
   const reviewTarget = data.claims.find(claim => claim.decision.grade === "E3")?.id || data.claims[0]?.id;
-  const example = "2024년 Scope 1·2 온실가스 배출량은 전년 대비 8% 감소했으며, 제3자 검증기관의 검증을 받았습니다.";
+  const example = "업로드 한 보고서 및 재무제표를 기반으로, 그린워싱으로 판별된 리스크가 높은 문장과 그 원인을 분석해줘.";
   const tools: [string, string, string, string][] = [
     ["/analyze", "보고서 분석", "PDF를 올려 분석 결과를 확인합니다", "t-upload"],
     ["/demo", "분석 결과", "331개 주장의 등급과 근거", "t-results"],
@@ -170,11 +170,11 @@ function Landing({ data }: { data: Snapshot }) {
   ];
   return <main className="landing">
     <section className="hero">
-      <p className="eyebrow-c">ESG 공시 검증</p>
-      <h1>ESG 공시 검증 | 모든 주장을<br />원문 근거까지, 한 번에</h1>
-      <p className="hero-sub">지속가능경영보고서의 환경 주장을 찾아 원문과 대조하고, 규칙엔진으로 근거 수준을 판정합니다. 모든 판정은 쪽수와 인용으로 확인할 수 있습니다.</p>
+      <p className="eyebrow-c">ESG · 지속가능경영보고서 공시 검증</p>
+      <h1>ESG · 지속가능경영보고서 공시 검증 |<br />모든 주장을 원문 근거까지, 한 번에</h1>
+      <p className="hero-sub">기업 보고서 내 환경 주장의 근거를 공시 안에서 찾으며, 규칙엔진을 기반으로 근거 수준을 판정합니다. 근거에 대한 쪽수·원문 인용 또는 확인 범위가 함께 표시됩니다.</p>
       <Link className="pill pill-dark" to="/analyze">보고서 분석 시작 <span aria-hidden="true">→</span></Link>
-      <form className="prompt" onSubmit={event => { event.preventDefault(); navigate(`/live?claim=${encodeURIComponent((draft || example).slice(0, 500))}`); }}>
+      <form className="prompt" onSubmit={event => { event.preventDefault(); navigate(draft.trim() ? `/live?claim=${encodeURIComponent(draft.trim().slice(0, 500))}` : "/analyze"); }}>
         <textarea aria-label="분석할 환경 주장" value={draft} onChange={event => setDraft(event.target.value)} placeholder={example} rows={3} />
         <div className="prompt-bar"><div className="chips"><Link to="/analyze" className="chip"><span className="ic">⬆</span>PDF 업로드</Link><Link to="/demo" className="chip"><span className="ic">◎</span>분석 결과</Link><Link to="/report/naver" className="chip"><span className="ic">▤</span>보고서</Link><Link to="/demo/kia" className="chip"><span className="ic">◇</span>기아 사례</Link></div><button type="submit" className="send" aria-label="문장 분석">↑</button></div>
       </form>
@@ -182,7 +182,7 @@ function Landing({ data }: { data: Snapshot }) {
     </section>
 
     <section className="sec sec-beige" id="how">
-      <p className="eyebrow-c center">작동 방식</p><h2 className="serif center">몇 분 만에 근거를 확인하세요</h2>
+      <p className="eyebrow-c center">작동 방식</p><h2 className="serif center">단 몇 분 만에 핵심 근거 확인</h2>
       <div className="steps">{steps.map(([title, body], index) => <article className="card" key={title}><span className="num">{index + 1}</span><h3>{title}</h3><p>{body}</p></article>)}</div>
       <div className="proof"><p className="proof-kicker">NAVER 2025 통합보고서</p><h3 className="serif center">실제 보고서 한 권을 끝까지 분석했습니다.</h3>
         <dl><div><dt>분석 쪽수</dt><dd><CountUp value={data.coverage.pages_total} /></dd></div><div><dt>추출 주장</dt><dd><CountUp value={data.coverage.claims_discovered} /></dd></div><div><dt>원문 대조</dt><dd><CountUp value={verified} /></dd></div><div><dt>확정 판정</dt><dd><CountUp value={data.coverage.claims_decided} /></dd></div></dl></div>
@@ -210,9 +210,55 @@ function Landing({ data }: { data: Snapshot }) {
     <section className="sec sec-cream faq">
       <div className="faq-inner">
         <h2 className="serif">ProofOps는 무엇인가요?</h2>
-        <p>ProofOps는 지속가능경영보고서의 환경 주장이 같은 보고서 안의 근거로 뒷받침되는지 확인하는 검증 도구입니다. 언어모델은 문장 추출과 요소 태깅만 맡고, 등급과 라벨은 규칙엔진이 계산합니다. 기업 성과의 진위나 법 위반 여부를 판정하지 않습니다.</p>
+        <p>ProofOps는 기업의 지속가능경영보고서 내 환경 주장의 근거가 공시 안에 있는지 확인하는 점검 도구입니다. 언어모델은 문장 추출 및 근거 요소 표시를 담당하며, 판정 등급 및 라벨은 사전에 정한 규칙을 기반으로 합니다.</p>
         <h2 className="serif">누구에게 필요한가요?</h2>
-        <ul><li><strong>공시 담당자</strong> — 발간 전에 근거가 빠진 주장을 찾아 보완합니다.</li><li><strong>검증·감사 조직</strong> — 주장별 근거 경로와 판정 이력을 한 곳에서 검토합니다.</li><li><strong>투자자·평가기관</strong> — 보고서의 주장을 원문 쪽수와 함께 빠르게 확인합니다.</li></ul>
+        <ul><li><strong>기업 지속가능경영·ESG 부서 및 공시 담당 부서</strong> — 발간 전에 근거가 빠진 주장을 찾아 보완합니다.</li><li><strong>검증기관·회계법인</strong> — 주장별 근거 경로와 판정 이력을 한 곳에서 검토합니다.</li><li><strong>공급망 담당·협력사</strong> — 공개된 보고서의 주장이 어느 쪽의 어떤 근거에 기반하는지 확인합니다.</li></ul>
+      </div>
+    </section>
+  </main>;
+}
+
+function Guide() {
+  const tracks: [string, string][] = [
+    ["목표형", "목표연도·수치, 기준값·적용범위, 진척·이행수단을 확인합니다."],
+    ["성과형", "수치·단위, 비교기준·산정방법·경계, 외부 검증 연결을 확인합니다."],
+    ["관리체계형", "구체적 수단, 적용범위, 외부 검증을 확인합니다."],
+  ];
+  const grades: [string, string, string][] = [
+    ["E3", "SUBSTANTIATED", "해당 유형의 입증 요소가 공시 안에서 모두 확인됨"],
+    ["E2 · E1", "INCOMPLETE", "일부 입증 요소만 확인됨"],
+    ["E0", "UNSUBSTANTIATED", "핵심 입증 요소가 없음을 확인함"],
+    ["범위 · 보류", "등급 범위 / 보류", "확인되지 않은 요소가 있으면 가능한 등급 범위나 보류 사유를 표시"],
+  ];
+  return <main className="landing guide-main">
+    <section className="hero">
+      <p className="eyebrow-c">서비스 가이드라인</p>
+      <h1>ProofOps 작동 방식과 기능</h1>
+      <p className="hero-sub">본 서비스는 공시 발간 전 근거 점검을 돕는 도구이며, 제3자 보증, 기업 성과 진위, 법률·회계 판단을 대신하지 않습니다.</p>
+    </section>
+    <section className="sec sec-beige">
+      <p className="eyebrow-c center">작동 방식</p><h2 className="serif center">보고서에서 판정까지 네 단계</h2>
+      <div className="steps">{steps.map(([title, body], index) => <article className="card" key={title}><span className="num">{index + 1}</span><h3>{title}</h3><p>{body}</p></article>)}</div>
+    </section>
+    <section className="sec sec-cream">
+      <p className="eyebrow-c center">서비스 기능</p><h2 className="serif center">주요 기능</h2>
+      <div className="features">{features.map(([title, body]) => <article className="card" key={title}><h3>{title}</h3><p>{body}</p></article>)}</div>
+    </section>
+    <section className="sec sec-beige">
+      <p className="eyebrow-c center">판정 기준</p><h2 className="serif center">주장 유형과 근거 수준</h2>
+      <div className="features">{tracks.map(([title, body]) => <article className="card" key={title}><h3>{title}</h3><p>{body}</p></article>)}</div>
+      <div className="features">{grades.map(([grade, label, body]) => <article className="card" key={grade}><h3>{grade}</h3><p><strong>{label}</strong></p><p>{body}</p></article>)}</div>
+    </section>
+    <section className="sec sec-cream faq">
+      <div className="faq-inner">
+        <h2 className="serif">이용 전에 확인해 주세요</h2>
+        <ul>
+          <li>언어모델은 문장 추출 및 근거 요소 표시를 담당하고, 판정 등급과 라벨은 사전에 정한 규칙으로 계산합니다.</li>
+          <li>근거가 원문과 일치하는지 확인되지 않은 주장은 “원문 대조 필요”로 표시하며 확정 등급을 주지 않습니다.</li>
+          <li>확인하지 못한 근거를 “근거 없음”으로 처리하지 않습니다.</li>
+          <li>결과는 보고서 안의 주장과 근거의 연결을 보여 줄 뿐, 기업의 실제 환경 성과나 법 위반 여부를 판단하지 않습니다.</li>
+        </ul>
+        <p><Link className="pill pill-dark" to="/analyze">보고서 분석 시작 <span aria-hidden="true">→</span></Link></p>
       </div>
     </section>
   </main>;

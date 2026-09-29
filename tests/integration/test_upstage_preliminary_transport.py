@@ -514,7 +514,7 @@ def test_oversize_context_is_bounded_before_hashing_without_losing_sources(tmp_p
     assert canonical_hash(bounded) != canonical_hash(envelope)
     request["user_json"] = json.dumps(bounded, ensure_ascii=False)
     request["packet_sha256"] = canonical_hash(bounded)
-    system, wire, _, _ = adapter._wire_request(request)
+    system, wire, _, _, _ = adapter._wire_request(request)
     probe.request_body(
         system, wire, request_id=request["request_id"], max_tokens=100, json_mode=True
     )
@@ -532,7 +532,7 @@ def test_context_bound_does_not_hide_oversize_numbered_sources(tmp_path, monkeyp
     )
     request["user_json"] = json.dumps(bounded, ensure_ascii=False)
     request["packet_sha256"] = canonical_hash(bounded)
-    system, wire, _, _ = adapter._wire_request(request)
+    system, wire, _, _, _ = adapter._wire_request(request)
     with pytest.raises(ValueError, match="PROBE_REQUEST_TOO_LARGE"):
         probe.request_body(
             system, wire, request_id=request["request_id"], max_tokens=100, json_mode=True
