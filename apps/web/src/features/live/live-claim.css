@@ -10,7 +10,7 @@
 .live-form label{display:block;font-size:13px;font-weight:700;color:var(--ink,#161616)}
 .live-form label small{font-weight:400;color:var(--muted,#7B7872);margin-left:8px}
 .live-form input,.live-form textarea{display:block;width:100%;margin-top:8px;padding:12px 14px;border:1px solid var(--line,#E9E4DB);border-radius:2px;background:#fff;color:var(--ink,#161616);font:inherit;font-size:15px;line-height:1.55;resize:vertical}
-.live-form :focus-visible,.live-grid button:focus-visible{outline:2px solid var(--lime,#E4623F);outline-offset:2px}
+.live-form :focus-visible,.live-grid button:focus-visible{outline:2px solid var(--lime,#031a0e);outline-offset:2px}
 .live-examples{display:grid;gap:0;border-top:1px solid var(--line,#E9E4DB)}
 .live-examples>span{padding:15px 0 7px;font-size:11px;letter-spacing:.08em;color:var(--muted,#7B7872);font-weight:700}
 .live-examples button{display:flex;align-items:baseline;justify-content:space-between;gap:20px;text-align:left;border:0;border-bottom:1px solid var(--line,#E9E4DB);background:transparent;padding:12px 0;color:var(--ink,#161616);cursor:pointer}

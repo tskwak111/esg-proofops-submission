@@ -14,8 +14,8 @@
 /* labels */
 .eyebrow, .tiny-label, .kicker { display: inline-flex; align-items: center; gap: 10px; font: 500 12px/1.4 var(--font); letter-spacing: .12em; text-transform: uppercase; color: var(--coral) }
 .kicker { color: var(--signal) } .kicker.dark { color: var(--green) }
-.pulse { width: 7px; height: 7px; background: var(--signal); box-shadow: 0 0 0 0 rgba(228, 98, 63, .5); animation: pulse 2.4s infinite }
-@keyframes pulse { 70% { box-shadow: 0 0 0 10px rgba(228, 98, 63, 0) } 100% { box-shadow: 0 0 0 0 rgba(228, 98, 63, 0) } }
+.pulse { width: 7px; height: 7px; background: var(--accent); box-shadow: 0 0 0 0 rgba(128, 173, 128, .5); animation: pulse 2.4s infinite }
+@keyframes pulse { 70% { box-shadow: 0 0 0 10px rgba(128, 173, 128, 0) } 100% { box-shadow: 0 0 0 0 rgba(128, 173, 128, 0) } }
 
 /* header */
 .site-header { position: sticky; top: 0; z-index: 50; background: rgba(249, 248, 244, .88); backdrop-filter: saturate(160%) blur(14px); -webkit-backdrop-filter: saturate(160%) blur(14px) }
@@ -157,7 +157,7 @@ a.card:hover, .features .card:hover, .steps .card:hover { transform: translateY(
 .badges { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 22px }
 .badge { font-size: 12px; font-weight: 600; color: var(--ink-2); padding-left: 12px; position: relative }
 .badge::before { content: ''; position: absolute; left: 0; top: 50%; width: 5px; height: 5px; margin-top: -2.5px; background: var(--green) }
-.badge.amber::before { background: var(--amber) }
+.badge.amber::before { background: var(--accent) }
 .report-link { display: inline-flex; margin-top: 22px; font-size: 14px; font-weight: 600; border-bottom: 1px solid transparent }
 .report-link:hover { border-color: currentColor }
 .heading-side { min-width: 200px; padding-top: 16px; border-top: 1px solid var(--ink); display: flex; flex-direction: column; gap: 6px }
@@ -254,7 +254,7 @@ a.card:hover, .features .card:hover, .steps .card:hover { transform: translateY(
 .guide-help summary::-webkit-details-marker { display: none }
 .guide-help summary:hover { border-color: var(--ink); color: var(--ink) }
 .guide-help [role=note] { border-radius: 10px; position: absolute; z-index: 20; top: 24px; left: -8px; width: 280px; padding: 14px 16px; background: var(--ink); color: #F4EFE6; font: 400 13px/1.6 var(--font); letter-spacing: 0; text-transform: none; box-shadow: 0 20px 40px -20px rgba(0, 0, 0, .5) }
-.guide-help [role=note] a { color: #F2B8A6; display: inline-block; margin-top: 6px }
+.guide-help [role=note] a { color: #80ad80; display: inline-block; margin-top: 6px }
 
 /* guide */
 .decision-guide { margin-top: 40px }
