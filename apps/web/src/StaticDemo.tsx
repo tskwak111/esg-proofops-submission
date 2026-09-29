@@ -268,7 +268,7 @@ function gradeText(claim: Claim) {
   if (claim.decision.display_grade) return `${claim.decision.display_grade} · 예비 등급`;
   const range = claim.decision.grade_range;
   if (range) return `${range.floor}–${range.ceiling} 가능`;
-  return "미판정";
+  return claim.decision.status !== "not_run" && statusText[claim.decision.status] || "미판정";
 }
 
 const ladderElements: Record<string, Record<string, string[]>> = {
