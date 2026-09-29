@@ -444,3 +444,11 @@ main.landing > section.hero { padding: 96px 40px 110px }
 /* Landing hero fills the first screen; the next section starts below the fold */
 main.landing > section.hero { min-height: calc(100vh - var(--header-h, 69px)); min-height: calc(100svh - var(--header-h, 69px)); display: flex; flex-direction: column; justify-content: center; align-items: center; padding-top: 48px; padding-bottom: 56px }
 main.landing > section.hero .prompt { width: 100%; margin-top: 56px }
+/* Landing lower sections: equal space above and below each block */
+main.landing > section.sec { padding: 96px 40px !important; margin: 0 !important }
+main.landing > section.hero { margin: 0 !important }
+main.landing .faq-inner > h2 { margin: 0 0 20px !important }
+main.landing .faq-inner > h2:not(:first-child) { margin-top: 64px !important }
+main.landing .faq-inner > p, main.landing .faq-inner > ul { margin: 0 !important }
+@media (max-width: 760px) { main.landing > section.sec { padding: 72px 20px !important } }
+main.landing .faq-inner li:last-child { margin-bottom: 0 !important }
