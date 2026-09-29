@@ -153,12 +153,10 @@ function ReportPreview({ data }: { data: Snapshot }) {
 function Landing({ data }: { data: Snapshot }) {
   const navigate = useNavigate();
   const [draft, setDraft] = useState("");
-  const reviewTarget = data.claims.find(claim => claim.decision.grade === "E3")?.id || data.claims[0]?.id;
   const example = "업로드 한 보고서 및 재무제표를 기반으로, 그린워싱으로 판별된 리스크가 높은 문장과 그 원인을 분석해줘.";
   const tools: [string, string, string, string][] = [
     ["/analyze", "보고서 분석", "어떤 기업 보고서든 선택한 쪽을 바로 분석합니다", "t-upload"],
     ["/demo", "분석 사례 · NAVER", "NAVER 2025 보고서의 주장·근거·판정", "t-results"],
-    [`/review/${reviewTarget}`, "검토", "요소를 바꾸면 판정이 다시 계산됩니다", "t-review"],
     ["/demo/kia", "분석 사례 · 기아", "수치 검산과 검증의견서 연결", "t-kia"],
   ];
   return <main className="landing">
