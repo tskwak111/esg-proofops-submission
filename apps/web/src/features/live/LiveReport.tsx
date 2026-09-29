@@ -69,9 +69,15 @@ export function LiveReport({ file }: { file: File }) {
     if (busy) return;
     setStage("선택한 쪽 준비 중"); setError(""); setResult(null);
     try {
-      const { PDFDocument } = await import("pdf-lib");
+      const { PDFDocument, PDFName } = await import("pdf-lib");
       const original = await PDFDocument.load(await file.arrayBuffer());
       const pages = parsePages(range, original.getPageCount());
+      // Link annotations point at other pages, so copying them drags the whole
+      // report along; thumbnails and editor data are not page content either.
+      for (const page of pages) {
+        const node = original.getPage(page - 1).node;
+        for (const key of ["Annots", "Thumb", "PieceInfo"]) node.delete(PDFName.of(key));
+      }
       const chunks: number[][] = [];
       for (let i = 0; i < pages.length; i += 10) chunks.push(pages.slice(i, i + 10));
       const combined: Result = { claims: [], pages, duration_ms: 0, cost_usd: 0, notice: "사용자 최종 검토 전" };
