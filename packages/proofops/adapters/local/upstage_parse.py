@@ -6,7 +6,7 @@ pages fit one reservation. Fixed host api.upstage.ai with pinned model
 document-parse-260128, mode, ocr=auto, coordinates=true,
 output_formats=[text,html]. No retries/redirects, bounded response, sanitized
 errors. Pricing 2026-09-12 standard 0.01/page enhanced 0.03/page +10% VAT.
-Rates rechecked 2026-09-25 at https://www.upstage.ai/pricing/api; expiry 2026-10-02.
+Rates rechecked 2026-10-07 at https://www.upstage.ai/pricing/api; expiry 2026-10-14.
 No quality approval or graph conversion.
 """
 

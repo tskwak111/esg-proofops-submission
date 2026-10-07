@@ -18,7 +18,9 @@ from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "packages"))
+sys.path.insert(0, str(ROOT / "api"))
 
+from _limits import LiveError, check_enabled, check_limits  # noqa: E402
 from proofops.application.tagging.consensus import (  # noqa: E402
     PARTIAL_FACTS_V1,
     reviewable_decision,
@@ -50,11 +52,6 @@ MAX_ESTIMATE_USD = 0.01
 INPUT_RATE = 0.10 / 1_000_000
 OUTPUT_RATE = 0.50 / 1_000_000
 PACK = RulePackSnapshot(**json.loads((ROOT / "api/rulepack.json").read_text(encoding="utf-8")))
-
-
-class LiveError(Exception):
-    def __init__(self, status: int, code: str):
-        self.status, self.code = status, code
 
 
 def _hash(text: str) -> str:
@@ -221,12 +218,13 @@ def _step(call_model, system: str, user: dict, max_tokens: int, spent_estimate: 
     raise LiveError(502, "OPENROUTER_RESPONSE_INVALID")
 
 
-def run_claim(payload: dict, *, access_code: str, call_model=None) -> dict:
+def run_claim(payload: dict, *, access_code: str, call_model=None, forwarded_for: str = "") -> dict:
     required = os.environ.get("DEMO_ACCESS_CODE", "")
     if not required:
         raise LiveError(503, "DEMO_NOT_CONFIGURED")
     if not hmac.compare_digest(access_code, required):
         raise LiveError(403, "ACCESS_DENIED")
+    check_enabled()
     call_model = call_model or _provider
     if not isinstance(payload, dict) or set(payload) - {"claim", "context", "page_label"}:
         raise LiveError(400, "INVALID_INPUT")
@@ -244,6 +242,7 @@ def run_claim(payload: dict, *, access_code: str, call_model=None) -> dict:
         or (page is not None and (not isinstance(page, str) or len(page) > 30))
     ):
         raise LiveError(400, "INVALID_INPUT")
+    check_limits(forwarded_for)
     claim_id, document_id, source_id, context_source_id, parse_id = (str(uuid4()) for _ in range(5))
     tenant_id = PACK.tenant_id
     packet_hash = _hash(
@@ -523,7 +522,11 @@ class handler(BaseHTTPRequestHandler):
             if length < 1 or length > MAX_BODY:
                 raise LiveError(413, "BODY_TOO_LARGE")
             payload = json.loads(self.rfile.read(length))
-            result = run_claim(payload, access_code=self.headers.get("X-Demo-Access-Code", ""))
+            result = run_claim(
+                payload,
+                access_code=self.headers.get("X-Demo-Access-Code", ""),
+                forwarded_for=self.headers.get("X-Forwarded-For", ""),
+            )
             status = 200
         except LiveError as exc:
             status, result = exc.status, {"error": exc.code}

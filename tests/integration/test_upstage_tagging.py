@@ -438,7 +438,10 @@ def test_openrouter_validates_compact_quote_wire_before_restoring_provenance(tmp
     def complete(*args, schema_json, **kwargs):
         Draft202012Validator(json.loads(schema_json)).validate(payload)
         return dict(
-            content=json.dumps(payload), schema_valid=True, input_tokens=1, output_tokens=1,
+            content=json.dumps(payload),
+            schema_valid=True,
+            input_tokens=1,
+            output_tokens=1,
             provider_request_id="fixture-provider",
         )
 

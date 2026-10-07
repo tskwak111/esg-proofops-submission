@@ -1,7 +1,7 @@
 """Opt-in one-page document extraction; existing USD10 ledger, no automatic retries.
 
 Protocol/model: https://console.upstage.ai/docs/capabilities/extract/universal-extraction
-Price: https://www.upstage.ai/pricing/api rechecked 2026-09-25 (rates unchanged).
+Price: https://www.upstage.ai/pricing/api rechecked 2026-10-07 (rates unchanged).
 Enhanced USD0.06/page
 plus 10% VAT. Settlement uses the submitted one-page count at the requested mode
 rate, not token pricing or a claimed provider invoice. No production activation.

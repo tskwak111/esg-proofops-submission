@@ -25,8 +25,9 @@ from proofops.domain.provenance import canonical_hash
 MODEL = "solar-pro3"
 MODEL_PRO4 = "solar-pro4"
 # Text, document parse and information-extract rates rechecked at the official
-# pricing page on 2026-09-25; keep one deadline across transports.
-PRICE_RECHECK_AT = datetime(2026, 10, 2, tzinfo=UTC)
+# pricing page on 2026-10-07; keep one deadline across transports.
+# Solar Pro 3 service ends 2026-10-30 KST (pricing notice rechecked 2026-10-07).
+PRICE_RECHECK_AT = datetime(2026, 10, 14, tzinfo=UTC)
 GENERAL_CEILING_USD = Decimal("30.00")
 R32_HISTORICAL_GENERAL_USD = Decimal("20.00")
 RECORDED_GENERAL_REASON = (
@@ -531,7 +532,7 @@ class UpstageProbe:
         max_tokens: int = 1024,
         json_mode: bool = False,
     ):
-        # Pricing reverified at https://www.upstage.ai/pricing/api on 2026-09-25:
+        # Pricing reverified at https://www.upstage.ai/pricing/api on 2026-10-07:
         # Pro3 $0.15/$0.60, Pro4 $0.30/$1.20 per M tokens (conservative, promotions ignored).
         # Recheck in one week; historical price IDs/rates and ledger policy stay unchanged.
         if datetime.now(UTC) >= PRICE_RECHECK_AT:

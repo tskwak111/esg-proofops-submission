@@ -41,4 +41,3 @@ outputs/handoff-packages/
 *.pem
 *.key
 .vercel
-.env*

@@ -397,3 +397,11 @@ def test_invalid_json_or_schema_retries_once_and_counts_both_costs(invalid):
     assert message["track"] == "goal"
     assert len(calls) == 2
     assert cost == pytest.approx(0.0002 if invalid == "provider" else 0.0004)
+
+
+@pytest.fixture(autouse=True)
+def fake_usage_check(monkeypatch):
+    import _limits
+
+    _limits._recent.clear()
+    monkeypatch.setattr(_limits, "daily_usage", lambda: 0.0)

@@ -3,7 +3,12 @@
 import hashlib
 import io
 import json
+import os
+import re
+import shutil
+import subprocess
 from decimal import Decimal
+from pathlib import Path
 
 import pytest
 from proofops.adapters.local import upstage
@@ -126,17 +131,32 @@ def test_async_parse_uses_one_shared_reservation_and_checks_batches(tmp_path, mo
         return {"request_id": "provider-id"}
 
     monkeypatch.setattr(client, "_post_parse", submit)
-    monkeypatch.setattr(client, "_async_status", lambda provider_id: {
-        "status": "completed", "model": PARSE_MODEL_PINNED,
-        "total_pages": 12, "completed_pages": 12,
-        "batches": [{"download_url": "https://kr.files.upstage.ai/a"},
-                    {"download_url": "https://kr.files.upstage.ai/b"}],
-    })
-    monkeypatch.setattr(client, "_async_download", lambda url: {
-        "model": PARSE_MODEL_PINNED, "elements": [],
-        "usage": {"pages": 10 if url.endswith("a") else 2,
-                  "standard": list(range(1, 11)) if url.endswith("a") else [11, 12]},
-    })
+    monkeypatch.setattr(
+        client,
+        "_async_status",
+        lambda provider_id: {
+            "status": "completed",
+            "model": PARSE_MODEL_PINNED,
+            "total_pages": 12,
+            "completed_pages": 12,
+            "batches": [
+                {"download_url": "https://kr.files.upstage.ai/a"},
+                {"download_url": "https://kr.files.upstage.ai/b"},
+            ],
+        },
+    )
+    monkeypatch.setattr(
+        client,
+        "_async_download",
+        lambda url: {
+            "model": PARSE_MODEL_PINNED,
+            "elements": [],
+            "usage": {
+                "pages": 10 if url.endswith("a") else 2,
+                "standard": list(range(1, 11)) if url.endswith("a") else [11, 12],
+            },
+        },
+    )
     result = client.parse_async(pdf, request_id="async-12")
     assert posted == [("standard", "/v1/document-digitization/async", True)]
     assert len(result["raw_batches"]) == 2
@@ -159,28 +179,57 @@ def test_parser_routes_bad_standard_html_to_enhanced_without_promoting_blank_tex
     from proofops.adapters.parsing.opendataloader import OpenDataLoaderParser
     from proofops.application.ingest.graph_fusion import ParserProfile, SourceArtifact
 
+    local_java = Path("/opt/homebrew/opt/openjdk@21/bin/java")
+    java = os.getenv("PROOFOPS_TEST_JAVA") or (str(local_java) if local_java.is_file() else "java")
+    executable = shutil.which(java)
+    if not executable:
+        pytest.skip("Java 21 unavailable")
+    runtime = subprocess.run([executable, "-version"], capture_output=True, timeout=20, check=True)
+    if re.search(r'version "21\.', runtime.stderr.decode(errors="replace")) is None:
+        pytest.skip("Java 21 unavailable")
     pdf = make_pdf(1)
-    source = SourceArtifact(str(uuid4()), str(uuid4()), str(uuid4()),
-                            hashlib.sha256(pdf).hexdigest(), "v1", pdf)
-    profile = ParserProfile(str(uuid4()), physical_pages=(1,),
-                            java_executable="/opt/homebrew/opt/openjdk@21/bin/java",
-                            timeout_seconds=120, table_auxiliary=False,
-                            parser_mode="upstage", vision_parse="off")
-    coords = [{"x": .1, "y": .1}, {"x": .9, "y": .1},
-              {"x": .9, "y": .9}, {"x": .1, "y": .9}]
+    source = SourceArtifact(
+        str(uuid4()), str(uuid4()), str(uuid4()), hashlib.sha256(pdf).hexdigest(), "v1", pdf
+    )
+    profile = ParserProfile(
+        str(uuid4()),
+        physical_pages=(1,),
+        java_executable=executable,
+        timeout_seconds=120,
+        table_auxiliary=False,
+        parser_mode="upstage",
+        vision_parse="off",
+    )
+    coords = [
+        {"x": 0.1, "y": 0.1},
+        {"x": 0.9, "y": 0.1},
+        {"x": 0.9, "y": 0.9},
+        {"x": 0.1, "y": 0.9},
+    ]
 
     class Fake:
         def parse_async(self, pdf_bytes, *, request_id, mode):
-            html = "<table>" if mode == "standard" else (
-                "<table><tr><td>2035</td></tr></table>"
-            )
-            batches = [{"model": PARSE_MODEL_PINNED,
-                        "usage": {"pages": 1, mode: [1]},
-                        "elements": [{"page": 1, "category": "table",
-                                      "coordinates": coords,
-                                      "content": {"text": "2035", "html": html}}]}]
-            return {"raw_batches": batches, "response_sha256": canonical_hash(batches),
-                    "model": PARSE_MODEL_PINNED, "pages": 1}
+            html = "<table>" if mode == "standard" else ("<table><tr><td>2035</td></tr></table>")
+            batches = [
+                {
+                    "model": PARSE_MODEL_PINNED,
+                    "usage": {"pages": 1, mode: [1]},
+                    "elements": [
+                        {
+                            "page": 1,
+                            "category": "table",
+                            "coordinates": coords,
+                            "content": {"text": "2035", "html": html},
+                        }
+                    ],
+                }
+            ]
+            return {
+                "raw_batches": batches,
+                "response_sha256": canonical_hash(batches),
+                "model": PARSE_MODEL_PINNED,
+                "pages": 1,
+            }
 
     parser = OpenDataLoaderParser(tmp_path / "artifacts", upstage_probe=Fake())
     graph = parser.parse(source, profile, tenant_id=source.tenant_id)
@@ -188,8 +237,15 @@ def test_parser_routes_bad_standard_html_to_enhanced_without_promoting_blank_tex
     assert all(b.quality == "unlocated" for b in graph.blocks)
     loaded = parser.load_verified(source, profile, tenant_id=source.tenant_id)
     assert loaded.to_dict() == graph.to_dict()
-    manifest = json.loads((parser.artifact_root / source.tenant_id /
-        source.document_version_id / profile.parse_manifest_id / "manifest.json").read_text())
+    manifest = json.loads(
+        (
+            parser.artifact_root
+            / source.tenant_id
+            / source.document_version_id
+            / profile.parse_manifest_id
+            / "manifest.json"
+        ).read_text()
+    )
     assert manifest["upstage_parse"]["standard"]["html_failed_pages"] == [1]
     assert manifest["upstage_parse"]["enhanced"][0]["grounded_cells"] == 0
 
@@ -211,14 +267,16 @@ def test_upstage_glyph_boxes_cover_exact_native_ink_without_changing_legacy_prof
 
     writer = PdfWriter()
     page = writer.add_blank_page(width=400, height=200)
-    font = DictionaryObject({
-        NameObject("/Type"): NameObject("/Font"),
-        NameObject("/Subtype"): NameObject("/Type1"),
-        NameObject("/BaseFont"): NameObject("/Helvetica"),
-    })
-    page[NameObject("/Resources")] = DictionaryObject({
-        NameObject("/Font"): DictionaryObject({NameObject("/F1"): font})
-    })
+    font = DictionaryObject(
+        {
+            NameObject("/Type"): NameObject("/Font"),
+            NameObject("/Subtype"): NameObject("/Type1"),
+            NameObject("/BaseFont"): NameObject("/Helvetica"),
+        }
+    )
+    page[NameObject("/Resources")] = DictionaryObject(
+        {NameObject("/Font"): DictionaryObject({NameObject("/F1"): font})}
+    )
     content = DecodedStreamObject()
     content.set_data(b"BT /F1 12 Tf 40 100 Td (Energy use fell 20% in 2025.) Tj ET")
     page[NameObject("/Contents")] = writer._add_object(content)
@@ -229,22 +287,35 @@ def test_upstage_glyph_boxes_cover_exact_native_ink_without_changing_legacy_prof
         str(uuid4()), str(uuid4()), str(uuid4()), hashlib.sha256(pdf).hexdigest(), "v1", pdf
     )
     coords = [
-        {"x": .05, "y": .4}, {"x": .95, "y": .4},
-        {"x": .95, "y": .6}, {"x": .05, "y": .6},
+        {"x": 0.05, "y": 0.4},
+        {"x": 0.95, "y": 0.4},
+        {"x": 0.95, "y": 0.6},
+        {"x": 0.05, "y": 0.6},
     ]
-    response = [{
-        "model": PARSE_MODEL_PINNED, "usage": {"pages": 1, "standard": [1]},
-        "elements": [{"page": 1, "category": "paragraph", "coordinates": coords,
-                      "content": {"text": "Energy use fell 20% in 2025."}}],
-    }]
+    response = [
+        {
+            "model": PARSE_MODEL_PINNED,
+            "usage": {"pages": 1, "standard": [1]},
+            "elements": [
+                {
+                    "page": 1,
+                    "category": "paragraph",
+                    "coordinates": coords,
+                    "content": {"text": "Energy use fell 20% in 2025."},
+                }
+            ],
+        }
+    ]
     legacy = ParserProfile(str(uuid4()), parser_mode="upstage")
     modern = ParserProfile(str(uuid4()), parser_mode="upstage", upstage_glyph_boxes=True)
     assert "upstage_glyph_boxes" not in legacy.config_snapshot()
     assert modern.config_hash() != legacy.config_hash()
-    old = candidate_batch(source, legacy, (1,), response, mode="standard",
-                          config_hash=legacy.config_hash())[0].blocks[0]
-    new_batch = candidate_batch(source, modern, (1,), response, mode="standard",
-                                config_hash=modern.config_hash())[0]
+    old = candidate_batch(
+        source, legacy, (1,), response, mode="standard", config_hash=legacy.config_hash()
+    )[0].blocks[0]
+    new_batch = candidate_batch(
+        source, modern, (1,), response, mode="standard", config_hash=modern.config_hash()
+    )[0]
     new = new_batch.blocks[0]
     with pdfplumber.open(io.BytesIO(pdf)) as doc:
         words = doc.pages[0].extract_words()
@@ -278,14 +349,16 @@ def test_upstage_region_words_ground_multiline_paragraph_in_two_column_page():
 
     writer = PdfWriter()
     page = writer.add_blank_page(width=400, height=200)
-    font = DictionaryObject({
-        NameObject("/Type"): NameObject("/Font"),
-        NameObject("/Subtype"): NameObject("/Type1"),
-        NameObject("/BaseFont"): NameObject("/Helvetica"),
-    })
-    page[NameObject("/Resources")] = DictionaryObject({
-        NameObject("/Font"): DictionaryObject({NameObject("/F1"): font})
-    })
+    font = DictionaryObject(
+        {
+            NameObject("/Type"): NameObject("/Font"),
+            NameObject("/Subtype"): NameObject("/Type1"),
+            NameObject("/BaseFont"): NameObject("/Helvetica"),
+        }
+    )
+    page[NameObject("/Resources")] = DictionaryObject(
+        {NameObject("/Font"): DictionaryObject({NameObject("/F1"): font})}
+    )
     content = DecodedStreamObject()
     # Two columns whose lines share baselines: page-wide word order interleaves them.
     content.set_data(
@@ -302,14 +375,25 @@ def test_upstage_region_words_ground_multiline_paragraph_in_two_column_page():
         str(uuid4()), str(uuid4()), str(uuid4()), hashlib.sha256(pdf).hexdigest(), "v1", pdf
     )
     coords = [
-        {"x": .03, "y": .3}, {"x": .45, "y": .3},
-        {"x": .45, "y": .55}, {"x": .03, "y": .55},
+        {"x": 0.03, "y": 0.3},
+        {"x": 0.45, "y": 0.3},
+        {"x": 0.45, "y": 0.55},
+        {"x": 0.03, "y": 0.55},
     ]
-    response = [{
-        "model": PARSE_MODEL_PINNED, "usage": {"pages": 1, "standard": [1]},
-        "elements": [{"page": 1, "category": "paragraph", "coordinates": coords,
-                      "content": {"text": "Energy use fell\n20% in 2025."}}],
-    }]
+    response = [
+        {
+            "model": PARSE_MODEL_PINNED,
+            "usage": {"pages": 1, "standard": [1]},
+            "elements": [
+                {
+                    "page": 1,
+                    "category": "paragraph",
+                    "coordinates": coords,
+                    "content": {"text": "Energy use fell\n20% in 2025."},
+                }
+            ],
+        }
+    ]
     glyph = ParserProfile(str(uuid4()), parser_mode="upstage", upstage_glyph_boxes=True)
     region = ParserProfile(
         str(uuid4()), parser_mode="upstage", upstage_glyph_boxes=True, upstage_region_words=True
@@ -318,11 +402,13 @@ def test_upstage_region_words_ground_multiline_paragraph_in_two_column_page():
     assert region.config_hash() != glyph.config_hash()
     with pytest.raises(ValueError):
         ParserProfile(str(uuid4()), upstage_region_words=True)
-    old = candidate_batch(source, glyph, (1,), response, mode="standard",
-                          config_hash=glyph.config_hash())[0].blocks[0]
+    old = candidate_batch(
+        source, glyph, (1,), response, mode="standard", config_hash=glyph.config_hash()
+    )[0].blocks[0]
     assert old.bbox is None
-    batch = candidate_batch(source, region, (1,), response, mode="standard",
-                            config_hash=region.config_hash())[0]
+    batch = candidate_batch(
+        source, region, (1,), response, mode="standard", config_hash=region.config_hash()
+    )[0]
     new = batch.blocks[0]
     assert new.bbox is not None
     assert new.source.raw_text == "Energy use fell 20% in 2025."

@@ -42,6 +42,10 @@ const stages = ["분류", "요소 태깅", "Python 규칙엔진"];
 const trackNames: Record<string, string> = { management: "관리체계", performance: "성과", goal: "목표" };
 const stateNames: Record<string, string> = { present: "확인", absent: "부재 후보", unknown: "확인 전", conflict: "상충" };
 const errors: Record<string, string> = {
+  DAILY_LIMIT: "오늘의 분석 비용 한도에 도달했습니다. 내일 다시 이용해 주세요.",
+  RATE_LIMITED: "요청이 많습니다. 1분 후 다시 시도해 주세요.",
+  LIVE_DISABLED: "실시간 분석이 일시 중지되었습니다.",
+  LIMIT_CHECK_UNAVAILABLE: "비용 한도를 확인할 수 없어 분석을 중지했습니다. 잠시 후 다시 시도해 주세요.",
   ACCESS_DENIED: "접근 키를 확인해 주세요.", DEMO_NOT_CONFIGURED: "분석 서비스를 사용할 수 없습니다.",
   INVALID_INPUT: "입력을 확인해 주세요. 주장은 500자, 문맥은 2,000자 이하여야 합니다.",
   BODY_TOO_LARGE: "입력 길이가 허용 범위를 넘었습니다.",

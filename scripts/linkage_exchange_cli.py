@@ -28,9 +28,7 @@ import json
 import sys
 from pathlib import Path
 
-LOCAL_FIXTURE_CONTRACT_DIR = (
-    Path(__file__).resolve().parents[1] / "tests/fixtures/linkage-contract"
-)
+LOCAL_FIXTURE_CONTRACT_DIR = Path(__file__).resolve().parents[1] / "tests/fixtures/linkage-contract"
 
 
 def resolve_contract_dir(contract_dir: str | Path | None = None) -> Path:

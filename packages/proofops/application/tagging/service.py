@@ -116,7 +116,7 @@ class TaggingSettings:
 
     @property
     def model_sha256(self) -> str:
-        identity = dict(
+        identity: dict[str, Any] = dict(
             binding=asdict(self.binding),
             model_id=self.model_id,
             model_profile=self.model_profile,
@@ -364,7 +364,7 @@ def tag_replicates(
             request = replace(
                 provisional, request_id=str(uuid5(UUID(ensemble_id), provisional.request_signature))
             )
-            identity = dict(
+            identity: dict[str, Any] = dict(
                 request=asdict(request),
                 tenant_id=tenant_id,
                 run_id=data["run_id"],

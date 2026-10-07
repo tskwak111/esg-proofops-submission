@@ -553,9 +553,7 @@ class UpstageTaggingTransport:
                 max_tokens=request["max_tokens"],
                 json_mode=True,
                 **(
-                    {"schema_json": wire_schema}
-                    if isinstance(self._probe, OpenRouterProbe)
-                    else {}
+                    {"schema_json": wire_schema} if isinstance(self._probe, OpenRouterProbe) else {}
                 ),
             )
         except Exception as error:

@@ -104,3 +104,11 @@ def test_selected_kia_page_with_fake_transports(monkeypatch):
     assert unverified["source_verified"] is False
     assert unverified["decision"] is None
     assert unverified["blocked_reason"] == "원문 대조 필요"
+
+
+@pytest.fixture(autouse=True)
+def fake_usage_check(monkeypatch):
+    import _limits
+
+    _limits._recent.clear()
+    monkeypatch.setattr(_limits, "daily_usage", lambda: 0.0)

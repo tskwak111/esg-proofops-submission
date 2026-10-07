@@ -366,7 +366,7 @@ class OpenDataLoaderParser(ParserPort):
                     )
                 fusion_version = 4 if profile.table_structure_repair == "odl_header_v2" else 3
                 vision_metrics = None
-                upstage_output = None
+                upstage_output: dict[str, Any] | None = None
                 fallback_pages = tuple(selected)
                 if profile.parser_mode == "upstage":
                     if self.upstage_probe is None:
@@ -383,8 +383,16 @@ class OpenDataLoaderParser(ParserPort):
                     def upstage_call(pages, mode):
                         cache_dir = self.artifact_root / "upstage-cache" / tenant_id
                         cache_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
-                        key = sha256(_json(dict(source_sha256=source.sha256,
-                            pages=pages, model=UPSTAGE_MODEL, mode=mode))).hexdigest()
+                        key = sha256(
+                            _json(
+                                dict(
+                                    source_sha256=source.sha256,
+                                    pages=pages,
+                                    model=UPSTAGE_MODEL,
+                                    mode=mode,
+                                )
+                            )
+                        ).hexdigest()
                         path = cache_dir / (key + ".json")
                         if path.exists():
                             result = json.loads(path.read_bytes())
@@ -393,7 +401,8 @@ class OpenDataLoaderParser(ParserPort):
                             return result, True
                         result = self.upstage_probe.parse_async(
                             selected_pdf(source.content, pages),
-                            request_id=str(uuid4()), mode=mode,
+                            request_id=str(uuid4()),
+                            mode=mode,
                         )
                         temporary = path.with_name(path.name + "." + uuid4().hex + ".tmp")
                         temporary.write_bytes(_json(result))
@@ -411,11 +420,14 @@ class OpenDataLoaderParser(ParserPort):
                     )
                     from proofops.adapters.parsing.gemini_vision import fragment
 
-                    local_prose = [block.source.raw_text for batch in candidates
-                        for block in batch.blocks if block.kind == "paragraph"
-                        and block.source.physical_page in selected]
-                    standard_metrics["fragment_rate_local"] = (
-                        sum(map(fragment, local_prose)) / max(1, len(local_prose))
+                    local_prose = [
+                        block.source.raw_text
+                        for batch in candidates
+                        for block in batch.blocks
+                        if block.kind == "paragraph" and block.source.physical_page in selected
+                    ]
+                    standard_metrics["fragment_rate_local"] = sum(map(fragment, local_prose)) / max(
+                        1, len(local_prose)
                     )
                     upstage_batches = [upstage_batch]
                     enhanced_records = []
@@ -423,7 +435,7 @@ class OpenDataLoaderParser(ParserPort):
                         set(standard_metrics["html_failed_pages"])
                         | set(standard_metrics["low_grounding_pages"])
                     )
-                    completed_enhanced_pages = set()
+                    completed_enhanced_pages: set[int] = set()
                     for start in range(0, len(enhanced_pages), 30):
                         pages = tuple(enhanced_pages[start : start + 30])
                         try:
@@ -468,7 +480,7 @@ class OpenDataLoaderParser(ParserPort):
                         )
                     fallback_pages = tuple(
                         sorted(
-                        (set(standard_metrics["gemini_pages"]) - completed_enhanced_pages)
+                            (set(standard_metrics["gemini_pages"]) - completed_enhanced_pages)
                             | {
                                 p
                                 for record in enhanced_records
@@ -598,19 +610,27 @@ class OpenDataLoaderParser(ParserPort):
                 upstage_parse=None
                 if upstage_output is None
                 else dict(
-                    standard=dict(upstage_output["standard"]["metrics"],
+                    standard=dict(
+                        upstage_output["standard"]["metrics"],
                         cost_usd=upstage_output["standard"]["receipt"].get(
-                            "cost_with_vat_reserve_usd"),
+                            "cost_with_vat_reserve_usd"
+                        ),
                         duration_seconds=upstage_output["standard"]["receipt"].get(
-                            "duration_seconds"),
-                        response_sha256=upstage_output["standard"]["receipt"][
-                            "response_sha256"],
-                        cache_hit=upstage_output["standard"]["cache_hit"]),
-                    enhanced=[dict(item["metrics"],
-                        cost_usd=item["receipt"].get("cost_with_vat_reserve_usd"),
-                        duration_seconds=item["receipt"].get("duration_seconds"),
-                        response_sha256=item["receipt"]["response_sha256"],
-                        cache_hit=item["cache_hit"]) for item in upstage_output["enhanced"]],
+                            "duration_seconds"
+                        ),
+                        response_sha256=upstage_output["standard"]["receipt"]["response_sha256"],
+                        cache_hit=upstage_output["standard"]["cache_hit"],
+                    ),
+                    enhanced=[
+                        dict(
+                            item["metrics"],
+                            cost_usd=item["receipt"].get("cost_with_vat_reserve_usd"),
+                            duration_seconds=item["receipt"].get("duration_seconds"),
+                            response_sha256=item["receipt"]["response_sha256"],
+                            cache_hit=item["cache_hit"],
+                        )
+                        for item in upstage_output["enhanced"]
+                    ],
                     enhanced_deferred_pages=upstage_output["enhanced_deferred_pages"],
                     fallback_pages=upstage_output["fallback_pages"],
                 ),
@@ -808,7 +828,7 @@ class OpenDataLoaderParser(ParserPort):
                     UPSTAGE_MODEL,
                     "upstage-document-parse",
                 )
-                if upstage_output["enhanced"]:
+                if upstage_output is not None and upstage_output["enhanced"]:
                     expected_parsers["upstage_async_enhanced"] = (
                         UPSTAGE_MODEL,
                         "upstage-document-parse",

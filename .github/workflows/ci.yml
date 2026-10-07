@@ -23,7 +23,7 @@ jobs:
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run mypy packages/proofops apps/api/src apps/worker/src apps/agent/src evaluation tests/load infra/cdk/staging_gate.py
-      - run: uv run pytest tests/unit tests/contracts tests/e2e/test_staging_gate.py -q
+      - run: uv run pytest tests/unit tests/contracts tests/e2e/test_staging_gate.py tests/test_live_report_handler.py -q
 
   reconciliation:
     env:

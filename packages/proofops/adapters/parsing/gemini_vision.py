@@ -237,7 +237,7 @@ def parse_pages(
                 page.width, page.height, page.rotation, tuple(map(float, page.cropbox))
             )
             response, hit, seconds = results[number]
-            counts = Counter()
+            counts: Counter[str] = Counter()
 
             def add(
                 kind,

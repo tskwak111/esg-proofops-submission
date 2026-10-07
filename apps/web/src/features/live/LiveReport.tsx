@@ -7,7 +7,11 @@ export type LiveResultClaim = Claim;
 type Claim = { quote: string; page: number; track: string | null; source_verified: boolean; blocked_reason: string | null; elements: { name: string; element_id: string; state: string; quote: string | null; source_verified: boolean }[]; decision: Decision | null };
 type Result = { claims: Claim[]; pages: number[]; duration_ms: number; cost_usd: number; tagging_passes?: number; notice: string };
 const tracks: Record<string, string> = { goal: "목표", performance: "성과", management: "관리체계" };
-const errors: Record<string, string> = { ACCESS_DENIED: "접근 키를 확인해 주세요.", BODY_TOO_LARGE: "선택한 쪽의 PDF가 4MB를 넘습니다. 쪽수를 줄여 주세요.", INVALID_PDF: "선택한 PDF를 읽지 못했습니다.", INVALID_PAGES: "쪽 번호를 확인해 주세요.", UPSTAGE_UNAVAILABLE: "문서 파싱을 완료하지 못했습니다. 다시 시도해 주세요.", LUNA_UNAVAILABLE: "주장 분석을 완료하지 못했습니다. 다시 시도해 주세요.", REQUEST_COST_CAP: "요청 비용 한도를 넘습니다. 쪽수를 줄여 주세요." };
+const errors: Record<string, string> = {
+  DAILY_LIMIT: "오늘의 분석 비용 한도에 도달했습니다. 내일 다시 이용해 주세요.",
+  RATE_LIMITED: "요청이 많습니다. 1분 후 다시 시도해 주세요.",
+  LIVE_DISABLED: "실시간 분석이 일시 중지되었습니다.",
+  LIMIT_CHECK_UNAVAILABLE: "비용 한도를 확인할 수 없어 분석을 중지했습니다. 잠시 후 다시 시도해 주세요.", ACCESS_DENIED: "접근 키를 확인해 주세요.", BODY_TOO_LARGE: "선택한 쪽의 PDF가 4MB를 넘습니다. 쪽수를 줄여 주세요.", INVALID_PDF: "선택한 PDF를 읽지 못했습니다.", INVALID_PAGES: "쪽 번호를 확인해 주세요.", UPSTAGE_UNAVAILABLE: "문서 파싱을 완료하지 못했습니다. 다시 시도해 주세요.", LUNA_UNAVAILABLE: "주장 분석을 완료하지 못했습니다. 다시 시도해 주세요.", REQUEST_COST_CAP: "요청 비용 한도를 넘습니다. 쪽수를 줄여 주세요." };
 const sections: [Section, string][] = [["E", "환경(E)"], ["S", "사회(S)"], ["G", "지배구조(G)"], ["A", "부록"], ["O", "기타"]];
 function pickPages(info: PageInfo[], selected: Section[]) {
   const matches = info.filter(item => selected.includes(item.section));

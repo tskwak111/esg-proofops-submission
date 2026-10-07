@@ -37,10 +37,7 @@ PDF = APP / "tests/fixtures/source-documents/kia.pdf"
 RECEIPTS = Path(
     os.environ.get(
         "R06G_KIA_RECEIPTS",
-        str(
-            APP
-            / ".local/pipeline-recovery-20260920/kia-full-context-64m/extraction-receipts"
-        ),
+        str(APP / ".local/pipeline-recovery-20260920/kia-full-context-64m/extraction-receipts"),
     )
 )
 # The E-body disclosure row on physical page 35 and the reviewed appendix grid on

@@ -42,9 +42,7 @@ MANIFEST = "33333333-3333-4333-8333-333333333333"
 CLAIM = "66666666-6666-4666-8666-666666666666"
 SR_SOURCE = "77777777-7777-4777-8777-777777777777"
 
-FIXTURE_CONTRACT_DIR = (
-    Path(__file__).resolve().parents[2] / "tests/fixtures/linkage-contract"
-)
+FIXTURE_CONTRACT_DIR = Path(__file__).resolve().parents[2] / "tests/fixtures/linkage-contract"
 CONTRACT_DIR = FIXTURE_CONTRACT_DIR
 
 

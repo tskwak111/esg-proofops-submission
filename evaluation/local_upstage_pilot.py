@@ -18,7 +18,7 @@ from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 from uuid import uuid4
 
 import yaml  # type: ignore[import-untyped]
@@ -457,7 +457,7 @@ def run_live_stages(args, *, tenant_id: str, run_id: str) -> dict:
     from proofops_worker.composition import build_composition
 
     tenant = tenant_id
-    result = dict(stage=None, status="not_run", exit_code=0, stage_seconds={})
+    result: dict[str, Any] = dict(stage=None, status="not_run", exit_code=0, stage_seconds={})
     for stage in ("parse", "extract", "tag"):
         stage_started = time.monotonic()
         worker = build_composition(

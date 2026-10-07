@@ -69,8 +69,10 @@ def candidate_batch(source, profile, selected, batches, *, mode: str, config_has
     if sha256(source.content).hexdigest() != source.sha256:
         raise ValueError("UPSTAGE_SOURCE_MISMATCH")
     run_id = str(uuid4())
-    blocks, edges, stats = [], [], Counter()
-    seen_pages, pages_with_output = set(), set()
+    blocks, edges = [], []
+    stats: Counter[str] = Counter()
+    seen_pages: set[int] = set()
+    pages_with_output = set()
     failed_html, low_grounding = set(), set()
     with pdfplumber.open(io.BytesIO(source.content)) as document:
         page_words = {p: document.pages[p - 1].extract_words() for p in selected}
