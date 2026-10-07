@@ -237,17 +237,18 @@ def test_invalid_reason_is_rejected(tmp_path, reason):
 # ---------------------------------------------------------------------------
 
 
-def test_expiry_guard_blocks_complete_at_oct2(tmp_path, monkeypatch):
-    """PRICE_RECHECK_REQUIRED must fire when datetime.now() >= 2026-10-02."""
+def test_expiry_guard_blocks_complete_at_oct14(tmp_path, monkeypatch):
+    """PRICE_RECHECK_REQUIRED must fire when datetime.now() >= 2026-10-14."""
     from datetime import UTC, datetime
 
     client = upstage.UpstageProbe("test-secret", tmp_path / "budget.sqlite3")
     client.authorize_additional_budget("10.00", reason="expiry guard test")
+    monkeypatch.setattr(client, "_post", lambda *_: pytest.fail("network dispatch"))
 
     class ExpiredDateTime(datetime):
         @classmethod
         def now(cls, tz=None):
-            return datetime(2026, 10, 2, tzinfo=UTC)
+            return datetime(2026, 10, 14, tzinfo=UTC)
 
     monkeypatch.setattr(upstage, "datetime", ExpiredDateTime)
     with pytest.raises(ValueError, match="PRICE_RECHECK_REQUIRED"):
@@ -263,7 +264,7 @@ def test_expiry_guard_does_not_block_authorize_additional_budget(tmp_path, monke
     class ExpiredDateTime(datetime):
         @classmethod
         def now(cls, tz=None):
-            return datetime(2026, 10, 2, tzinfo=UTC)
+            return datetime(2026, 10, 14, tzinfo=UTC)
 
     monkeypatch.setattr(upstage, "datetime", ExpiredDateTime)
     client = upstage.UpstageProbe("test-secret", tmp_path / "budget.sqlite3")

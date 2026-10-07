@@ -450,7 +450,7 @@ def test_duplicate_receipt_root_cannot_count_historical_spend(tmp_path, monkeypa
     first, data = make_extractor(probe, tmp_path / "first")
     first.extract(data)
     if expired:
-        now[0] = datetime(2026, 10, 2, tzinfo=UTC)
+        now[0] = datetime(2026, 10, 14, tzinfo=UTC)
     second, _ = make_extractor(probe, tmp_path / "second")
     code = "PRICE_RECHECK_REQUIRED" if expired else "DUPLICATE_PROBE_REQUEST"
     with pytest.raises(ValueError, match=code):

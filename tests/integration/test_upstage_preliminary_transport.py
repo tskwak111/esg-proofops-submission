@@ -546,7 +546,7 @@ def test_context_sizing_leaves_price_stop_to_authorized_dispatch(tmp_path, monke
     class ExpiredClock(_RealDatetime):
         @classmethod
         def now(cls, tz=None):
-            return _RealDatetime(2026, 10, 2, tzinfo=_UTC).astimezone(tz)
+            return _RealDatetime(2026, 10, 14, tzinfo=_UTC).astimezone(tz)
 
     monkeypatch.setattr("proofops.adapters.local.upstage.datetime", ExpiredClock)
     assert adapter.bound_context(envelope) == envelope

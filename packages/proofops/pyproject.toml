@@ -9,14 +9,14 @@ dependencies = ["jsonschema>=4.18,<5"]
 parsing = [
     "opendataloader-pdf==2.5.7",
     "pdfplumber==0.11.10",
-    "pypdf==6.18.0",
+    "pypdf==6.19.0",
 ]
 auth = [
     "httpx==0.28.1",
-    "pyjwt[crypto]==2.13.0",
+    "pyjwt[crypto]==2.15.1",
 ]
 verification = [
-    "pypdf==6.18.0",
+    "pypdf==6.19.0",
 ]
 
 [build-system]
