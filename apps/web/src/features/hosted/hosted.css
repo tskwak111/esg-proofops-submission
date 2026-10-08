@@ -1,0 +1,11 @@
+.hosted-analysis { display: grid; gap: 14px; align-content: start }
+.hosted-analysis label { display: grid; gap: 6px; font-size: 13px; font-weight: 600 }
+.hosted-analysis input:not([type=file]) { min-height: 43px; border: 1px solid var(--line-2); border-radius: 8px; padding: 10px; background: #fff; color: var(--ink) }
+.hosted-analysis button { min-height: 43px; border: 0; border-radius: 8px; padding: 0 16px; background: var(--green); color: #fff; cursor: pointer; justify-self: start }
+.hosted-analysis button:disabled { opacity: .55; cursor: not-allowed }
+.hosted-analysis button.hosted-danger { background: #fff; color: #a32020; border: 1px solid #a32020 }
+.hosted-notice, .hosted-outcome { border: 1px solid var(--card-line); border-radius: 10px; padding: 16px; background: #fafaf7 }
+.hosted-blocked { border-color: #b7791f; background: #fffaf0 }
+.hosted-failed, .hosted-error { color: #a32020 }
+.hosted-notice-text, .hosted-note, .hosted-session { font-size: 13px; color: var(--ink-2); line-height: 1.6 }
+.hosted-session button { min-height: 28px; padding: 0 10px; margin-left: 8px; background: transparent; color: var(--ink); border: 1px solid var(--line-2) }

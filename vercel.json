@@ -17,6 +17,10 @@
   },
   "rewrites": [
     {
+      "source": "/hosted-api/:path*",
+      "destination": "https://REPLACE_WITH_HOSTED_API_ORIGIN.invalid/:path*"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
