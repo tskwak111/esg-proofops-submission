@@ -9,6 +9,7 @@ export function resolveBackend(value: string | undefined): AnalysisBackend {
 export type Runtime = {
   analysis_backend: string; accept_new_runs: boolean; accept_uploads: boolean; live_analysis: boolean; live_disabled: boolean;
   upload_notice: string; consent_version: string; source_verifier?: string; profile?: string;
+  provider_limits?: { openrouter?: { status: "unknown" | "blocked"; remaining_usd: string | null } };
   limits: { max_upload_bytes: number; selected_pages: number; max_pdf_pages: number; original_days: number; [key: string]: unknown };
 };
 export type Session = { user_id: string; tenant_id: string | null; role: string | null; csrf_token: string; expires_at: number };
@@ -209,7 +210,11 @@ export function createHostedClient(options: ClientOptions = {}) {
 export const terminalStatuses = ["partial_blocked", "completed", "cancelled", "failed"];
 export type HostedClient = ReturnType<typeof createHostedClient>;
 
+export const providerLimitCodes = ["OPENROUTER_HTTP_402", "OPENROUTER_HTTP_403"];
+export const providerLimitMessage = "분석 서비스 한도 초과 — 운영자 확인 필요";
 const blockedReasons: Record<string, string> = {
+  OPENROUTER_HTTP_402: providerLimitMessage,
+  OPENROUTER_HTTP_403: providerLimitMessage,
   LIVE_BINDING_UNAVAILABLE: "실시간 모델·OCR 분석이 서버에 연결되어 있지 않아 판정하지 않았습니다.",
   LINUX_SOURCE_READER_UNRESOLVED: "이 서버의 원문 판독기가 아직 승인되지 않아 분석하지 않았습니다. 주장·등급은 만들지 않았습니다.",
   LEASE_EXPIRED: "처리 중 작업이 중단되어 비용 정산 확인 전까지 보류되었습니다.",

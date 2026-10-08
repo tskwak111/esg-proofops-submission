@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router";
-import { createHostedClient, HostedApiError, parsePageSelection, runOutcome, terminalStatuses, type HostedClient, type HostedDocument, type HostedResult, type HostedRun, type Runtime, type Session } from "./hostedClient";
+import { createHostedClient, HostedApiError, parsePageSelection, providerLimitCodes, providerLimitMessage, runOutcome, terminalStatuses, type HostedClient, type HostedDocument, type HostedResult, type HostedRun, type Runtime, type Session } from "./hostedClient";
 import { ResultView } from "./HostedResult";
 
 const stageLabel: Record<string, string> = { queued: "대기", parse: "문서 파싱", extract: "주장 추출", tag: "요소 태깅", result: "결과 정리" };
@@ -125,6 +125,8 @@ export function HostedAnalysis({ client: injected }: { client?: HostedClient }) 
   }
 
   const running = !!run && !terminalStatuses.includes(run.status);
+  const providerBlocked = runtime?.provider_limits?.openrouter?.status === "blocked"
+    || (!!run?.error_code && providerLimitCodes.includes(run.error_code));
   let body: ReactNode;
   if (phase === "checking") body = <p role="status">서버 상태 확인 중…</p>;
   else if (runtime && !runtime.live_analysis && phase === "login" && !session) body = <>
@@ -143,7 +145,7 @@ export function HostedAnalysis({ client: injected }: { client?: HostedClient }) 
     {doc && <div className="hosted-pages">
       <p>업로드 완료 · 총 {doc.page_count}쪽. 분석할 쪽을 최대 {runtime?.limits.selected_pages ?? 2}개 고르세요.</p>
       <label>쪽 번호<input value={pages} onChange={event => setPages(event.target.value)} disabled={!!busy || running} aria-label="분석할 쪽 번호" placeholder="예: 26,28" /></label>
-      <button type="button" disabled={!!busy || running || runtime?.accept_new_runs === false} onClick={() => void start()}>분석 시작</button>
+      <button type="button" disabled={!!busy || running || providerBlocked || runtime?.accept_new_runs === false} onClick={() => void start()}>분석 시작</button>
       {runtime?.accept_new_runs === false && <p className="hosted-error">현재 새 분석 접수가 중지되어 있습니다.</p>}
     </div>}
     {run && <RunOutcomeView run={run} />}
@@ -163,6 +165,7 @@ export function HostedAnalysis({ client: injected }: { client?: HostedClient }) 
   return <section className="surface live-report hosted-analysis" aria-label="호스팅 분석">
     <p className="eyebrow">HOSTED ANALYSIS</p><h2>실시간 분석 (초대 코드)</h2>
     {session && <p className="hosted-session">로그인됨 · {session.role ?? "역할 없음"} <button type="button" onClick={() => void logout()}>로그아웃</button></p>}
+    {providerBlocked && !run && <p className="hosted-error" role="alert">{providerLimitMessage}</p>}
     {body}
     {busy && <p role="status">{busy}…</p>}
     {error && <p className="hosted-error" role="alert">{error}</p>}

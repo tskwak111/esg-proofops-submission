@@ -80,6 +80,20 @@ assert.ok(blocked.reasons.some(r => r.includes("근거 없음")));
 assert.notEqual(c.runOutcome({ ...run, status: "completed" }).kind, "blocked");
 assert.ok(c.runOutcome({ ...run, status: "completed" }).reasons.length, "completed without result must not look like a verified result");
 
+// P7 provider quota failures render the exact Korean message and stop polling.
+for (const code of ["OPENROUTER_HTTP_402", "OPENROUTER_HTTP_403"]) {
+  const rejected = { ...run, status: "failed", error_code: code };
+  assert.deepEqual(c.runOutcome(rejected).reasons, ["분석 서비스 한도 초과 — 운영자 확인 필요"]);
+  let quotaReads = 0;
+  const quotaPoller = c.createHostedClient({
+    sleep: async () => {},
+    fetchImpl: async () => { quotaReads++; return json(200, rejected); },
+  });
+  assert.equal((await quotaPoller.pollRun(run, () => {})).status, "failed");
+  assert.equal(quotaReads, 1);
+  assert.match(renderToString(createElement(v.RunOutcomeView, { run: rejected })), /분석 서비스 한도 초과 — 운영자 확인 필요/);
+}
+
 // page selection
 assert.deepEqual(c.parsePageSelection("3, 1", 5), [1, 3]);
 assert.throws(() => c.parsePageSelection("1,2,3", 5), /최대 2쪽/);
