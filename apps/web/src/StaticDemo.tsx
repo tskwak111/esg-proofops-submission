@@ -10,7 +10,12 @@ import AuditReportPage from "./features/auditreport/AuditReportPage";
 import { auditReportRoute } from "./features/auditreport/route";
 import { DecisionGuide, GuideHelp } from "./DecisionGuide";
 import { elementLabels } from "./features/labels";
+import { HostedAnalysis } from "./features/hosted/HostedAnalysis";
+import { resolveBackend } from "./features/hosted/hostedClient";
+import "./features/hosted/hosted.css";
 import "./static-demo.css";
+
+const analysisBackend = resolveBackend(import.meta.env.VITE_ANALYSIS_BACKEND);
 
 type Evidence = { page: number | null; quote: string };
 type Element = { id: string; state: string; evidence: Evidence[] };
@@ -81,6 +86,11 @@ function CompanyTabs({ selected }: { selected: "naver" | "kia" }) { return <nav 
 
 
 function Analyze({ data }: { data: Snapshot }) {
+  if (analysisBackend === "hosted") return <main className="static-main analyze-main"><h1>보고서 분석 시작</h1><HostedAnalysis /></main>;
+  return <LegacyAnalyze data={data} />;
+}
+
+function LegacyAnalyze({ data }: { data: Snapshot }) {
   const [busy, setBusy] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<{ name: string; matched: boolean; message: string } | null>(null);
@@ -104,7 +114,7 @@ function Analyze({ data }: { data: Snapshot }) {
     <section className="analyze-grid"><div className="surface analyze-upload"><h2>PDF 보고서 선택</h2><p>파일을 놓거나 눌러 선택하세요.</p><label className="drop-zone" onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); void inspect(event.dataTransfer.files[0]); }}><span aria-hidden="true">↥</span><strong>{busy ? "파일 지문 계산 중…" : "PDF 업로드"}</strong><small>또는 클릭해 파일 선택 · PDF는 이 브라우저 안에서만 읽습니다</small><input type="file" accept=".pdf,application/pdf" aria-label="분석할 PDF 선택" disabled={busy} onChange={event => { void inspect(event.target.files?.[0]); event.target.value = ""; }} /></label>
       {result && <div className={`analyze-result ${result.matched ? "match" : "no-match"}`} role="status"><small>{result.name}</small><h3>{result.message}</h3>{result.matched ? <><Link to="/analyze/replay">분석 과정 보기 ↗</Link><small>오른쪽에서 실시간 분석도 할 수 있습니다.</small></> : <p>오른쪽에서 분석할 쪽을 확인해 주세요.</p>}</div>}
     </div>
-      {file ? <LiveReport key={file.name + file.lastModified} file={file} renderClaims={claims => <LiveClaimBrowser claims={claims} />} /> : <aside className="surface live-report live-placeholder"><p className="eyebrow">LIVE REPORT</p><h2>실시간 분석</h2><p>PDF를 선택하면 목차를 읽어 환경(E)·부록 쪽을 자동으로 고릅니다. 쪽을 확인하고 접근 키를 넣은 뒤 분석을 시작하세요.</p><ol className="live-steps"><li>PDF 업로드</li><li>분석할 구역·쪽 확인</li><li>접근 키 입력 후 실시간 분석 시작</li></ol></aside>}</section>
+      {analysisBackend === "hosted" ? <HostedAnalysis /> : analysisBackend === "static" ? <aside className="surface live-report live-placeholder"><p className="eyebrow">LIVE REPORT</p><h2>실시간 분석</h2><p>현재 실시간 분석이 꺼져 있습니다. 저장된 분석 사례를 확인해 주세요.</p><Link className="primary-link" to="/demo">분석 사례 보기 ↗</Link></aside> : file ? <LiveReport key={file.name + file.lastModified} file={file} renderClaims={claims => <LiveClaimBrowser claims={claims} />} /> : <aside className="surface live-report live-placeholder"><p className="eyebrow">LIVE REPORT</p><h2>실시간 분석</h2><p>PDF를 선택하면 목차를 읽어 환경(E)·부록 쪽을 자동으로 고릅니다. 쪽을 확인하고 접근 키를 넣은 뒤 분석을 시작하세요.</p><ol className="live-steps"><li>PDF 업로드</li><li>분석할 구역·쪽 확인</li><li>접근 키 입력 후 실시간 분석 시작</li></ol></aside>}</section>
   </main>;
 }
 
