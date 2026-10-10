@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       port: 5173,
-      proxy: { "/v1": api, "/auth": api, "/local/uploads": api, "/local/sources": api },
+      proxy: { "/hosted-api": { target: api, rewrite: path => path.replace(/^\/hosted-api/, "") }, "/v1": api, "/auth": api, "/local/uploads": api, "/local/sources": api },
     },
   };
 });

@@ -86,6 +86,11 @@ function CompanyTabs({ selected }: { selected: "naver" | "kia" }) { return <nav 
 
 
 function Analyze({ data }: { data: Snapshot }) {
+  if (analysisBackend === "hosted") return <main className="static-main analyze-main"><h1>보고서 분석 시작</h1><HostedAnalysis /></main>;
+  return <LegacyAnalyze data={data} />;
+}
+
+function LegacyAnalyze({ data }: { data: Snapshot }) {
   const [busy, setBusy] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<{ name: string; matched: boolean; message: string } | null>(null);

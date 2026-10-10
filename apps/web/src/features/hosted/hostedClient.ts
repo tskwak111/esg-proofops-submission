@@ -9,14 +9,24 @@ export function resolveBackend(value: string | undefined): AnalysisBackend {
 export type Runtime = {
   analysis_backend: string; accept_new_runs: boolean; accept_uploads: boolean; live_analysis: boolean; live_disabled: boolean;
   upload_notice: string; consent_version: string; source_verifier?: string; profile?: string;
-  provider_limits?: { openrouter?: { status: "unknown" | "blocked"; remaining_usd: string | null } };
+  analysis_profile?: string; analysis_profile_options?: string[]; analysis_profile_warning?: string | null;
+  pipeline_profile?: string;
+  provider_limits?: Record<string, { status: "unknown" | "blocked"; remaining_usd: string | null }>;
   limits: { max_upload_bytes: number; selected_pages: number; max_pdf_pages: number; original_days: number; [key: string]: unknown };
 };
-export type Session = { user_id: string; tenant_id: string | null; role: string | null; csrf_token: string; expires_at: number };
+export type Session = { user_id: string; tenant_id: string | null; role: string | null; csrf_token: string; expires_at: string };
 export type HostedDocument = { document_id: string; page_count: number; size_bytes: number; expires: number; sha256: string };
+export type ScopePlan = {
+  revision: number;
+  plan: { status: string; selected_claim_pages: number[]; selected_evidence_pages: number[];
+    failure_reasons: string[]; unreadable_pages: number[]; unknown_pages: number[]; conflict_pages: number[]; suggested_front_pages?: number[];
+    pages: { page: number; category: string; reasons: string[]; snippet: string }[] };
+  selection: { pages: number[]; claim_pages: number[]; selection_sha256: string } | null;
+};
 export type HostedRun = {
   run_id: string; document_id: string; status: string; selected_pages: number[]; status_url: string;
   error_code: string | null; stage?: string | null; queue_position?: number | null; progress?: number | null;
+  claims_extracted?: number; claims_processed?: number;
   result_url?: string | null; result?: HostedResult | null;
 };
 
@@ -42,6 +52,9 @@ export type MissingEvidence = {
 export type ResultClaim = {
   claim_id: string; page_num: number; original_page_num: number; quote: string; track: string | null; topic_ids?: string[];
   decision: ResultDecision | null; revision: number; source_refs: SourceRefDto[]; source_quality: string; elements: ResultElement[];
+  source_status?: { status: string; reason?: string; display: string };
+  provisional_grade?: { evidence_grade: string | null; display: string; reason: string; display_type?: string; hold_reasons?: string[]; evidence_note?: string; needed_evidence?: { track: string; target_grade: string; elements: string[] }[]; grade_basis?: string; grade_range?: GradeRange | null; elements?: { element_id: string; state: string; votes: number; total_replicas: number; evidence_refs: SourceRefDto[] }[] } | null;
+  pipeline_stage?: string; pipeline_status?: string; provisional_track?: string | null;
   hold_reason: string | null; possible_grade_range: GradeRange | null; confirmed_grade: string | null; missing_evidence: MissingEvidence[];
 };
 export type ResultReview = { review_id: string; run_id: string; claim_id: string; status: string; revision: number; base_tag_revision: number; reason_codes: string[] };
@@ -66,6 +79,10 @@ export class HostedApiError extends Error {
 }
 
 const codeMessages: Record<string, string> = {
+  SCOPE_PLAN_FAILED: "읽을 수 있는 환경 본문을 찾지 못했습니다. 스캔·불명확한 쪽을 확인해 주세요. 분석 비용은 발생하지 않았습니다.",
+  SCOPE_INSPECTION_FAILED: "자동 범위 계획을 만들지 못했습니다. 파일 내부 처리 한도 또는 서버 상태를 확인해 주세요.",
+  SCOPE_CONFLICT: "분석 범위가 변경되었습니다. 최신 계획을 확인해 주세요.",
+  SCOPE_PLAN_REQUIRED: "업로드 후 자동 범위 계획을 먼저 만들어 주세요.",
   INVITATION_INVALID: "초대 코드가 올바르지 않거나 이미 사용·만료되었습니다.",
   AUTH_REQUIRED: "로그인이 필요합니다. 초대 코드로 다시 로그인해 주세요.",
   CSRF_INVALID: "요청 검증에 실패했습니다. 페이지를 새로고침한 뒤 다시 로그인해 주세요.",
@@ -77,13 +94,13 @@ const codeMessages: Record<string, string> = {
   ANALYSIS_DISABLED: "현재 새 분석 접수가 중지되어 있습니다.",
   SOURCE_EXPIRED: "원본 PDF 보관 기간(7일)이 끝났습니다. 다시 업로드해 주세요.",
   SOURCE_UNAVAILABLE: "원본 PDF를 사용할 수 없습니다. 다시 업로드해 주세요.",
-  PAGE_SELECTION_INVALID: "쪽 선택을 확인해 주세요. 문서 범위 안에서 최대 2쪽까지 고를 수 있습니다.",
+  PAGE_SELECTION_INVALID: "쪽 선택을 확인해 주세요. 주장 최대 10쪽, 근거 검색 최대 30쪽이며 주장 쪽을 근거 검색 범위에 포함해야 합니다.",
   IDEMPOTENCY_CONFLICT: "같은 요청 키로 다른 내용이 전송되었습니다. 처음부터 다시 시도해 주세요.",
   IDEMPOTENCY_KEY_INVALID: "요청 키가 올바르지 않습니다. 다시 시도해 주세요.",
   USER_RUN_LIMIT: "이미 진행 중인 분석이 있습니다. 끝난 뒤 다시 시도해 주세요.",
   QUEUE_FULL: "대기열이 가득 찼습니다. 잠시 후 다시 시도해 주세요.",
   DAILY_RUN_LIMIT: "오늘의 분석 가능 횟수에 도달했습니다. 내일 다시 이용해 주세요.",
-  BUDGET_EXCEEDED: "분석 비용 한도에 도달했습니다.",
+  BUDGET_EXCEEDED: "분석 비용 상한(실행 USD 1.0, 일·행사 USD 7)에 도달했습니다. 남은 주장은 예산 상한으로 미분석 표시됩니다.",
   RATE_LIMITED: "요청이 많습니다. 잠시 후 다시 시도해 주세요.",
   ACCOUNTING_PENDING: "비용 정산 확인 중이라 새 분석을 접수할 수 없습니다.",
   DEPENDENCY_UNAVAILABLE: "서버 저장소를 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.",
@@ -173,8 +190,12 @@ export function createHostedClient(options: ClientOptions = {}) {
     runtime: () => request<Runtime>("GET", "/v1/runtime"),
     uploadDocument: (file: Blob, key = newIdempotencyKey(), signal?: AbortSignal) =>
       request<HostedDocument>("POST", "/v1/documents", { body: file, headers: { "Content-Type": "application/pdf", "Idempotency-Key": key }, signal }),
-    createRun: (documentId: string, pages: number[], key = newIdempotencyKey()) =>
-      request<HostedRun>("POST", "/v1/runs", { json: { document_id: documentId, selected_pages: pages }, headers: { "Idempotency-Key": key } }),
+    scopePlan: (documentId: string) => request<ScopePlan>("POST", `/v1/documents/${encodeURIComponent(documentId)}/scope-plan`),
+    getScopePlan: (documentId: string) => request<ScopePlan>("GET", `/v1/documents/${encodeURIComponent(documentId)}/scope-plan`),
+    editScope: (documentId: string, scope: ScopePlan, claims: number[], evidence: number[]) =>
+      request<ScopePlan>("POST", `/v1/documents/${encodeURIComponent(documentId)}/scope-plan/selection`, { json: { selected_claim_pages: claims, selected_evidence_pages: evidence }, headers: { "If-Match": `"${scope.revision}"` } }),
+    createRun: (documentId: string, scope: ScopePlan, key = newIdempotencyKey(), profile?: string) =>
+      request<HostedRun>("POST", "/v1/runs", { json: { document_id: documentId, scope_selection_sha256: scope.selection?.selection_sha256 }, headers: { "Idempotency-Key": key, ...(profile ? { "X-Pipeline-Profile": profile } : {}) } }),
     getRun: (statusUrl: string, signal?: AbortSignal) => request<HostedRun>("GET", statusUrl, { signal }),
     cancelRun: (runId: string) => request<HostedRun>("POST", `/v1/runs/${encodeURIComponent(runId)}/cancel`),
     getResult: (resultUrl: string, signal?: AbortSignal) => request<HostedResult>("GET", resultUrl, { signal }),
@@ -210,19 +231,28 @@ export function createHostedClient(options: ClientOptions = {}) {
 export const terminalStatuses = ["partial_blocked", "completed", "cancelled", "failed"];
 export type HostedClient = ReturnType<typeof createHostedClient>;
 
-export const providerLimitCodes = ["OPENROUTER_HTTP_402", "OPENROUTER_HTTP_403"];
+export const providerLimitCodes = ["OPENROUTER_HTTP_402", "OPENROUTER_HTTP_403", "OPENAI_HTTP_401", "OPENAI_HTTP_429", "OPENAI_INSUFFICIENT_QUOTA"];
 export const providerLimitMessage = "분석 서비스 한도 초과 — 운영자 확인 필요";
 const blockedReasons: Record<string, string> = {
+  OPENAI_HTTP_401: providerLimitMessage,
+  OPENAI_HTTP_429: providerLimitMessage,
+  OPENAI_INSUFFICIENT_QUOTA: providerLimitMessage,
+  BUDGET_EXHAUSTED: "예산 상한으로 미분석",
+  R108_BUDGET_EXHAUSTED: "분석 예산 한도로 일부 항목을 미분석했습니다. 호출 수·시간·비용 기록을 확인하세요.",
+  BUDGET_EXCEEDED: "분석 비용 상한에 도달했습니다.",
   OPENROUTER_HTTP_402: providerLimitMessage,
   OPENROUTER_HTTP_403: providerLimitMessage,
   LIVE_BINDING_UNAVAILABLE: "실시간 모델·OCR 분석이 서버에 연결되어 있지 않아 판정하지 않았습니다.",
   LINUX_SOURCE_READER_UNRESOLVED: "이 서버의 원문 판독기가 아직 승인되지 않아 분석하지 않았습니다. 주장·등급은 만들지 않았습니다.",
   LEASE_EXPIRED: "처리 중 작업이 중단되어 비용 정산 확인 전까지 보류되었습니다.",
+  LEASE_EXPIRED_NO_DISPATCH: "작업이 중단되었습니다. 모델 전송이 없어 비용 예약이 해제되었습니다. 다시 접수할 수 있습니다.",
+  ANALYSIS_LOCK_BUSY: "문서가 다른 작업에서 사용 중입니다. 잠시 후 다시 접수해 주세요.",
   PREPARE_FAILED: "선택한 쪽을 준비하지 못했습니다.",
   HOSTED_PREPARATION_FAILED: "선택한 쪽을 준비하지 못했습니다.",
   R108_NEEDS_REVIEW: "일부 주장이 사람 검토를 기다리고 있어 전체를 확정하지 않았습니다.",
   SOURCE_VALIDATION_REQUIRED: "원문 대조가 끝나지 않아 판정하지 않았습니다.",
   CONSENSUS_UNRESOLVED: "모델 판독이 합의되지 않아 요소 상태가 확정되지 않았습니다.",
+  PROCESSING_UNCERTAIN: "처리 불확실 — 네트워크 응답을 확인하지 못해 해당 주장만 보류했습니다.",
   PRELIMINARY_TAGS_UNRESOLVED: "예비 분류(트랙)가 합의되지 않아 요소를 판정하지 않았습니다.",
   RELATION_TAGS_UNRESOLVED: "주장과 근거의 관계가 정리되지 않아 요소를 판정하지 않았습니다.",
   REPLICA_UNRESOLVED: "반복 판독 결과가 일치하지 않습니다.",
@@ -241,7 +271,7 @@ export function runOutcome(run: HostedRun): { kind: "pending" | "blocked" | "com
       reasons.push("보류는 ‘근거 없음’이 아닙니다. 판정되지 않은 주장의 근거는 확인되지 않은 상태이며, 확정 등급을 부여하지 않았습니다.");
       return { kind: "blocked", title: "보류", reasons };
     }
-    case "completed": return { kind: "completed", title: "분석 완료", reasons: run.result ? [] : ["이 서버가 결과 상세를 아직 제공하지 않아 화면에 표시할 수 없습니다."] };
+    case "completed": return { kind: "completed", title: "선택 범위 처리 종료 · 잠정 결과", reasons: run.result ? [] : ["이 서버가 결과 상세를 아직 제공하지 않아 화면에 표시할 수 없습니다."] };
     case "cancelled": return { kind: "cancelled", title: "취소됨", reasons: [] };
     case "failed": return { kind: "failed", title: "실패", reasons: [holdReasonText(run.error_code ?? "알 수 없음")] };
     default: return { kind: "pending", title: run.status === "queued" ? "대기 중" : "분석 중", reasons: [] };

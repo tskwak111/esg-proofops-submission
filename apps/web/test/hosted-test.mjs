@@ -36,17 +36,39 @@ await client.uploadDocument(new Blob(["%PDF"]));
 assert.equal(calls[1].headers["Content-Type"], "application/pdf");
 assert.equal(calls[1].headers["X-CSRF-Token"], "CSRF1");
 assert.match(calls[1].headers["Idempotency-Key"], /^pk-[0-9a-f]{32}$/);
-const run = await client.createRun("d1", [1, 2]);
+const scope = { revision: 2, plan: { status: "ready", selected_claim_pages: [1], selected_evidence_pages: [1, 2], failure_reasons: [], unreadable_pages: [], unknown_pages: [], conflict_pages: [], pages: [] }, selection: { pages: [1, 2], claim_pages: [1], selection_sha256: "scope-hash" } };
+const run = await client.createRun("d1", scope, "pk-run", "finals-unattended-v2");
 assert.equal(run.status, "queued");
-assert.deepEqual(JSON.parse(calls[2].body), { document_id: "d1", selected_pages: [1, 2] });
+assert.deepEqual(JSON.parse(calls[2].body), { document_id: "d1", scope_selection_sha256: "scope-hash" });
 assert.equal(calls[2].headers["X-CSRF-Token"], "CSRF1");
+assert.equal(calls[2].headers["X-Pipeline-Profile"], "finals-unattended-v2");
+const scopeCalls = [];
+let stale = false;
+const scopeClient = c.createHostedClient({ fetchImpl: async (url, init) => {
+  scopeCalls.push({ url, ...init });
+  if (stale) return json(412, { error: { code: "SCOPE_CONFLICT" } });
+  return json(200, scope, { ETag: '"2"' });
+} });
+assert.equal((await scopeClient.scopePlan("d1")).revision, 2);
+assert.equal(scopeCalls.at(-1).method, "POST");
+await scopeClient.getScopePlan("d1");
+assert.equal(scopeCalls.at(-1).method, "GET");
+await scopeClient.editScope("d1", scope, [1], [1, 2]);
+assert.equal(scopeCalls.at(-1).headers["If-Match"], '"2"');
+assert.deepEqual(JSON.parse(scopeCalls.at(-1).body), { selected_claim_pages: [1], selected_evidence_pages: [1, 2] });
+stale = true;
+await assert.rejects(scopeClient.editScope("d1", scope, [1], [1, 2]), e => e.status === 412 && e.code === "SCOPE_CONFLICT" && /최신 계획/.test(e.userMessage));
+stale = false;
+assert.equal((await scopeClient.getScopePlan("d1")).revision, 2);
+assert.deepEqual(c.parsePageSelection("1,2,3,4,5,6,7,8,9,10", 300, 10), [1,2,3,4,5,6,7,8,9,10]);
+assert.throws(() => c.parsePageSelection("1,2,3,4,5,6,7,8,9,10,11", 300, 10), /최대 10쪽/);
 
 // error mapping
 for (const [status, code, retry, expect] of [
   [401, "AUTH_REQUIRED", null, /로그인/], [403, "CSRF_INVALID", null, /검증/], [403, "FORBIDDEN", null, /권한/],
   [404, "RESOURCE_NOT_FOUND", null, /찾을 수 없/], [409, "SOURCE_EXPIRED", null, /7일/], [413, "PAYLOAD_TOO_LARGE", null, /한도/],
   [429, "QUEUE_FULL", 42, /42초/], [429, "DAILY_RUN_LIMIT", null, /오늘/], [503, "ANALYSIS_DISABLED", null, /중지/], [503, "X", null, /일시적/],
-  [422, "PAGE_SELECTION_INVALID", null, /최대 2쪽/], [0, "NETWORK", null, /연결/],
+  [422, "PAGE_SELECTION_INVALID", null, /주장 최대 10쪽/], [0, "NETWORK", null, /연결/],
 ]) {
   const err = new c.HostedApiError(status, code, retry, "/x");
   assert.match(err.userMessage, expect, `${status} ${code}`);
@@ -81,7 +103,7 @@ assert.notEqual(c.runOutcome({ ...run, status: "completed" }).kind, "blocked");
 assert.ok(c.runOutcome({ ...run, status: "completed" }).reasons.length, "completed without result must not look like a verified result");
 
 // P7 provider quota failures render the exact Korean message and stop polling.
-for (const code of ["OPENROUTER_HTTP_402", "OPENROUTER_HTTP_403"]) {
+for (const code of ["OPENROUTER_HTTP_402", "OPENROUTER_HTTP_403", "OPENAI_HTTP_401", "OPENAI_HTTP_429", "OPENAI_INSUFFICIENT_QUOTA"]) {
   const rejected = { ...run, status: "failed", error_code: code };
   assert.deepEqual(c.runOutcome(rejected).reasons, ["분석 서비스 한도 초과 — 운영자 확인 필요"]);
   let quotaReads = 0;
@@ -124,7 +146,7 @@ const result = { schema: "r108-hosted-result-v1", claims: [claimA, claimB, claim
 // unknown / range vs confirmed / hold reasons
 const rHtml = html(createElement(rv.ResultView, { result }));
 assert.match(rHtml, /합성 주장 문장 하나/); assert.match(rHtml, /p\.22/);
-assert.match(rHtml, /원문 대조 필요/);
+assert.match(rHtml, /원문 확인 필요/);
 assert.match(rHtml, /R108_NEEDS_REVIEW|일부 주장이 사람 검토/); assert.match(rHtml, /일부 주장이 사람 검토를 기다리고/);
 assert.match(rHtml, /분류 미합의/);
 assert.match(rHtml, /mini-status good">E3 · SUBSTANTIATED/);
@@ -209,5 +231,8 @@ mode = "res";
 const resClient = c.createHostedClient({ fetchImpl: async url => json(200, url.endsWith("/result") ? result : {}) });
 assert.equal((await resClient.getResult("/v1/runs/r1/result")).claims.length, 3);
 
+assert.match(c.holdReasonText("PROCESSING_UNCERTAIN"), /처리 불확실/);
+assert.match(c.holdReasonText("BUDGET_EXHAUSTED"), /예산 상한으로 미분석/);
+assert.match(html(createElement(v.RunOutcomeView, { run: { ...run, status: "running", claims_extracted: 3, claims_processed: 1 } })).replace(/<!-- -->/g, ""), /추출된 주장 3개 · 태깅 처리 1개/);
 await server.close();
 console.log("hosted tests passed");
