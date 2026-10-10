@@ -18,7 +18,7 @@
   "rewrites": [
     {
       "source": "/hosted-api/:path*",
-      "destination": "https://REPLACE_WITH_HOSTED_API_ORIGIN.invalid/:path*"
+      "destination": "https://13.237.98.233.sslip.io/:path*"
     },
     {
       "source": "/((?!api/).*)",
