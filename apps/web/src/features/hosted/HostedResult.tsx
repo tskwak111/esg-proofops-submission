@@ -95,6 +95,12 @@ export function ResultView({ result, reportName, companyName, pageCount, selecte
     const items = group.claims.map(claim => resultBrowserItem(result, claim)).filter(item => matchesResultFilters(item, filters) && (!holdReason || w18HoldReason(result, item.claim) === holdReason));
     return items.length ? [{ group, item: items[0], items }] : [];
   }), [groups, result, filters, holdReason]);
+  const trackCount = (track: string) => result.claims.filter(claim => {
+    const item = resultBrowserItem(result, claim);
+    return matchesResultFilters(item, { ...filters, track }) && (!holdReason || w18HoldReason(result, item.claim) === holdReason);
+  }).length;
+  const narrowed = filters.track !== "all" || filters.grade !== "all" || filters.status !== "all" || filters.search !== "" || !!holdReason;
+  const resetNarrowing = () => { setFilters(current => ({ ...allFilters, queue: current.queue })); setHoldReason(null); setLimit(25); setDetailOpen(false); setSelectedId(null); };
   const selectedGroup = filtered.find(row => row.group.claims.some(claim => claim.claim_id === selectedId)) ?? filtered[0];
   const selected = selectedGroup?.group.claims.find(claim => claim.claim_id === selectedId) ?? selectedGroup?.item.claim ?? null;
   const changeFilter = (key: keyof ResultFilters, value: string) => {
@@ -167,7 +173,7 @@ export function ResultView({ result, reportName, companyName, pageCount, selecte
       : "분석이 보류되어 표시할 주장이 없습니다. 처리 단계와 보류 사유를 확인해 주세요. 근거 없음으로 판정한 결과가 아닙니다."}</p> :
       <section className="claims-section result-claims"><div className="card-heading"><div><p className="eyebrow">문장별 근거 점검</p><h2>문장별 결과</h2><p>상태를 선택하고 문장을 열어 원문과 요소별 근거를 확인하세요.</p></div><span>{filtered.reduce((sum, row) => sum + row.items.length, 0)} / {counts.total}건</span></div>
         <div className="result-browser-controls"><ClaimBrowserControls tabs={tabs} queue={filters.queue} onQueueChange={value => changeFilter("queue", value)} panelId={panelId} search={filters.search} onSearchChange={value => changeFilter("search", value)}
-          track={{ value: filters.track, onChange: value => changeFilter("track", value), options: [{ value: "all", label: "전체 트랙" }, { value: "goal", label: "목표형" }, { value: "performance", label: "성과형" }, { value: "management", label: "관리체계형" }, { value: "unknown", label: "분류 미합의" }] }}
+          track={{ value: filters.track, onChange: value => changeFilter("track", value), options: [{ value: "all", label: `전체 트랙 (${trackCount("all")})` }, { value: "goal", label: `목표형 (${trackCount("goal")})` }, { value: "performance", label: `성과형 (${trackCount("performance")})` }, { value: "management", label: `관리체계형 (${trackCount("management")})` }, { value: "unknown", label: `분류 미합의 (${trackCount("unknown")})` }] }}
           grade={{ value: filters.grade, onChange: value => changeFilter("grade", value), options: [{ value: "all", label: "전체 등급" }, ...["E3", "E2", "E1", "E0"].map(value => ({ value, label: value })), { value: "none", label: "등급 보류" }] }}
           status={{ value: filters.status, onChange: value => changeFilter("status", value), options: [{ value: "all", label: "전체 상태" }, ...(counts.confirmed ? [{ value: "confirmed", label: "확정" }] : []), ...(counts.provisional ? [{ value: "provisional", label: "추가 확인 필요" }] : []), { value: "hold", label: "판정 보류" }, { value: "source_unverified", label: "원문 대조 필요" }] }} /></div>
         {holdReason && <p className="result-filter-chip" role="status">보류 사유: <strong title={holdReason}>{holdReasonLabel(holdReason)}</strong> <button type="button" className="hosted-text-button" aria-label="사유 필터 해제" onClick={() => { setHoldReason(null); setLimit(25); }}>사유 필터 해제</button></p>}
@@ -183,7 +189,7 @@ export function ResultView({ result, reportName, companyName, pageCount, selecte
               {contexts.some(context => context.summary) && <div className="claim-table-context" aria-label="표 주장 문맥">{contexts.filter(context => context.summary).map(({ occurrence, summary }) => <span key={occurrence.claim_id}>{pageLabel(result, occurrence.page_num)} · {summary}</span>)}</div>}
               <small className="claim-evidence-line">{item.bucket === "hold" ? claimSourceText(claim) : claimEvidenceLine(result, claim)}</small>
             </button>;
-          })}{!filtered.length && <p className="empty">조건에 맞는 주장이 없습니다. 검색어나 필터를 바꿔 주세요.</p>}
+          })}{!filtered.length && <div className="empty"><p>{narrowed ? "선택한 트랙·등급·상태·검색 조건에 맞는 주장이 없습니다." : "조건에 맞는 주장이 없습니다."}</p>{narrowed && <button type="button" className="hosted-secondary" onClick={resetNarrowing}>필터 초기화</button>}</div>}
             {filtered.length > limit && <button className="more-button" type="button" onClick={() => setLimit(current => current + 25)}>더 보기 ({filtered.length - limit}건 남음)</button>}
           </div>
           {selected && selectedGroup ? <ClaimPanel key={selected.claim_id} claim={selected} occurrences={selectedGroup.group.claims} occurrenceCount={selectedGroup.group.occurrenceCount} onSelectOccurrence={selectClaim} onOpenSource={openSource} detailRef={detailRef} onBack={back} result={result} role={role} client={client} runId={runId} onReload={onReload} /> : <aside className="claim-detail"><div className="detail-empty"><h3>주장을 선택하세요</h3><p>조건에 맞는 문장을 선택하면 근거와 판정 경로를 볼 수 있습니다.</p></div></aside>}
