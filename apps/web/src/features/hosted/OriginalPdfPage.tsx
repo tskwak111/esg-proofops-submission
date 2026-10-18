@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { AnnotationMode, TextLayer, GlobalWorkerOptions, getDocument, type PDFDocumentProxy, type RenderTask } from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import type { SourceViewRef } from "./hostedClient";
-import { sourceHighlight, textSearchRects } from "./sourceSplitModel";
+import { sourceHighlight, textSearchRects, highlightLabel, ESTIMATED_LOCATION_LABEL, type DisplaySourceRef } from "./sourceSplitModel";
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 
 export default function OriginalPdfPage({ url, pageNumber, refs, zoom, onPageCount, sourceSha }: {
-  url: string; pageNumber: number; refs: SourceViewRef[]; zoom: number; onPageCount: (count: number) => void; sourceSha: string;
+  url: string; pageNumber: number; refs: DisplaySourceRef[]; zoom: number; onPageCount: (count: number) => void; sourceSha: string;
 }) {
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
   const [failure, setFailure] = useState("");
@@ -104,13 +103,14 @@ export default function OriginalPdfPage({ url, pageNumber, refs, zoom, onPageCou
         <canvas ref={canvas} aria-label={`원본 PDF 물리 쪽 ${pageNumber}`} />
         {ready && <svg className="split-pdf-overlay" viewBox="0 0 1 1" preserveAspectRatio="none" aria-label="저장된 원문 인용 위치">
           {visible.filter(item => item.boxes.length).map(({ ref, boxes, precision }) => <g key={ref.ref_id} className={`split-highlight ${ref.kind} ${precision}`} data-testid={`pdf-${ref.kind}-highlight`} data-ref-id={ref.ref_id} data-page={pageNumber} data-precision={precision}>
-            <title>{precision === "search" ? "텍스트 검색 위치" : precision === "region" ? "영역 표시(정확 위치 아님)" : precision === "cell" ? "저장된 표 셀 위치" : "정확 인용 위치"} · {ref.element_id ? `${ref.element_id} 근거: ` : "주장: "}{ref.quote}</title>
+            <title>{highlightLabel(precision)} · {ref.element_id ? `${ref.element_id} 근거: ` : "주장: "}{ref.quote}</title>
             {boxes.map(([x,y,width,height], index) => <rect key={index} x={x} y={y} width={width} height={height} />)}
           </g>)}
         </svg>}
       </div>
     </div>
     {ready && visible.some(item => !item.boxes.length) && <p role="status">위치 미확인 · 검증된 인용과 이 쪽의 일치를 확인할 수 없습니다.</p>}
+    {ready && visible.some(item => item.precision === "estimated") && <p className="split-note split-estimated-note" role="status">{ESTIMATED_LOCATION_LABEL} · 보라색 점선은 파서가 추정한 영역입니다. 주변 문장이 포함될 수 있으며, 원문 확인 필요·보류 상태는 유지됩니다.</p>}
     {ready && visible.some(item => item.precision === "search") && <p className="split-note" role="status">텍스트 검색 위치 · 같은 쪽에서 공백만 정규화하여 유일하게 일치한 인용입니다.</p>}
     {ready && visible.some(item => item.precision === "region") && <p className="split-note" role="status">영역 표시(정확 위치 아님) · 점선은 인용이 포함된 문단 영역이며 주변 문장이 포함될 수 있습니다.</p>}
   </>;
