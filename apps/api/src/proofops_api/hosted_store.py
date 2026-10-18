@@ -1203,8 +1203,6 @@ class HostedStore:
             raise HostedError("FORBIDDEN", 403)
         if force_fresh and not auth.has_capability("admin"):
             raise HostedError("FORBIDDEN", 403)
-        if auth.tenant_id == self.settings.showcase_tenant:
-            raise HostedError("SHOWCASE_READ_ONLY", 403)
         if not self.settings.accept_runs or self.settings.backend != "r108":
             raise HostedError("ANALYSIS_DISABLED", 503)
         with self.transaction() as db:

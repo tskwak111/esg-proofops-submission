@@ -681,11 +681,9 @@ def test_showcase_all_roles_collection_result_original_and_page_links(showcase, 
         ("guest", False),
         ("organizer", False),
         ("admin", False),
-        ("organizer", True),
-        ("admin", True),
     ],
 )
-def test_showcase_writes_forbidden_even_for_source_tenant(showcase, role, same_tenant):
+def test_showcase_writes_forbidden_for_other_tenants(showcase, role, same_tenant):
     from uuid import uuid4
 
     app, store, _, done, _, _, _ = showcase
@@ -710,6 +708,24 @@ def test_showcase_writes_forbidden_even_for_source_tenant(showcase, role, same_t
         assert response.status_code in (403, 404), (route, response.text)
     assert client.get(run_path).json()["status"] == "completed"
     assert client.get(doc_path + "/original").status_code == 200
+
+
+@pytest.mark.parametrize("role", ["organizer", "admin"])
+def test_showcase_source_tenant_members_keep_normal_write_paths(showcase, role):
+    """The showcase tenant is the operators' own workspace; only other tenants are read-only."""
+    app, store, _, done, _, _, _ = showcase
+    client, headers = showcase_client(app, store, role, same_tenant=True)
+    doc_path = f'/v1/documents/{done["document_id"]}'
+    for route, body in (
+        (doc_path + "/scope-plan", None),
+        ("/v1/runs", {"document_id": done["document_id"], "selected_pages": [1]}),
+    ):
+        response = client.post(
+            route,
+            json=body,
+            headers=headers | {"Idempotency-Key": "ga1-showcase-owner-write", "If-Match": '"1"'},
+        )
+        assert "SHOWCASE_READ_ONLY" not in response.text, (route, response.text)
 
 
 def test_showcase_disabled_and_foreign_document_filter(settings):
