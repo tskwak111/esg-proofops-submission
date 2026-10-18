@@ -16,8 +16,9 @@ import { focusClaimDetail, focusClaimRegion } from "./features/claims/claimFocus
 import { HostedResultRoute, hostedResultPaths } from "./features/hosted/HostedResultRoute";
 import { runIdFromResultPath } from "./features/hosted/hostedHistory";
 import { HostedAnalysis } from "./features/hosted/HostedAnalysis";
+import { HostedExamples } from "./features/hosted/HostedExamples";
 import { HostedArchive } from "./features/hosted/HostedArchive";
-import { resolveBackend } from "./features/hosted/hostedClient";
+import { createHostedClient, resolveBackend } from "./features/hosted/hostedClient";
 import "./features/hosted/hosted.css";
 import "./static-demo.css";
 import "./features/hosted/result-design.css";
@@ -52,7 +53,8 @@ const statusText: Record<string, string> = { decided: "규칙 판정", blocked_e
 
 export function StaticDemo() {
   const location = useLocation();
-  const standalone = location.pathname === "/" ? <Landing /> : location.pathname === "/guide" ? <Guide /> : analysisBackend === "hosted" && location.pathname === "/archive" ? <main className="static-main analyze-main archive-main"><h1>보관함</h1><HostedArchive /></main> : null;
+  const examplesClient = useMemo(() => createHostedClient({ base: import.meta.env.VITE_HOSTED_API_BASE || "/hosted-api" }), []);
+  const standalone = analysisBackend === "hosted" && location.pathname === "/demo" ? <HostedExamples client={examplesClient} /> : location.pathname === "/" ? <Landing /> : location.pathname === "/guide" ? <Guide /> : analysisBackend === "hosted" && location.pathname === "/archive" ? <main className="static-main analyze-main archive-main"><h1>보관함</h1><HostedArchive /></main> : null;
   const needsSnapshot = !standalone && !runIdFromResultPath(location.pathname) && location.pathname !== "/live" && !(analysisBackend === "hosted" && location.pathname === "/analyze");
   const isLive = location.pathname === "/live";
   const [data, setData] = useState<Snapshot | null>(null);

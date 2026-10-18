@@ -80,3 +80,13 @@ test('known run failures retain their actionable provider/parsing explanation', 
   assert.match(holdReasonText('PROVIDER_AUTH_FAILED'),/인증에 실패/);
   assert.match(holdReasonText('PARSER_FAILED'),/파싱에 실패/);
 });
+
+test('unresolved claim type keeps its hold meaning without retired wording in detail and export', () => {
+  const result = {...fixture, claims:[held]};
+  for (const html of [render(React.createElement(ResultView,{result})), resultReportHtml(result,{reportMode:'full'})]) {
+    assert.match(html, /주장 유형\(트랙\)이 합의되지 않아 요소를 판정하지 않았습니다/);
+    assert.doesNotMatch(html, /예비|잠정/);
+  }
+  assert.equal(resultBrowserSummary(result).hold,1);
+  assert.equal(resultBrowserSummary(result).confirmed,0);
+});

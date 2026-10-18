@@ -1,10 +1,10 @@
 async page => {
-  const base = page.url().startsWith('https://esg-proofops-') ? new URL(page.url()).origin : 'http://127.0.0.1:5237';
+  const base = new URL(page.url()).origin;
   const session = await (await page.request.get('http://127.0.0.1:5271/__pw2/session')).json();
   if (!session.local_synthetic) throw new Error('Only local synthetic fixture session allowed');
   await page.context().addCookies([{ name: '__Host-proofops_session', value: session.cookie, domain: '127.0.0.1', path: '/', httpOnly: true, secure: true, sameSite: 'Lax' }]);
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto(`${base}/analyze`);
+  await page.goto(`${base}/archive`);
   const list = page.getByRole('region', { name: '이전 보고서 내역', exact: true });
   await list.getByRole('button', { name: '결과 열기', exact: true }).waitFor();
   if (!(await list.innerText()).includes('진행 100%') || !(await list.innerText()).includes('대기 중')) throw new Error('Status/progress missing');
@@ -15,6 +15,9 @@ async page => {
   await list.getByRole('button', { name: '결과 열기', exact: true }).click();
   const result = page.getByTestId('hosted-result');
   await result.waitFor();
+  if (new URL(page.url()).pathname !== '/analyze') throw new Error('Archive result did not open on analysis page');
+  await page.getByRole('tab',{name:'문장별 결과',exact:true}).click();
+  await result.locator('.claim-list .claim-item').first().click();
   const viewer = result.getByRole('region', { name: '원문 쪽 보기' });
   const manifestResponse = page.waitForResponse(response => response.url().includes('/source-pages/2/manifest'));
   await page.route('**/source-pages/*/image?**', async route => { const response = await route.fetch(); await new Promise(resolve => setTimeout(resolve, 750)); await route.fulfill({ response }); });

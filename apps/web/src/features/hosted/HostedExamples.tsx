@@ -32,7 +32,7 @@ export function ExampleOverview({ example }: { example: Example }) {
   </>;
 }
 
-/** Catalog first, one selected report at a time. Other results load only on selection. */
+/** One representative report; query parameters cannot fetch other companies. */
 export function HostedExamples({ client }: { client: HostedClient }) {
   const [catalog, setCatalog] = useState<ExampleCatalogEntry[]>([]);
   const [loaded, setLoaded] = useState<Record<string, Example | null>>({});
@@ -44,7 +44,7 @@ export function HostedExamples({ client }: { client: HostedClient }) {
   const [resultError, setResultError] = useState("");
   const [session, setSession] = useState<Session | null>(null);
   const report = params.get("report");
-  const selected = catalog.find(entry => entry.runs.some(run => run.run_id === report)) ?? selectedExample(catalog, report);
+  const selected = selectedExample(catalog, null);
   const example = selected ? loaded[selected.identity] : undefined;
   const year = selected?.name.match(/(?:19|20)\d{2}/)?.[0];
   const scope = example ? resultScope(example.result, example.document.page_count, example.run.selected_pages) : null;
@@ -85,10 +85,6 @@ export function HostedExamples({ client }: { client: HostedClient }) {
   }, [client, selected, example]);
   return <main className="static-main demo-main examples-main">
     <div className="breadcrumb"><Link to="/">홈</Link><span>/</span>분석 사례</div>
-    {!!catalog.length && <nav className="company-tabs example-company-tabs" aria-label="보고서 선택">{catalog.map(entry => {
-      const result = loaded[entry.identity];
-      return <Link key={entry.identity} to={`/demo?report=${encodeURIComponent(result?.run.run_id ?? entry.run.run_id)}`} aria-current={selected?.identity === entry.identity ? "page" : undefined} title={entry.name}><strong>{companyName(entry)}</strong>{result && <small>확정 {result.counts.confirmed} · 보류 {result.counts.total - result.counts.confirmed}</small>}{result && <span>{result.completion.title}</span>}</Link>;
-    })}</nav>}
     <section className="demo-heading example-editorial-heading"><div><p className="eyebrow">ANALYSIS{year ? ` · ${year}` : ""}</p><h1>분석 사례{selected ? ` · ${companyName(selected)}${year ? ` ${year}` : ""}` : ""}</h1><p>실제 보고서에서 추출한 주장과 원문 근거, 규칙 판정을 탐색할 수 있습니다.</p>{scope && <div className="badges"><span className="badge amber">분석 범위: {scope.pages.length}/{scope.total ?? "전체 쪽 미제공"}쪽</span><span className="badge">{example?.completion.title} · 읽기 전용</span></div>}</div></section>
     {busy && <p role="status">분석 사례 목록 불러오는 중…</p>}
     {login ? <section className="surface hosted-empty"><h2>로그인 후 분석 사례를 확인하세요</h2><p>보고서 접근 권한을 확인하기 위해 로그인이 필요합니다.</p><Link className="primary-link" to="/analyze?return_to=examples">로그인하고 사례 보기 →</Link></section> : <>
@@ -96,8 +92,9 @@ export function HostedExamples({ client }: { client: HostedClient }) {
       {!busy && !error && !catalog.length && <section className="surface hosted-empty"><h2>아직 소개할 분석 사례가 없습니다</h2><p>이름과 완료 결과를 확인할 수 있는 보고서가 준비되면 표시됩니다.</p><Link to="/analyze">내 보고서로 이동 →</Link></section>}
       {selected && example === undefined && !resultError && <p role="status">{companyName(selected)} 분석 결과 불러오는 중…</p>}
       {resultError && <p role="alert">{resultError}</p>}
-      {example === null && <p role="status">현재 정책으로 완료된 분석 결과가 없습니다. 다른 보고서를 선택해 주세요.</p>}
-      {example && <><ExampleOverview example={example} /><section className="hosted-analysis example-result" aria-label="선택한 보고서 결과"><ResultView key={example.run.run_id} result={example.result} reportName={example.name} companyName={companyName(example)} pageCount={example.document.page_count} selectedPages={example.run.selected_pages} runStatus={example.run.status} client={client} runId={example.run.run_id} role={session?.role} readOnly /></section></>}
+      {example === null && <p role="status">현재 정책으로 완료된 분석 결과가 없습니다. 잠시 후 다시 확인해 주세요.</p>}
+      {example && report === example.run.run_id && <><ExampleOverview example={example} /><section className="hosted-analysis example-result" aria-label="선택한 보고서 결과"><ResultView key={example.run.run_id} result={example.result} reportName={example.name} companyName={companyName(example)} pageCount={example.document.page_count} selectedPages={example.run.selected_pages} runStatus={example.run.status} client={client} runId={example.run.run_id} role={session?.role} readOnly /></section></>}
+      <p className="caption">다른 보고서는 <Link to="/analyze">분석 페이지</Link>에서 PDF를 올리면 바로 확인할 수 있습니다</p>
       <button type="button" className="hosted-secondary" disabled={busy} onClick={() => setRefresh(value => value + 1)}>목록 새로고침</button>
     </>}
   </main>;

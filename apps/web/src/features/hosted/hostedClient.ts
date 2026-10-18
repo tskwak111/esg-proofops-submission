@@ -457,7 +457,7 @@ const blockedReasons: Record<string, string> = {
   SOURCE_VALIDATION_REQUIRED: "원문 대조가 끝나지 않아 판정하지 않았습니다.",
   CONSENSUS_UNRESOLVED: "모델 판독이 합의되지 않아 요소 상태가 확정되지 않았습니다.",
   PROCESSING_UNCERTAIN: "처리 불확실 — 네트워크 응답을 확인하지 못해 해당 주장만 보류했습니다.",
-  PRELIMINARY_TAGS_UNRESOLVED: "예비 분류(트랙)가 합의되지 않아 요소를 판정하지 않았습니다.",
+  PRELIMINARY_TAGS_UNRESOLVED: "주장 유형(트랙)이 합의되지 않아 요소를 판정하지 않았습니다.",
   RELATION_TAGS_UNRESOLVED: "주장과 근거의 관계가 정리되지 않아 요소를 판정하지 않았습니다.",
   REPLICA_UNRESOLVED: "반복 판독 결과가 일치하지 않습니다.",
   MODEL_SPAN_OR_SCHEMA_INVALID: "추출 응답의 원문 구간 또는 형식 검증에 실패했습니다.",
