@@ -46,6 +46,46 @@ test('PDF credentials never follow an untrusted result URL or unvalidated docume
   assert.throws(() => client.originalPdfUrl({...doc, sha256:'invalid'}));
 });
 const { displayRefs, uniqueTextMatch } = require('./sourceSplitModel.ts');
+const { claimLocationLabel, highlightLabel } = require('./sourceSplitModel.ts');
+const parserClaim = () => ({ source_quality:'unverified', source_status:{status:'unverified',display:'원문 확인 필요'}, source_refs:[{source_id:'parser-source',page_num:3,location_quality:'located',verification_state:'rejected',bbox:[100,200,300,400]}], w16_source_view:{refs:[{ref_id:'source_refs/0',source_id:'parser-source',kind:'claim',physical_page:84,location:null}]} });
+test('unverified parser bbox uses the original page and actual PDF dimensions without changing source status', () => {
+  const claim = parserClaim(), before = JSON.stringify(claim);
+  const ref = displayRefs(claim)[0];
+  assert.equal(ref.physical_page,84);
+  assert.deepEqual(sourceHighlight(ref,{width:800,height:600,rotation:90}),{precision:'estimated',boxes:[[.125,1/3,.25,1/3]]});
+  assert.equal(claimLocationLabel(claim),'추정 위치');
+  assert.equal(highlightLabel('estimated'),'추정 위치(원문 대조 전)');
+  assert.notEqual(highlightLabel('estimated'),highlightLabel('exact'));
+  assert.notEqual(highlightLabel('estimated'),highlightLabel('region'));
+  assert.equal(JSON.stringify(claim),before);
+});
+test('estimated geometry follows stored rotated display dimensions once and rejects viewport mismatch', () => {
+  const claim = parserClaim(); claim.w16_source_view.refs[0].location = location;
+  const ref = displayRefs(claim)[0];
+  assert.deepEqual(sourceHighlight(ref,{width:800,height:600,rotation:90}).boxes,[[.125,1/3,.25,1/3]]);
+  assert.equal(sourceHighlight(ref,{width:600,height:800,rotation:0}).precision,'unavailable');
+  assert.equal(sourceHighlight(ref).precision,'estimated');
+});
+test('missing or malformed parser boxes, missing physical page and unrelated refs stay unlocated', () => {
+  for (const bbox of [null,[],[0,0,Infinity,5],[1,2,0,3],[-1,0,2,3]]) {
+    const claim = parserClaim(); claim.source_refs[0].bbox = bbox;
+    assert.equal(claimLocationLabel(claim),'위치 미확인');
+    assert.equal(sourceHighlight(displayRefs(claim)[0],{width:800,height:600,rotation:0}).precision,'unavailable');
+  }
+  for (const change of [c=>c.w16_source_view.refs[0].physical_page=null,c=>c.source_refs[0].location_quality='unlocated',c=>c.w16_source_view.refs[0].source_id='other',c=>c.w16_source_view.refs[0].kind='evidence',c=>c.source_quality='unreadable']) {
+    const claim = parserClaim(); change(claim); if(claim.source_quality==='unreadable')claim.source_status.status='unreadable';
+    assert.equal(claimLocationLabel(claim),'위치 미확인');
+  }
+  const claim = parserClaim(); claim.source_refs[0].bbox=[0,0,900,50];
+  assert.equal(sourceHighlight(displayRefs(claim)[0],{width:800,height:600,rotation:0}).precision,'unavailable');
+});
+test('verified precise quotes keep exact highlights and never inherit parser estimates', () => {
+  const claim = parserClaim(); claim.source_quality='verified'; claim.source_status.status='verified'; claim.source_refs[0].verification_state='verified';
+  claim.w16_source_view.refs[0].location={...location,line_rects:[[100,200,200,212]]};
+  assert.equal(sourceHighlight(displayRefs(claim)[0]).precision,'exact');
+  assert.equal(claimLocationLabel(claim),'');
+  assert.equal(highlightLabel('exact'),'정확 인용 위치');
+});
 test('W18 coordinates precede W16 and reject invalid geometry, page and unverified refs', () => {
   const ref = {ref_id:'source_refs/0', physical_page:3, location, w18_verification_state:'verified', w18_line_rects:[[10,20,30,40]], w18_coordinates:{...location, physical_page:3}};
   assert.deepEqual(sourceHighlight(ref).boxes, [[10/800,20/600,20/800,20/600]]);

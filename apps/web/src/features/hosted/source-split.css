@@ -27,6 +27,7 @@
 .split-legend .evidence::before { border-color:#216dc4; background:#97c8ff; }
 .split-legend .exact::before { border-color:#52665c; background:#d5dfda; }
 .split-legend .region::before { border:2px dashed #52665c; background:transparent; }
+.split-legend .estimated::before { border:2px dashed #8246af; background:transparent; border-radius:3px; }
 .split-pdf-scroll { overflow:auto; max-height:720px; background:#e8eeea; border:1px solid #d3ded7; }
 .split-pdf-page { position:relative; margin:0 auto; line-height:0; }
 .split-pdf-page canvas { width:100%; height:auto; display:block; }
@@ -35,6 +36,8 @@
 .split-highlight.evidence rect { fill:#4d9fff; fill-opacity:.3; stroke:#1265c0; stroke-width:.0007; }
 .split-highlight.region rect { fill:none; stroke:#866800; stroke-width:2; stroke-dasharray:6 4; vector-effect:non-scaling-stroke; }
 .split-highlight.evidence.region rect { stroke:#1265c0; }
+.split-highlight.estimated rect { fill:none; stroke:#8246af; stroke-width:2; stroke-dasharray:3 3; vector-effect:non-scaling-stroke; }
+.split-estimated-note { color:#69368e; }
 .split-citations { border-top:1px solid #dde4df; margin-top:16px; padding-top:4px; font-size:14px; }
 .split-citations h4 { margin:16px 0 8px; }
 .split-citations blockquote { margin:8px 0 12px; padding-left:10px; border-left:3px solid #e0c048; line-height:1.7; }

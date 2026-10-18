@@ -1,4 +1,13 @@
-import type { ResultClaim, SourceLocation, SourceViewRef } from "./hostedClient";
+import type { ResultClaim, SourceLocation, SourceRefDto, SourceViewRef } from "./hostedClient";
+
+// Display-only geometry. Never promote a parser estimate into verified location data.
+export type DisplaySourceRef = SourceViewRef & { estimated_bbox?: number[] };
+export const ESTIMATED_LOCATION_LABEL = "추정 위치(원문 대조 전)";
+
+function validParserBox(box: unknown): box is number[] {
+  return Array.isArray(box) && box.length === 4 && box.every(Number.isFinite)
+    && 0 <= box[0] && box[0] < box[2] && 0 <= box[1] && box[1] < box[3];
+}
 
 export function locationRects(location: SourceLocation | null, viewport?: { width: number; height: number; rotation: number }): number[][] {
   if (!location || location.units !== "pdf_points" || location.origin !== "top_left" || location.space !== "rotated_cropbox_display" || location.bbox_format !== "x0,y0,x1,y1") return [];
@@ -11,8 +20,16 @@ export function locationRects(location: SourceLocation | null, viewport?: { widt
   return boxes.map(([x0,y0,x1,y1]) => [x0 / width, y0 / height, (x1-x0) / width, (y1-y0) / height]);
 }
 
-export function sourceHighlight(ref: SourceViewRef, viewport?: { width: number; height: number; rotation: number }) {
-  if (ref.w18_verification_state !== undefined && ref.w18_verification_state !== "verified") return { boxes: [], precision: "unavailable" };
+export function sourceHighlight(ref: DisplaySourceRef, viewport?: { width: number; height: number; rotation: number }) {
+  if (ref.w18_verification_state !== undefined && ref.w18_verification_state !== "verified") {
+    if (ref.kind !== "claim" || !Number.isInteger(ref.physical_page) || ref.physical_page! <= 0 || !validParserBox(ref.estimated_bbox)) return { boxes: [], precision: "unavailable" };
+    const page = ref.location?.page ?? (ref.w18_coordinates?.physical_page === ref.physical_page ? ref.w18_coordinates.page : undefined)
+      ?? (viewport ? { width_pt: viewport.width, height_pt: viewport.height, rotation: viewport.rotation, crop_box: [] } : undefined);
+    // The list can announce an estimate before PDF.js supplies this page's dimensions.
+    if (!page) return { boxes: [], precision: "estimated" };
+    const boxes = locationRects({ bbox: ref.estimated_bbox, line_rects: null, page, units: "pdf_points", origin: "top_left", space: "rotated_cropbox_display", bbox_format: "x0,y0,x1,y1" }, viewport);
+    return { boxes, precision: boxes.length ? "estimated" : "unavailable" };
+  }
   const w18 = ref.w18_coordinates;
   const precise = ref.w18_cell_rects?.length ? ref.w18_cell_rects : ref.w18_line_rects;
   if (w18 && precise?.length && w18.physical_page === ref.physical_page) {
@@ -38,14 +55,29 @@ export function uniqueEvidence(refs: SourceViewRef[]): SourceViewRef[] {
 }
 
 /** Verification is read from existing server refs even when an older API omits W18. */
-export function displayRefs(claim?: ResultClaim): SourceViewRef[] {
+export function displayRefs(claim?: ResultClaim): DisplaySourceRef[] {
   return (claim?.w16_source_view?.refs ?? []).map(ref => {
     let raw: unknown = claim;
     for (const key of ref.ref_id.split("/")) raw = raw && typeof raw === "object" ? (raw as Record<string, unknown>)[key] : undefined;
     const state = raw && typeof raw === "object" ? (raw as { verification_state?: string }).verification_state : undefined;
     const claimVerified = (claim?.source_status?.status ?? claim?.source_quality) === "verified";
-    return { ...ref, w18_verification_state: ref.kind === "claim" && !claimVerified ? "unverified" : state ?? ref.w18_verification_state ?? "unverified" };
+    const source = raw as SourceRefDto | undefined;
+    const estimated = (claim?.source_status?.status ?? claim?.source_quality) === "unverified" && ref.kind === "claim"
+      && /^source_refs\/\d+$/.test(ref.ref_id) && source?.source_id === ref.source_id && source?.location_quality === "located"
+      && Number.isInteger(source.page_num) && source.page_num > 0 && Number.isInteger(ref.physical_page) && ref.physical_page! > 0 && validParserBox(source.bbox);
+    return { ...ref, ...(estimated ? { estimated_bbox: source!.bbox! } : {}), w18_verification_state: ref.kind === "claim" && !claimVerified ? "unverified" : state ?? ref.w18_verification_state ?? "unverified" };
   });
+}
+
+export function claimLocationLabel(claim?: ResultClaim): string {
+  const highlights = displayRefs(claim).filter(ref => ref.kind === "claim").map(ref => sourceHighlight(ref));
+  if (highlights.some(item => item.precision !== "estimated" && item.boxes.length)) return "";
+  return highlights.some(item => item.precision === "estimated") ? "추정 위치" : "위치 미확인";
+}
+
+export function highlightLabel(precision: string): string {
+  return precision === "estimated" ? ESTIMATED_LOCATION_LABEL : precision === "search" ? "텍스트 검색 위치"
+    : precision === "region" ? "영역 표시(정확 위치 아님)" : precision === "cell" ? "저장된 표 셀 위치" : "정확 인용 위치";
 }
 
 /** Only whitespace normalization. Punctuation, digits and codepoints stay literal. */

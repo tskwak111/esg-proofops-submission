@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { HostedClient, HostedResult, ResultClaim, SourceViewRef } from "./hostedClient";
 import { holdReasonLabel, resultBrowserItem, w18HoldReason } from "./resultModel";
-import { displayRefs, sourceHighlight, uniqueEvidence, selectedSourceRef } from "./sourceSplitModel";
+import { displayRefs, sourceHighlight, uniqueEvidence, selectedSourceRef, claimLocationLabel, ESTIMATED_LOCATION_LABEL } from "./sourceSplitModel";
 
 const OriginalPdfPage = lazy(() => import("./OriginalPdfPage"));
 export type SourceSelection = { claimId: string; page?: number; quote?: string; elementId?: string; nonce: number; scroll?: boolean };
@@ -75,10 +75,11 @@ function SplitContent({ result, client, selection, onSelectClaim }: Props) {
           const summary = resultBrowserItem(result, item);
           const status = summary.bucket;
           const onPage = item.w16_source_view?.refs.some(ref => ref.kind === "claim" && ref.physical_page === page);
+          const locationLabel = claimLocationLabel(item);
           return <button type="button" key={item.claim_id} className={`split-claim ${item.claim_id === claim?.claim_id ? "selected" : ""} ${onPage ? "on-page" : ""}`} data-current-page={onPage || undefined} aria-pressed={item.claim_id === claim?.claim_id}
             onClick={() => select(item, true)}>
             <span className={`split-status ${status}`}>{summary.badge}</span><small>{summary.page}{onPage ? " · 보고 있는 쪽" : ""}</small>
-            <p>{item.quote}</p>{w18HoldReason(result, item) && <small className="w18-hold-reason" title={w18HoldReason(result, item)!}>보류 · {holdReasonLabel(w18HoldReason(result, item)!)}</small>}{!displayRefs(item).some(ref => ref.kind === "claim" && sourceHighlight(ref).boxes.length > 0) && <small>위치 미확인</small>}
+            <p>{item.quote}</p>{w18HoldReason(result, item) && <small className="w18-hold-reason" title={w18HoldReason(result, item)!}>보류 · {holdReasonLabel(w18HoldReason(result, item)!)}</small>}{locationLabel && <small>{locationLabel}</small>}
           </button>;
         })}</div>
       </aside>
@@ -95,7 +96,7 @@ function SplitContent({ result, client, selection, onSelectClaim }: Props) {
         <details className="split-evidence-picker" key={claim?.claim_id}><summary>요소 근거 {evidence.length}개</summary>
           <div className="split-citations" aria-label="선택한 주장과 요소 인용">
             <h4>선택한 주장</h4><blockquote>{claim?.w16_source_view?.quote ?? claim?.quote}</blockquote>
-            {!refs.some(ref => ref.kind === "claim" && sourceHighlight(ref).boxes.length) && <p>위치 미확인</p>}
+            {claimLocationLabel(claim) && <p>{claimLocationLabel(claim) === "추정 위치" ? ESTIMATED_LOCATION_LABEL : "위치 미확인"}</p>}
             <h4>요소별 원문 인용</h4>
             {!evidence.length && <p>연결된 요소 인용이 없습니다.</p>}
             {evidence.map(ref => <div className={`split-citation ${activeEvidence?.ref_id === ref.ref_id ? "active" : ""}`} key={ref.ref_id}>
@@ -105,7 +106,7 @@ function SplitContent({ result, client, selection, onSelectClaim }: Props) {
             </div>)}
           </div>
         </details>
-        <div className="split-legend"><span className="claim">주장</span><span className="evidence">선택한 요소 근거</span><span className="exact">정확 인용·표 셀</span><span className="region">영역 표시(정확 위치 아님)</span></div>
+        <div className="split-legend"><span className="claim">주장</span><span className="evidence">선택한 요소 근거</span><span className="exact">정확 인용·표 셀</span><span className="region">영역 표시(정확 위치 아님)</span><span className="estimated">{ESTIMATED_LOCATION_LABEL}</span></div>
         {cells.length > 0 && <p className="split-note">표의 저장된 셀 위치 · {cells.map(ref => `${({ value: "값", unit: "단위", year: "연도" } as Record<string, string>)[ref.ref_id.split("/").at(-1)!] ?? "셀"}: ${ref.quote}`).join(" · ")}</p>}
         <Suspense fallback={<p role="status">PDF 뷰어 준비 중…</p>}><OriginalPdfPage key={attempt} sourceSha={result.w16_source_document!.sha256} url={url} pageNumber={page} refs={highlights} zoom={zoom} onPageCount={setPageCount} /></Suspense>
         <button type="button" className="split-retry" onClick={() => setAttempt(value => value + 1)}>PDF 다시 불러오기</button>

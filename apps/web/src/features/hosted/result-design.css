@@ -340,6 +340,9 @@
 .split-highlight.evidence rect{fill:#80AD80 !important;fill-opacity:.32 !important;stroke:#3F5B45 !important;}
 .split-highlight.region rect{stroke:#8A7A4A !important;}
 .split-highlight.evidence.region rect{stroke:#3F5B45 !important;}
+.split-legend .estimated::before{background:transparent !important;border:2px dashed #8246af !important;}
+.split-highlight.claim.estimated rect{fill:none !important;stroke:#8246af !important;}
+.split-estimated-note{color:#69368e !important;}
 
 
 /* ---------------------------------------------------------------------
