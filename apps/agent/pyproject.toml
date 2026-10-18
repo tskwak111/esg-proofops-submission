@@ -1,7 +1,7 @@
 [project]
 name = "proofops-agent"
 version = "0.0.0"
-description = "ESG ProofOps tagging agent (TASK-000 baseline)"
+description = "ESG ProofOps tagging agent"
 requires-python = ">=3.12"
 dependencies = [
   "proofops",

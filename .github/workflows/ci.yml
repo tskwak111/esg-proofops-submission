@@ -116,6 +116,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter proofops-web typecheck
+      - run: pnpm --filter proofops-web test:ci
       - run: pnpm --filter proofops-web build
 
   architecture:
