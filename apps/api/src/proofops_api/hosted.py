@@ -311,7 +311,11 @@ def create_hosted_app(settings: HostedSettings | None = None) -> FastAPI:
             store.sessions.touch(sid, now)
             parts = request.url.path.strip("/").split("/")
             if len(parts) >= 3 and parts[0] == "v1" and parts[1] in {"documents", "runs"}:
-                if showcase_resource(store, parts[1], parts[2], now):
+                # Showcase members (its own tenant) keep normal ownership checks;
+                # every other tenant, including guests, may only read it.
+                if auth.tenant_id != store.settings.showcase_tenant and showcase_resource(
+                    store, parts[1], parts[2], now
+                ):
                     if request.method != "GET":
                         raise HostedError("SHOWCASE_READ_ONLY", 403)
                     if request.scope["route"].path in SHOWCASE_READ_ROUTES:
