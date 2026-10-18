@@ -97,6 +97,10 @@ class HostedReads:
         self.store = store
 
     def _cursor(self, auth, kind, document, cursor=None, position=None):
+        from proofops_api.hosted_guest import ShowcaseReader
+
+        if isinstance(auth, ShowcaseReader):
+            kind = "showcase:" + kind
         secret = self.store.settings.secret.encode()
         scope = hmac.digest(
             secret, json.dumps([auth.tenant_id, auth.user_sub, kind, document]).encode(), "sha256"
@@ -132,8 +136,10 @@ class HostedReads:
             raise HostedError("VALIDATION_ERROR", 422)
         position = self._cursor(auth, kind, document, cursor)
         from proofops_api.hosted_access import is_organizer
+        from proofops_api.hosted_guest import ShowcaseReader
 
-        personal = is_organizer(auth)
+        showcase = isinstance(auth, ShowcaseReader)
+        personal = is_organizer(auth) and not showcase
         with self.store.transaction(readonly=True) as db:
             if document:
                 self.store._document(db, auth.tenant_id, document)
@@ -164,6 +170,8 @@ class HostedReads:
                     "AND t.document_id=r.document_id)"
                 )
                 params = [auth.tenant_id, now]
+                if showcase:
+                    sql += " AND r.status='completed'"
                 if personal:
                     sql += (
                         " AND r.user_hash=? AND EXISTS (SELECT 1 FROM document_owners o "
@@ -560,8 +568,9 @@ class HostedReads:
                     membership_port=self.store.memberships,
                     required_capability="viewer",
                 )
-                if (fresh.tenant_id, fresh.user_sub) != (auth.tenant_id, auth.user_sub):
-                    raise HostedError("RESOURCE_NOT_FOUND", 404)
+                from proofops_api.hosted_guest import recheck_read_auth
+
+                recheck_read_auth(self.store, auth, fresh, "runs", run, time.time())
             except SessionExpiredError:
                 raise HostedError("AUTH_REQUIRED", 401) from None
             except CapabilityDeniedError:

@@ -79,8 +79,9 @@ def original_pdf(store, auth, document_id, expected_sha=None):
             raise HostedError("FORBIDDEN", 403) from None
         except TenantNotFoundError:
             raise HostedError("RESOURCE_NOT_FOUND", 404) from None
-        if (fresh.tenant_id, fresh.user_sub) != (auth.tenant_id, auth.user_sub):
-            raise HostedError("RESOURCE_NOT_FOUND", 404)
+        from proofops_api.hosted_guest import recheck_read_auth
+
+        fresh = recheck_read_auth(store, auth, fresh, "documents", document_id, time.time())
         with store.transaction(readonly=True) as db:
             current = store._document(db, auth.tenant_id, document_id)
             store._require_document_owner(db, fresh, document_id)

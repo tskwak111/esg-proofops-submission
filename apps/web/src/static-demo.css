@@ -28,6 +28,9 @@
 .site-header nav a:hover { color: var(--ink) }
 .header-actions { display: flex; justify-content: flex-end; gap: 8px }
 .menu-toggle { display: none }
+.admin-login { justify-self: end; font-size: 13px; font-weight: 600; color: var(--ink-2); border: 1px solid var(--line); border-radius: 999px; padding: 8px 16px; transition: color .2s, border-color .2s }
+.admin-login:hover { color: var(--ink); border-color: var(--ink-2) }
+.site-header nav a.nav-admin-login { display: none !important }
 
 /* pills */
 .pill { display: inline-flex; align-items: center; gap: 10px; height: 40px; padding: 0 20px; border-radius: 999px; font-size: 14px; font-weight: 500; transition: background .2s, border-color .2s, transform .2s }
@@ -312,6 +315,7 @@ a.card:hover, .features .card:hover, .steps .card:hover { transform: translateY(
   .menu-toggle { display: inline-flex; gap: 8px; min-height: 36px; padding: 0 12px; font-size: 13px; background: transparent }
   .site-header nav { display: none; position: absolute; top: 60px; left: 0; right: 0; flex-direction: column; align-items: flex-start; gap: 0; padding: 8px 20px 20px; background: var(--paper); border-bottom: 1px solid var(--line) }
   .site-header.is-dark nav { background: var(--forest) }
+  .admin-login { display: none } .site-header nav a.nav-admin-login { display: block !important }
   .site-header nav.open { display: flex } .site-header nav a { padding: 12px 0; width: 100%; font-size: 16px }
   .header-cta { display: none }
   .hero { padding-top: 64px } .hero-copy h1 { font-size: 40px }
@@ -506,3 +510,4 @@ main.guide-main .uses-head { text-align: center }
 
 .missing-evidence-card strong { display: inline; margin: 0; font-family: inherit; font-size: inherit; font-weight: 600; line-height: inherit; color: inherit; }
 .missing-evidence-card p { letter-spacing: normal; }
+.site-header.is-dark .admin-login { color: rgba(255,255,255,.88); border-color: rgba(255,255,255,.35) }

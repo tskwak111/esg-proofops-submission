@@ -2,11 +2,21 @@ import { reportNames } from "./documentName";
 import { HostedApiError, completedRunPresentation, type CollectionPage, type HostedClient, type HostedDocument, type HostedResult, type ListedRun } from "./hostedClient";
 import { resultBrowserSummary } from "./resultModel";
 import { UX1_HASH } from "./ux1Model";
+import { unsupportedGuestEndpoint } from "./guestAccess";
 
 // Coordinator-approved v29d default; compared with the result's actual analysis policy.
 // UI/UX policy hashes and the reuse wrapper policy are not analysis-policy identities.
 export const CURRENT_EXAMPLE_POLICY = "f29385d0c74d1520350deb06eaa9e11b72c5829dfaefeb2417c4e8ac0fed4ebd";
-export type Example = { run: ListedRun; name: string; identity: string; counts: ReturnType<typeof resultBrowserSummary>; completion: NonNullable<ReturnType<typeof completedRunPresentation>> };
+export type Example = { run: ListedRun; document: HostedDocument; result: HostedResult; name: string; identity: string; counts: ReturnType<typeof resultBrowserSummary>; completion: NonNullable<ReturnType<typeof completedRunPresentation>> };
+
+/** Explicit report links win; otherwise open the original NAVER 2025 integrated report. */
+export function selectedExample(examples: Example[], runId: string | null): Example | undefined {
+  const naver = (example: Example) => /(?:\bNAVER\b|네이버|N사)/i.test(`${example.document.company_name ?? ""} ${example.name}`);
+  return examples.find(example => example.run.run_id === runId)
+    ?? examples.find(example => naver(example) && /2025/.test(example.name) && /통합보고서|integrated/i.test(example.name))
+    ?? examples.find(naver)
+    ?? examples[0];
+}
 export const exampleRuns = (runs: ListedRun[]) => runs.filter(run => run.status === "completed")
   .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
 
@@ -45,10 +55,24 @@ async function allPages<T>(read: (cursor: string | null) => Promise<CollectionPa
 }
 
 export async function loadExamples(client: HostedClient, signal: AbortSignal): Promise<Example[]> {
-  const [documents, runs] = await Promise.all([
+  // Older injected clients and servers retain their tenant-only catalog. Never mix the two inventories.
+  const ownInventory = () => Promise.all([
     allPages(cursor => client.listDocuments(cursor, signal), signal),
     allPages(cursor => client.listRuns(cursor, signal), signal),
   ]);
+  let documents: HostedDocument[], runs: ListedRun[];
+  if (typeof client.listShowcaseDocuments !== "function" || typeof client.listShowcaseRuns !== "function") [documents, runs] = await ownInventory();
+  else {
+    try {
+      [documents, runs] = await Promise.all([
+        allPages(cursor => client.listShowcaseDocuments(cursor, signal), signal),
+        allPages(cursor => client.listShowcaseRuns(cursor, signal), signal),
+      ]);
+    } catch (error) {
+      if (!unsupportedGuestEndpoint(error)) throw error;
+      [documents, runs] = await ownInventory();
+    }
+  }
   const names = reportNames(documents);
   const docs = new Map(documents.map(doc => [doc.document_id, doc]));
   const groups = new Map<string, { name: string; runs: ListedRun[] }>();
@@ -63,7 +87,7 @@ export async function loadExamples(client: HostedClient, signal: AbortSignal): P
   }
   const examples = await Promise.all([...groups].map(async ([identity, group]) => {
     const chosen = await chooseExample(group.runs, url => client.getResult(url, signal, UX1_HASH));
-    return chosen ? { run: chosen.run, name: group.name, identity, completion: chosen.completion, counts: resultBrowserSummary(chosen.result) } : null;
+    return chosen ? { run: chosen.run, document: docs.get(chosen.run.document_id)!, result: chosen.result, name: group.name, identity, completion: chosen.completion, counts: resultBrowserSummary(chosen.result) } : null;
   }));
   signal.throwIfAborted();
   return examples.filter((example): example is Example => example !== null).sort((a, b) => Date.parse(b.run.created_at) - Date.parse(a.run.created_at));

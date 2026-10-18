@@ -32,6 +32,13 @@ from starlette.concurrency import run_in_threadpool
 from starlette.middleware.cors import CORSMiddleware
 
 from proofops_api.auth import SESSION_COOKIE_NAME, AuthStore, _epoch_to_rfc3339
+from proofops_api.hosted_guest import (
+    SHOWCASE_READ_ROUTES,
+    is_guest,
+    peer_ip,
+    showcase_reader,
+    showcase_resource,
+)
 from proofops_api.hosted_store import HostedError, HostedSettings, HostedStore
 from proofops_api.middleware import BrowserSecurityHeadersMiddleware, verify_csrf
 
@@ -229,6 +236,7 @@ def create_hosted_app(settings: HostedSettings | None = None) -> FastAPI:
 
         return JSONResponse(
             {
+                **({"code": exc.code} if exc.code.startswith("GUEST_") else {}),
                 "error": {
                     "code": exc.code,
                     **(
@@ -236,7 +244,7 @@ def create_hosted_app(settings: HostedSettings | None = None) -> FastAPI:
                         if exc.code in CONTROL_MESSAGES
                         else {}
                     ),
-                }
+                },
             },
             status_code=exc.status,
             headers={"Retry-After": str(exc.retry_after or 60)}
@@ -293,6 +301,8 @@ def create_hosted_app(settings: HostedSettings | None = None) -> FastAPI:
                 )
             ):
                 raise HostedError("CSRF_INVALID", 403)
+            if is_guest(auth) and request.url.path == "/v1/session/tenant":
+                raise HostedError("FORBIDDEN", 403)
             store.consume(
                 auth.user_sub + (":read" if request.method == "GET" else ":write"),
                 60 if request.method == "GET" else 10,
@@ -301,6 +311,11 @@ def create_hosted_app(settings: HostedSettings | None = None) -> FastAPI:
             store.sessions.touch(sid, now)
             parts = request.url.path.strip("/").split("/")
             if len(parts) >= 3 and parts[0] == "v1" and parts[1] in {"documents", "runs"}:
+                if showcase_resource(store, parts[1], parts[2], now):
+                    if request.method != "GET":
+                        raise HostedError("SHOWCASE_READ_ONLY", 403)
+                    if request.scope["route"].path in SHOWCASE_READ_ROUTES:
+                        return showcase_reader(store, auth)
                 store.require_owned_resource(auth, parts[1], parts[2])
             return auth
         except SessionExpiredError:
@@ -319,13 +334,20 @@ def create_hosted_app(settings: HostedSettings | None = None) -> FastAPI:
         return {
             "user_id": record.user_sub,
             "tenant_id": record.active_tenant_id,
-            "role": record.user_sub.removeprefix("access-password:")
+            "role": "guest"
+            if is_guest(record)
+            else record.user_sub.removeprefix("access-password:")
             if record.user_sub.startswith("access-password:")
             else membership.role
             if membership
             else None,
             "csrf_token": store.sessions.csrf_token_for(sid),
             "expires_at": _epoch_to_rfc3339(record.expires_at),
+            **(
+                {"guest": store.guest.session_info(record.user_sub, time.time())}
+                if is_guest(record)
+                else {}
+            ),
         }
 
     def set_cookie(response: Response, sid: str) -> None:
@@ -346,20 +368,57 @@ def create_hosted_app(settings: HostedSettings | None = None) -> FastAPI:
     def password_login(body: AccessPassword, request: Request, response: Response) -> dict:
         if request.headers.get("Origin") != settings.origin:
             raise HostedError("CSRF_INVALID", 403)
-        peer = request.client.host if request.client else "unknown"
-        if peer in settings.auth_trusted_proxies:
-            from ipaddress import ip_address
-
-            # Only trust a configured immediate proxy; use its rightmost XFF hop.
-            forwarded = request.headers.get("X-Forwarded-For", "").split(",")[-1].strip()
-            try:
-                peer = str(ip_address(forwarded))
-            except ValueError:
-                pass
-        sid = store.access.login(body.role, body.password, ip=peer, now=time.time())
+        sid = store.access.login(
+            body.role, body.password, ip=peer_ip(request, settings), now=time.time()
+        )
         set_cookie(response, sid)
         response.headers["Cache-Control"] = "private, no-store"
         return session_body(sid)
+
+    @app.get("/v1/guest")
+    def guest_info(response: Response) -> dict:
+        response.headers["Cache-Control"] = "private, no-store"
+        return store.guest.discovery(time.time())
+
+    @app.post("/v1/guest/session")
+    def guest_login(request: Request, response: Response) -> dict:
+        # As with password/invitation login, no pre-existing session/CSRF token is
+        # required. Exact Origin validation protects the session-creating POST.
+        if request.headers.get("Origin") != settings.origin:
+            raise HostedError("CSRF_INVALID", 403)
+        sid = store.guest.login(ip=peer_ip(request, settings), now=time.time())
+        set_cookie(response, sid)
+        response.headers["Cache-Control"] = "private, no-store"
+        return session_body(sid)
+
+    @app.get("/v1/showcase/documents")
+    def showcase_documents(
+        auth: Annotated[AuthContext, Depends(current)],
+        limit: Annotated[int, Query(ge=1, le=100)] = 20,
+        cursor: Annotated[str | None, Query(max_length=1024)] = None,
+    ) -> dict:
+        if not settings.showcase_tenant:
+            return dict(items=[], next_cursor=None)
+        return reads.collection(
+            showcase_reader(store, auth), "documents", limit=limit, cursor=cursor
+        )
+
+    @app.get("/v1/showcase/runs")
+    def showcase_runs(
+        auth: Annotated[AuthContext, Depends(current)],
+        limit: Annotated[int, Query(ge=1, le=100)] = 20,
+        cursor: Annotated[str | None, Query(max_length=1024)] = None,
+        document_id: UUID | None = None,
+    ) -> dict:
+        if not settings.showcase_tenant:
+            return dict(items=[], next_cursor=None)
+        return reads.collection(
+            showcase_reader(store, auth),
+            "runs",
+            limit=limit,
+            cursor=cursor,
+            document=str(document_id) if document_id else None,
+        )
 
     @app.get("/v1/session")
     def session(request: Request, auth: Annotated[AuthContext, Depends(current)]) -> dict:

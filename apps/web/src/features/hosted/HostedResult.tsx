@@ -27,13 +27,17 @@ function revealBelowTabs(target: Element | null | undefined, tabs: Element | nul
   const offset = headerOffset() + (tabs?.getBoundingClientRect().height ?? 0) + 12;
   window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY - offset, behavior: "smooth" });
 }
+function currentResult(runId: string): boolean {
+  return runIdFromHash(window.location.hash) === runId || (window.location.pathname === "/demo" && new URLSearchParams(window.location.search).get("report") === runId);
+}
 function initialTab(runId?: string): ResultTab {
-  if (typeof window === "undefined" || !runId || runIdFromHash(window.location.hash) !== runId) return "overview";
+  if (typeof window === "undefined" || !runId || !currentResult(runId)) return "overview";
   return resultTabFromSearch(window.location.search);
 }
 
-type ResultViewProps = { result: HostedResult; reportName?: string; companyName?: string; pageCount?: number; selectedPages?: number[]; runStatus?: string; role?: string | null; client?: HostedClient; runId?: string; onReload?: () => Promise<void>; runSummary?: ReactNode };
-export function ResultView({ result, reportName, companyName, pageCount, selectedPages, runStatus, role, client, runId, onReload, runSummary }: ResultViewProps) {
+type ResultViewProps = { result: HostedResult; reportName?: string; companyName?: string; pageCount?: number; selectedPages?: number[]; runStatus?: string; role?: string | null; readOnly?: boolean; client?: HostedClient; runId?: string; onReload?: () => Promise<void>; runSummary?: ReactNode };
+export function ResultView({ result, reportName, companyName, pageCount, selectedPages, runStatus, role, readOnly = false, client, runId, onReload, runSummary }: ResultViewProps) {
+  if (readOnly) role = null;
   companyName = metadataText(companyName);
   reportName = reportTitle(reportName);
   const [printError, setPrintError] = useState("");
@@ -60,7 +64,7 @@ export function ResultView({ result, reportName, companyName, pageCount, selecte
   useEffect(() => setVisited(current => current.includes(tab) ? current : [...current, tab]), [tab]);
   useEffect(() => {
     if (!runId) return;
-    const sync = () => { if (runIdFromHash(window.location.hash) === runId) setTab(resultTabFromSearch(window.location.search)); };
+    const sync = () => { if (currentResult(runId)) setTab(resultTabFromSearch(window.location.search)); };
     window.addEventListener("popstate", sync);
     return () => window.removeEventListener("popstate", sync);
   }, [runId]);

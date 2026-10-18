@@ -93,7 +93,8 @@ export function StaticDemo() {
     <header className="site-header" ref={siteHeader}><div className="site-header-inner">
       <Link className="brand" to="/" aria-label="ProofOps 홈"><span className="brand-dot" aria-hidden="true" />ProofOps</Link>
       <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="site-menu" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? "닫기" : "메뉴"}<span aria-hidden="true">{menuOpen ? "×" : "☰"}</span></button>
-      <nav id="site-menu" className={menuOpen ? "open" : ""} aria-label="주요 메뉴" onClick={() => setMenuOpen(false)}><Link to="/">서비스</Link><Link to="/analyze">분석</Link><Link to="/demo">분석 사례</Link><Link to="/guide">서비스 가이드라인</Link></nav>
+      <nav id="site-menu" className={menuOpen ? "open" : ""} aria-label="주요 메뉴" onClick={() => setMenuOpen(false)}><Link to="/">서비스</Link><Link to="/analyze">분석</Link><Link to="/demo">분석 사례</Link><Link to="/guide">서비스 가이드라인</Link><Link className="nav-admin-login" to="/analyze?operator=1">관리자 로그인</Link></nav>
+      <Link className="admin-login" to="/analyze?operator=1">관리자 로그인</Link>
     </div></header>
     {standalone ?? (runIdFromResultPath(location.pathname) ? <HostedResultRoute /> : analysisBackend === "hosted" && location.pathname === "/analyze" ? <main className="static-main analyze-main"><h1>보고서 분석 시작</h1><HostedAnalysis /></main> : isLive ? <LiveClaim /> : error ? <main className="static-main"><section className="surface"><h1>분석 결과를 불러오지 못했습니다</h1><p>잠시 후 새로고침해 주세요.</p></section></main> :
       !data ? <main className="static-main loading-main" role="status" aria-label="검토 결과 불러오는 중"><div className="skeleton skeleton-title" /><div className="skeleton skeleton-card" /><div className="skeleton skeleton-card" /></main> :

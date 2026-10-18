@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test:hosted": "node test/hosted-test.mjs && node --test src/features/hosted/resultModel.test.cjs src/features/hosted/resultBrowser.test.cjs src/features/hosted/hostedClient.test.cjs src/features/hosted/hostedHistory.test.cjs src/features/hosted/sourcePageModel.test.cjs src/features/hosted/sourceSplitModel.test.cjs && node --test src/features/claims/holdCards.test.cjs",
-    "test": "pnpm test:hosted && node --test src/features/hosted/documentName.test.cjs src/features/hosted/resultReport.test.cjs src/features/hosted/ux1.test.cjs src/features/hosted/ux2.test.cjs src/features/hosted/ux3.test.cjs src/features/hosted/resultTabs.test.cjs src/features/replay/replayData.test.mjs"
+    "test": "pnpm test:hosted && node --test src/features/hosted/guestAccess.test.cjs src/features/hosted/documentName.test.cjs src/features/hosted/resultReport.test.cjs src/features/hosted/ux1.test.cjs src/features/hosted/ux2.test.cjs src/features/hosted/ux3.test.cjs src/features/hosted/resultTabs.test.cjs src/features/replay/replayData.test.mjs"
   },
   "dependencies": {
     "pdf-lib": "1.17.1",

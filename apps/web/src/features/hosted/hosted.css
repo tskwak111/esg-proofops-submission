@@ -336,23 +336,17 @@
 .ux2-stage-counts dt { font-size:13px; }
 .ux2-stage-counts dd { margin:4px 0 0; font-weight:700; }
 
-.example-cards { list-style: none; margin: 28px 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
-.example-card { min-width: 0; padding: 24px; border: 1px solid var(--line); border-radius: 16px; background: #fff; }
-.example-card-heading { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
-.example-card-heading h2 { margin: 0; font-size: 21px; line-height: 1.5; overflow-wrap: anywhere; }
-.example-card-heading .hosted-state { flex-shrink: 0; }
-.example-counts { margin: 22px 0 14px; font-size: 15px; }
-.example-grade-bar { display: flex; height: 16px; border-radius: 5px; overflow: hidden; background: #eceeea; }
-.example-e3 { background: #245c48; } .example-e2 { background: #4d856b; } .example-e1 { background: #9cbaa9; } .example-e0 { background: #dca67e; }
-.example-grade-legend { display: flex; flex-wrap: wrap; gap: 10px 18px; list-style: none; margin: 14px 0; padding: 0; font-size: 13px; }
-.example-grade-legend li { display: flex; align-items: center; gap: 4px; }
-.example-grade-legend i { width: 9px; height: 9px; border-radius: 2px; margin-right: 3px; }
-.examples-main .example-result-link { display: inline-flex; justify-content: center; align-items: center; text-align: center; white-space: nowrap; width: auto; min-width: 134px; min-height: 46px; height: auto; padding: 12px 24px; margin-top: 12px; line-height: 1.4; box-sizing: border-box; }
+.example-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.example-heading h1 { margin-bottom: 0; }
+.example-selector { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 28px; min-width: 0; }
+.example-chip { display: grid; align-content: start; gap: 3px; flex: 1 1 145px; min-width: 0; max-width: 100%; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--bg); text-decoration: none; overflow-wrap: anywhere; }
+.example-chip:hover, .example-chip[aria-current=true] { border-color: var(--accent, #245c48); background: #edf3ee; }
+.example-chip[aria-current=true] { box-shadow: inset 0 0 0 1px var(--accent, #245c48); }
+.example-chip strong { font-size: 14px; }
+.example-chip small, .example-chip span { font-size: 11px; line-height: 1.5; color: var(--muted); }
+.example-result { min-width: 0; margin-bottom: 24px; }
 @media (max-width: 640px) {
-  .example-cards { grid-template-columns: minmax(0, 1fr); gap: 16px; }
-  .example-card { padding: 18px; }
-  .example-card-heading { flex-wrap: wrap; }
-  .example-card-heading h2 { font-size: 19px; }
+  .example-chip { flex-basis: 125px; padding: 8px 10px; }
 }
 
 /* Result tabs: one panel at a time; the bar sticks under the site header (--header-h set by the shell). */

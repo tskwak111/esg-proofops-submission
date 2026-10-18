@@ -4,11 +4,13 @@ import { UX1Progress } from "./UX1Progress";
 import { UX1Comparison } from "./UX1Comparison";
 import { documentName, reportTitle } from "./documentName";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { budgetNotice, completedRunPresentation, createHostedClient, holdReasonText, HostedApiError, parsePageSelection, providerLimitCodes, providerLimitMessage, resultExecution, runOutcome, terminalStatuses, type HostedClient, type HostedDocument, type HostedResult, type HostedRun, type Runtime, type Session, type ScopePlan } from "./hostedClient";
 import { resultBrowserSummary, w18HoldBreakdown } from "./resultModel";
 import { MyReports } from "./MyReports";
 import { ResultView } from "./HostedResult";
+import { enterHostedSession, isShowcaseRun } from "./guestAccess";
+import { GuestBanner } from "./GuestBanner";
 import { forgetDocumentHistory, historyKey, readHistory, rememberHistory, resultTabFromSearch, resultTabUrl, runIdFromHash, runIdFromResultLink, validResourceId, type HistoryEntry } from "./hostedHistory";
 
 // Session-scoped history only: browser storage is disallowed (security contract);
@@ -64,10 +66,12 @@ export function RunOutcomeView({ run }: { run: HostedRun }) {
 }
 
 type Phase = "checking" | "login" | "ready";
-type Intake = { key: string; name: string; doc?: HostedDocument; error?: string; runId?: string; restoreRunId?: string; restored?: boolean };
+type Intake = { key: string; name: string; doc?: HostedDocument; error?: string; runId?: string; restoreRunId?: string; restored?: boolean; readOnly?: boolean };
 
 export function HostedAnalysis({ client: injected }: { client?: HostedClient }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const operatorLogin = new URLSearchParams(location.search).has("operator");
   const client = useMemo(() => injected ?? createHostedClient({ base: import.meta.env.VITE_HOSTED_API_BASE || "/hosted-api" }), [injected]);
   const [connection, setConnection] = useState("");
   const [retryVersion, setRetryVersion] = useState(0);
@@ -94,7 +98,7 @@ export function HostedAnalysis({ client: injected }: { client?: HostedClient }) 
   const trackResult = useCallback((runId: string, name: string, open: boolean) => setOpenResults(items => [...items.filter(item => item.runId !== runId), ...(open ? [{ runId, name }] : [])]), []);
   const intakeAreaId = useId();
   const expire = useCallback(() => {
-    uploadAbort.current?.abort(); setSession(null); setIntake([]); setFiles([]); setNotice(""); setHistory([]); setPhase("login");
+    uploadAbort.current?.abort(); setSession(null); setIntake([]); setFiles([]); setNotice(""); setHistory([]); setOpenResults([]); setLookup(""); setPhase("login");
     if (fileInput.current) fileInput.current.value = "";
   }, []);
   const fail = useCallback((err: unknown) => {
@@ -111,24 +115,32 @@ export function HostedAnalysis({ client: injected }: { client?: HostedClient }) 
       try {
         const rt = await client.runtime(controller.signal);
         if (!live) return; setRuntime(rt);
-        try { const next = await client.session(controller.signal); if (live) { setSession(next); setPhase("ready"); } }
-        catch (err) { if (live && err instanceof HostedApiError && err.status === 401) setPhase("login"); else throw err; }
+        try {
+          const next = operatorLogin ? await client.session(controller.signal).catch(err => {
+            if (err instanceof HostedApiError && err.status === 401) return null;
+            throw err;
+          }) : await enterHostedSession(client, controller.signal);
+          if (live) {
+            setSession(next); setPhase(next ? "ready" : "login");
+            if (next && new URLSearchParams(window.location.search).get("return_to") === "examples" && !new URLSearchParams(window.location.search).has("operator")) navigate("/demo");
+          }
+        } catch (err) { if (live && !controller.signal.aborted) { setPhase("login"); throw err; } }
       } catch (err) { if (live && !controller.signal.aborted) fail(err); }
     })();
     return () => { live = false; controller.abort(); unsubscribe(); uploadAbort.current?.abort(); };
-  }, [client, fail, retryVersion]);
+  }, [client, fail, retryVersion, navigate, operatorLogin]);
 
   const openRun = useCallback(async (id: string) => {
     if (!validResourceId(id)) { setError("올바른 분석 번호를 입력해 주세요."); return; }
     setError("");
     try {
       const next = await client.getRun(`/v1/runs/${id}`);
-      const document = await client.getDocument(next.document_id);
+      const [document, readOnly] = await Promise.all([client.getDocument(next.document_id), isShowcaseRun(client, id)]);
       if (!session || !currentSession.current || historyKey(currentSession.current) !== historyKey(session)) return;
       const savedName = session ? readHistory(historyStore, historyKey(session)).find(entry => entry.documentId === document.document_id)?.name : undefined;
       const name = documentName(document) ?? reportTitle(savedName) ?? "분석 보고서";
-      if (session) setHistory(rememberHistory(historyStore, historyKey(session), { documentId: document.document_id, name, runId: id, seenAt: Date.now() }));
-      setIntake(items => items.some(item => item.runId === id) ? items : [...items, { key: id, name, doc: document, runId: id, restoreRunId: id, restored: true }]);
+      if (session && !readOnly) setHistory(rememberHistory(historyStore, historyKey(session), { documentId: document.document_id, name, runId: id, seenAt: Date.now() }));
+      setIntake(items => items.some(item => item.runId === id) ? items : [...items, { key: id, name, doc: document, runId: id, restoreRunId: id, restored: true, readOnly }]);
       setIntakeExpanded(false);
       // A shared ?tab= link belongs to the run in its own anchor; any other run opens on the overview.
       window.history.replaceState(null, "", resultTabUrl(window.location, id, runIdFromHash(window.location.hash) === id ? resultTabFromSearch(window.location.search) : "overview"));
@@ -157,8 +169,8 @@ export function HostedAnalysis({ client: injected }: { client?: HostedClient }) 
     void (async () => {
       for (const entry of readHistory(historyStore, historyKey(session)).slice(-5)) {
         try {
-          const doc = await client.getDocument(entry.documentId, signal);
-          if (!signal.aborted && currentSession.current && historyKey(currentSession.current) === historyKey(session)) setIntake(items => items.some(item => (item.runId ?? item.doc?.document_id) === (entry.runId ?? entry.documentId)) ? items : [...items, { key: entry.runId ?? entry.documentId, name: entry.name, doc, runId: entry.runId, restoreRunId: entry.runId, restored: true }]);
+          const [doc, readOnly] = await Promise.all([client.getDocument(entry.documentId, signal), entry.runId ? isShowcaseRun(client, entry.runId, signal) : false]);
+          if (!signal.aborted && currentSession.current && historyKey(currentSession.current) === historyKey(session)) setIntake(items => items.some(item => (item.runId ?? item.doc?.document_id) === (entry.runId ?? entry.documentId)) ? items : [...items, { key: entry.runId ?? entry.documentId, name: entry.name, doc, runId: entry.runId, restoreRunId: entry.runId, restored: true, readOnly }]);
         } catch (err) { if (!signal.aborted) fail(err); }
       }
     })();
@@ -173,7 +185,7 @@ export function HostedAnalysis({ client: injected }: { client?: HostedClient }) 
   }
   async function login(event: FormEvent) {
     event.preventDefault(); setError(""); setBusy("로그인 중");
-    try { setSession(await (loginMethod === "password" ? client.loginPassword(code, accessRole) : client.login(code))); setPhase("ready"); if (new URLSearchParams(window.location.search).get("return_to") === "examples") navigate("/demo"); } catch (err) { fail(err); } finally { setCode(""); setBusy(""); }
+    try { const next = await (loginMethod === "password" ? client.loginPassword(code, accessRole) : client.login(code)); expire(); setSession(next); setPhase("ready"); if (new URLSearchParams(window.location.search).get("return_to") === "examples") navigate("/demo"); } catch (err) { fail(err); } finally { setCode(""); setBusy(""); }
   }
   async function upload() {
     const controller = new AbortController(); uploadAbort.current = controller;
@@ -258,7 +270,7 @@ export function HostedAnalysis({ client: injected }: { client?: HostedClient }) 
     </div>
     <ul className="hosted-documents" aria-label="문서별 분석 상태">
       {intake.map(item => <li key={item.key}>
-        {item.doc ? <HostedDocumentAnalysis name={item.name} doc={item.doc} client={client} runtime={runtime} session={session} initialRunId={item.restoreRunId} restored={item.restored} onResult={trackResult} onAccepted={run => remember(item.doc!, item.name, run)} onExpired={expire} onRemoved={() => { setIntake(items => items.filter(next => next.doc?.document_id !== item.doc!.document_id)); if (session) setHistory(forgetDocumentHistory(historyStore, historyKey(session), item.doc!.document_id)); setNotice(`${item.name} 원본 PDF와 분석 기록을 삭제했습니다.`); }} />
+        {item.doc ? <HostedDocumentAnalysis name={item.name} doc={item.doc} client={client} runtime={runtime} session={session} initialRunId={item.restoreRunId} restored={item.restored} readOnly={item.readOnly} onResult={trackResult} onAccepted={run => remember(item.doc!, item.name, run)} onExpired={expire} onRemoved={() => { setIntake(items => items.filter(next => next.doc?.document_id !== item.doc!.document_id)); if (session) setHistory(forgetDocumentHistory(historyStore, historyKey(session), item.doc!.document_id)); setNotice(`${item.name} 원본 PDF와 분석 기록을 삭제했습니다.`); }} />
           : <article><h3>{item.name}</h3><p role="alert" className="hosted-error">{item.error}</p></article>}
       </li>)}
     </ul>
@@ -271,8 +283,10 @@ export function HostedAnalysis({ client: injected }: { client?: HostedClient }) 
     <header className="hosted-heading" id={`${intakeAreaId}-heading`} hidden={collapsed}>
     <p className="eyebrow">보고서 근거 점검</p><h2>ESG 보고서 근거 분석</h2>
     <p>PDF를 올리고 분석 범위를 선택하면 주장과 원문 근거를 연결합니다. 결과는 확정·보류로 안내합니다.</p>
-    {session && <p className="hosted-session">로그인됨 · {session.role === "admin" ? "관리자" : session.role === "reviewer" ? "검토자" : session.role === "organizer" ? "대회측" : "사용자"} <button className="hosted-text-button" type="button" onClick={() => void logout()}>로그아웃</button></p>}
+    {session && session.role !== "guest" && <p className="hosted-session">{`로그인됨 · ${session.role === "admin" ? "관리자" : session.role === "reviewer" ? "검토자" : session.role === "organizer" ? "대회측" : "사용자"}`} <button className="hosted-text-button" type="button" onClick={() => void logout()}>로그아웃</button></p>}
     </header>
+    <GuestBanner session={session} />
+    {session?.role === "guest" && new URLSearchParams(window.location.search).has("operator") && <section className="hosted-operator-login" aria-labelledby="admin-login-heading"><h3 id="admin-login-heading">관리자 로그인</h3>{loginForm()}</section>}
     {Object.values(runtime?.provider_limits ?? {}).some(limit => limit.status === "blocked") && <p className="hosted-error" role="alert">{providerLimitMessage}</p>}
     {connection && <p className="hosted-notice" role="status" aria-live="polite">{connection}</p>}
     {body}
@@ -282,8 +296,8 @@ export function HostedAnalysis({ client: injected }: { client?: HostedClient }) 
   </section>;
 }
 
-function HostedDocumentAnalysis({ name, doc, client, runtime, session, initialRunId, restored, onResult, onAccepted, onExpired, onRemoved }: {
-  name: string; doc: HostedDocument; client: HostedClient; runtime: Runtime | null; session: Session | null; initialRunId?: string; restored?: boolean; onResult?: (runId: string, name: string, open: boolean) => void; onAccepted: (run: HostedRun) => void; onExpired: () => void; onRemoved: () => void;
+function HostedDocumentAnalysis({ name, doc, client, runtime, session, initialRunId, restored, readOnly = false, onResult, onAccepted, onExpired, onRemoved }: {
+  name: string; doc: HostedDocument; client: HostedClient; runtime: Runtime | null; session: Session | null; initialRunId?: string; restored?: boolean; readOnly?: boolean; onResult?: (runId: string, name: string, open: boolean) => void; onAccepted: (run: HostedRun) => void; onExpired: () => void; onRemoved: () => void;
 }) {
   const [profile, setProfile] = useState(runtime?.pipeline_profile ?? "unattended-v1");
   const [pages, setPages] = useState("");
@@ -323,7 +337,7 @@ function HostedDocumentAnalysis({ name, doc, client, runtime, session, initialRu
           if (!live) return;
           const finished = await client.pollRun(first, next => { if (live) setRun(next); }, controller.signal);
           if (live && !controller.signal.aborted) await showResult(finished, controller.signal);
-        } else {
+        } else if (!readOnly) {
           const next = restored ? await client.getScopePlan(doc.document_id, controller.signal) : await client.scopePlan(doc.document_id);
           if (live) applyScope(next);
         }
@@ -331,7 +345,7 @@ function HostedDocumentAnalysis({ name, doc, client, runtime, session, initialRu
       finally { if (live) { setBusy(""); setLoadingResult(false); } }
     })();
     return () => { live = false; controller.abort(); };
-  }, [client, doc.document_id, fail, initialRunId, restored]);
+  }, [client, doc.document_id, fail, initialRunId, restored, readOnly]);
 
   useEffect(() => {
     if (!result || !run || focusedRun.current === run.run_id) return;
@@ -373,7 +387,7 @@ function HostedDocumentAnalysis({ name, doc, client, runtime, session, initialRu
     return reportYear !== String(scope?.reporting_scope?.report_year ?? "") || periodStart !== (scope?.reporting_scope?.period_start ?? "") || periodEnd !== (scope?.reporting_scope?.period_end ?? "");
   }
   async function saveScope() {
-    if (!doc || !scope) return;
+    if (readOnly || !doc || !scope) return;
     setError(""); setBusy("범위 저장 중");
     try {
       applyScope(await client.editScope(doc.document_id, scope,
@@ -381,7 +395,7 @@ function HostedDocumentAnalysis({ name, doc, client, runtime, session, initialRu
     } catch (err) { fail(err); } finally { setBusy(""); }
   }
   async function start() {
-    if (!doc || !scope) return;
+    if (readOnly || !doc || !scope) return;
     setError(""); setBusy("접수 중");
     abort.current?.abort();
     const controller = new AbortController(); abort.current = controller;
@@ -413,12 +427,12 @@ function HostedDocumentAnalysis({ name, doc, client, runtime, session, initialRu
     try { if (run?.result_url) setResult(await client.getResult(run.result_url, undefined, UX1_HASH)); } catch (err) { fail(err); }
   }
   async function cancel() {
-    if (!run) return; setError(""); setBusy("취소 중");
+    if (readOnly || !run) return; setError(""); setBusy("취소 중");
     try { const cancelled = await client.cancelRun(run.run_id); abort.current?.abort(); setRun(cancelled); } catch (err) { fail(err); }
     finally { setBusy(""); }
   }
   async function remove() {
-    if (!doc || !window.confirm("업로드한 원본 PDF와 분석 기록을 삭제합니다. 계속할까요?")) return;
+    if (readOnly || !doc || !window.confirm("업로드한 원본 PDF와 분석 기록을 삭제합니다. 계속할까요?")) return;
     setError(""); setBusy("삭제 중");
     try {
       const deletion = await client.deleteDocument(doc.document_id);
@@ -449,7 +463,8 @@ function HostedDocumentAnalysis({ name, doc, client, runtime, session, initialRu
     {result && run && validResourceId(run.run_id) && <button className="hosted-secondary" type="button" onClick={() => void copyResultLink()}>{linkCopied ? "결과 링크 복사됨" : "결과 링크 복사"}</button>}
     <p className="hosted-note">{scope ? `선택 요약: 주장 ${scope.plan.selected_claim_pages.length}쪽 · 근거 검색 ${scope.plan.selected_evidence_pages.length}쪽` : run ? `접수한 선택 범위 ${run.selected_pages.length}쪽` : "분석 범위를 준비하고 있습니다."}</p>
     {!result && runtime?.accept_new_runs === false && <p className="hosted-error">현재 새 분석 접수가 중지되어 있습니다.</p>}
-    <details className="hosted-scope" open={!run}><summary>분석 범위와 보고기간</summary><div className="hosted-pages">
+    {readOnly && <p className="hosted-note">공개 분석 사례 · 읽기 전용</p>}
+    {!readOnly && <details className="hosted-scope" open={!run}><summary>분석 범위와 보고기간</summary><div className="hosted-pages">
       <p>업로드 완료 · 총 {doc.page_count}쪽. 자동 선택: 주장 최대 10쪽 · 근거 검색 최대 30쪽(주장 포함). 수정하지 않으면 이 범위로 진행합니다.</p>
       {!scope && <button type="button" disabled={!!busy} onClick={() => { setBusy("자동 범위 계획 생성 중"); void client.scopePlan(doc.document_id).then(applyScope).catch(fail).finally(() => setBusy("")); }}>자동 범위 계획 생성</button>}
       {scope && <>
@@ -484,8 +499,8 @@ function HostedDocumentAnalysis({ name, doc, client, runtime, session, initialRu
       </select></label>
       <p className="hosted-note">선택한 범위의 원문 근거를 점검합니다. 원문 확인이 끝나지 않은 문장은 판정 보류로 표시합니다.</p>
 
-    </div></details>
-    {!result && run?.status !== "completed" && run?.status !== "partial_blocked" && <div className="hosted-start-row">
+    </div></details>}
+    {!readOnly && !result && run?.status !== "completed" && run?.status !== "partial_blocked" && <div className="hosted-start-row">
     <p className="hosted-note">{budgetNotice(runtime?.limits)}</p>
     <button className="hosted-primary" type="button" disabled={!!busy || running || !scope || scopeConflict || providerBlocked || runtime?.accept_new_runs === false} onClick={() => void start()}>분석 시작</button>
     </div>}
@@ -496,12 +511,12 @@ function HostedDocumentAnalysis({ name, doc, client, runtime, session, initialRu
     {!(result && run) && (loadingResult && !error && (!run || terminalStatuses.includes(run.status))
       ? <div className="result-skeleton" role="status" aria-label="분석 결과 불러오는 중"><i className="result-skeleton-title" /><i className="result-skeleton-line" /><span className="result-skeleton-tabs"><i /><i /><i /><i /></span><i className="result-skeleton-block" /></div>
       : intakeSurface)}
-    {result && run && <div ref={resultRegion} className="hosted-result-region"><ResultView reportName={documentName(doc) ?? reportTitle(name)} companyName={ux1CompanyName(doc)} pageCount={doc.page_count} selectedPages={run.selected_pages} runStatus={run.status} result={result} role={session?.role} client={client} runId={run.run_id} onReload={reloadResult} runSummary={intakeSurface} /></div>}
-    {running && <button className="hosted-secondary" type="button" disabled={!!busy} onClick={() => void cancel()}>분석 취소</button>}
-    <div className="hosted-document-footer">
+    {result && run && <div ref={resultRegion} className="hosted-result-region"><ResultView reportName={documentName(doc) ?? reportTitle(name)} companyName={ux1CompanyName(doc)} pageCount={doc.page_count} selectedPages={run.selected_pages} runStatus={run.status} result={result} role={session?.role} readOnly={readOnly} client={client} runId={run.run_id} onReload={reloadResult} runSummary={intakeSurface} /></div>}
+    {!readOnly && running && <button className="hosted-secondary" type="button" disabled={!!busy} onClick={() => void cancel()}>분석 취소</button>}
+    {!readOnly && <div className="hosted-document-footer">
     {doc && <p className="hosted-note">업로드한 PDF는 올린 본인 또는 작업 공간 관리자가 삭제할 수 있습니다. 삭제하면 원본과 분석 기록이 함께 지워집니다.</p>}
     {doc && <button type="button" className="hosted-danger" disabled={!!busy} onClick={() => void remove()}>업로드한 PDF 삭제</button>}
-    </div>
+    </div>}
 
     {busy && <p role="status">{busy}…</p>}
     {error && <p className="hosted-error" role="alert">{error}</p>}

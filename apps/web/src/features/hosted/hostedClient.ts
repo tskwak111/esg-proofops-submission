@@ -25,7 +25,9 @@ export function budgetNotice(limits: Record<string, unknown> = {}): string {
     });
   return rows.length ? `분석 비용 한도: ${rows.join(" · ")}` : "분석 비용 한도는 현재 서비스 설정을 따릅니다.";
 }
-export type Session = { user_id: string; tenant_id: string | null; role: string | null; csrf_token: string; expires_at: string };
+export type GuestAccess = { available: boolean; until: string | null; fresh_runs_per_day: number; showcase: boolean };
+export type GuestSession = { until: string | null; fresh_runs_today: number; fresh_runs_limit: number };
+export type Session = { user_id: string; tenant_id: string | null; role: string | null; csrf_token: string; expires_at: string; guest?: GuestSession | null };
 export type HostedDocument = DocumentMetadata & { document_id: string; page_count: number; size_bytes: number; expires: number; sha256: string; display_name?: string; company_name?: string };
 export type ListedDocument = HostedDocument & { display_name: string; uploaded_at: string };
 export type ListedRun = HostedRun & { created_at: string };
@@ -161,6 +163,10 @@ export class HostedApiError extends Error {
 }
 
 const codeMessages: Record<string, string> = {
+  GUEST_DAILY_LIMIT: "오늘 새 보고서 분석 하루 한도에 도달했습니다. 올린 보고서는 유지됩니다. 미리 분석된 분석 사례를 확인하거나 내일 다시 이용해 주세요.",
+  GUEST_UPLOAD_LIMIT: "오늘 업로드 한도에 도달했습니다. 미리 분석된 분석 사례를 확인하거나 내일 다시 이용해 주세요.",
+  GUEST_SESSION_RATE_LIMIT: "접속 요청이 많습니다. 잠시 후 다시 시도해 주세요. 관리자 계정이 있다면 관리자 로그인을 이용해 주세요.",
+  GUEST_ACCESS_CLOSED: "공개 이용 기간이 종료되었거나 현재 닫혀 있습니다. 관리자 로그인으로 접속해 주세요.",
   SCOPE_PLAN_FAILED: "읽을 수 있는 환경 본문을 찾지 못했습니다. 스캔·불명확한 쪽을 확인해 주세요. 분석 비용은 발생하지 않았습니다.",
   SCOPE_INSPECTION_FAILED: "자동 범위 계획을 만들지 못했습니다. 파일 내부 처리 한도 또는 서버 상태를 확인해 주세요.",
   SCOPE_CONFLICT: "분석 범위가 변경되었습니다. 최신 계획을 확인해 주세요.",
@@ -272,7 +278,7 @@ export function createHostedClient(options: ClientOptions = {}) {
       for (;;) {
         try { return await requestOnce<T>(method, path, init); }
         catch (error) {
-          if (method !== "GET" || init.signal?.aborted || !(error instanceof HostedApiError) || !(error.status === 0 || error.status >= 500)) throw error;
+          if (method !== "GET" || init.signal?.aborted || !(error instanceof HostedApiError) || !(error.status === 0 || (error.status >= 500 && error.status !== 501))) throw error;
           recovering.add(recovery); notifyConnection();
           await wait(delay, init.signal); delay = Math.min(delay * 2, 30000);
         }
@@ -336,10 +342,17 @@ export function createHostedClient(options: ClientOptions = {}) {
       const session = await request<Session>("GET", "/v1/session", { signal });
       csrf = session.csrf_token; return session;
     },
+    guestAccess: (signal?: AbortSignal) => request<GuestAccess>("GET", "/v1/guest", { signal }),
+    async guestSession(signal?: AbortSignal): Promise<Session> {
+      const session = await request<Session>("POST", "/v1/guest/session", { signal });
+      csrf = session.csrf_token; return session;
+    },
     async logout(): Promise<void> { await request<void>("POST", "/v1/auth/logout"); csrf = ""; },
     runtime: (signal?: AbortSignal) => request<Runtime>("GET", "/v1/runtime", { signal }),
     listDocuments: (cursor?: string | null, signal?: AbortSignal) => request<CollectionPage<ListedDocument>>("GET", `/v1/documents?${new URLSearchParams({ limit: "20", ...(cursor ? { cursor } : {}) })}`, { signal }),
     listRuns: (cursor?: string | null, signal?: AbortSignal) => request<CollectionPage<ListedRun>>("GET", `/v1/runs?${new URLSearchParams({ limit: "20", ...(cursor ? { cursor } : {}) })}`, { signal }),
+    listShowcaseDocuments: (cursor?: string | null, signal?: AbortSignal) => request<CollectionPage<ListedDocument>>("GET", `/v1/showcase/documents?${new URLSearchParams({ limit: "20", ...(cursor ? { cursor } : {}) })}`, { signal }),
+    listShowcaseRuns: (cursor?: string | null, signal?: AbortSignal) => request<CollectionPage<ListedRun>>("GET", `/v1/showcase/runs?${new URLSearchParams({ limit: "20", ...(cursor ? { cursor } : {}) })}`, { signal }),
     getSourceManifest: (runId: string, page: number, claimId: string, signal?: AbortSignal) =>
       request<SourcePageManifest>("GET", `/v1/runs/${encodeURIComponent(runId)}/source-pages/${page}/manifest?${new URLSearchParams({ claim_id: claimId })}`, { signal }),
     async getSourceImage(manifest: SourcePageManifest, signal?: AbortSignal): Promise<Blob> {

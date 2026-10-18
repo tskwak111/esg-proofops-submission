@@ -148,6 +148,11 @@ class HostedSettings:
     daily_runs: int = 10
     access_config: Path | None = None
     auth_trusted_proxies: tuple[str, ...] = ()
+    guest_access_until: datetime | None = None
+    guest_fresh_runs_per_day: int = 2
+    guest_sessions_per_ip_hour: int = 30
+    guest_uploads_per_day: int = 60
+    showcase_tenant: str = ""
     rc1_reuse_enabled: bool = False
     retain_failed_analysis: bool = True
     failure_diagnostics_max_bytes: int = 512 * 1024 * 1024
@@ -156,6 +161,24 @@ class HostedSettings:
         from urllib.parse import urlsplit
 
         parsed = urlsplit(self.origin)
+        if self.guest_access_until is not None and (
+            not isinstance(self.guest_access_until, datetime)
+            or self.guest_access_until.utcoffset() is None
+        ):
+            raise ValueError("HOSTED_GUEST_ACCESS_UNTIL must include a timezone")
+        if (
+            type(self.guest_fresh_runs_per_day) is not int
+            or not 1 <= self.guest_fresh_runs_per_day <= 5
+            or type(self.guest_sessions_per_ip_hour) is not int
+            or self.guest_sessions_per_ip_hour < 1
+            or type(self.guest_uploads_per_day) is not int
+            or self.guest_uploads_per_day < 1
+        ):
+            raise ValueError("HOSTED_GUEST_LIMIT_INVALID")
+        if not isinstance(self.showcase_tenant, str):
+            raise ValueError("HOSTED_SHOWCASE_TENANT must be a UUID or empty")
+        if self.showcase_tenant:
+            identifier(self.showcase_tenant)
         if type(self.retain_failed_analysis) is not bool or (
             type(self.failure_diagnostics_max_bytes) is not int
             or not 16384 <= self.failure_diagnostics_max_bytes <= 512 * 1024 * 1024
@@ -263,6 +286,13 @@ class HostedSettings:
                 for value in env.get("HOSTED_AUTH_TRUSTED_PROXIES", "").split(",")
                 if value.strip()
             ),
+            guest_access_until=datetime.fromisoformat(env["HOSTED_GUEST_ACCESS_UNTIL"])
+            if env.get("HOSTED_GUEST_ACCESS_UNTIL")
+            else None,
+            guest_fresh_runs_per_day=int(env.get("HOSTED_GUEST_FRESH_RUNS_PER_DAY", "2")),
+            guest_sessions_per_ip_hour=int(env.get("HOSTED_GUEST_SESSIONS_PER_IP_HOUR", "30")),
+            guest_uploads_per_day=int(env.get("HOSTED_GUEST_UPLOADS_PER_DAY", "60")),
+            showcase_tenant=env.get("HOSTED_SHOWCASE_TENANT", ""),
         )
 
 
@@ -279,6 +309,8 @@ class SQLiteSessions:
         with self.store.transaction(readonly=True) as db:
             row = db.execute("SELECT * FROM sessions WHERE sid_hash=?", (digest(sid),)).fetchone()
             valid = row is not None and self.store.access.session_valid(db, row, time.time())
+            if row is not None and row["user_id"].startswith("guest:"):
+                valid = valid and self.store.guest.available(time.time())
         if row is None:
             return None
         return SessionRecord(
@@ -364,10 +396,13 @@ class HostedStore:
         self.sessions = SQLiteSessions(self)
         self.memberships = SQLiteMemberships(self)
         from proofops_api.hosted_access import AccessPasswords
+        from proofops_api.hosted_guest import GuestAccess
 
         self.access = AccessPasswords(self)
+        self.guest = GuestAccess(self)
         with self.transaction() as db:
             self.access.migrate(db)
+            self.guest.migrate(db)
             db.execute("CREATE TABLE IF NOT EXISTS hosted_schema (version INTEGER PRIMARY KEY)")
             versions = db.execute("SELECT version FROM hosted_schema").fetchall()
             if versions and [row[0] for row in versions] != [1]:
@@ -539,7 +574,7 @@ class HostedStore:
     def invite(self, tenant: str, user: str, role: str, *, now: float) -> str:
         identifier(tenant)
         MembershipRecord(tenant, user, role, "active")  # type: ignore[arg-type]
-        if not user or len(user) > 200 or user.startswith("access-password:"):
+        if not user or len(user) > 200 or user.startswith(("access-password:", "guest:")):
             raise ValueError("invalid user")
         code = secrets.token_urlsafe(32)
         with self.transaction() as db:
@@ -651,8 +686,9 @@ class HostedStore:
 
     def _require_document_owner(self, db: Any, auth: Any, document: str) -> None:
         from proofops_api.hosted_access import is_organizer
+        from proofops_api.hosted_guest import ShowcaseReader
 
-        if is_organizer(auth):
+        if is_organizer(auth) and not isinstance(auth, ShowcaseReader):
             owner = db.execute(
                 "SELECT user_hash FROM document_owners WHERE tenant_id=? AND document_id=?",
                 (auth.tenant_id, document),
@@ -701,6 +737,7 @@ class HostedStore:
                 now,
             ),
         )
+        self.guest.audit(db, auth, route, resource, now)
 
     def upload(self, auth: Any, content: bytes, key: str, *, now: float) -> dict:
         """Compatibility for bounded local callers; HTTP uses upload_file directly."""
@@ -726,6 +763,7 @@ class HostedStore:
                 return dict(
                     self._document(db, auth.tenant_id, replay)
                 ) | self.ux1_document_metadata(auth.tenant_id, replay)
+            self.guest.check_upload(db, auth, now)
         doc = str(uuid4())
         with TemporaryDirectory(prefix="proofops-upload-", dir=self.settings.root) as scratch:
             security: dict[str, Any] = {}
@@ -751,6 +789,7 @@ class HostedStore:
                     return dict(
                         self._document(db, auth.tenant_id, replay)
                     ) | self.ux1_document_metadata(auth.tenant_id, replay)
+                self.guest.check_upload(db, auth, now)
                 path = self.document_dir(auth.tenant_id, doc)
                 path.mkdir(parents=True, mode=0o700)
                 copy_verified_file(source, path / "original.pdf", sha)
@@ -1164,6 +1203,8 @@ class HostedStore:
             raise HostedError("FORBIDDEN", 403)
         if force_fresh and not auth.has_capability("admin"):
             raise HostedError("FORBIDDEN", 403)
+        if auth.tenant_id == self.settings.showcase_tenant:
+            raise HostedError("SHOWCASE_READ_ONLY", 403)
         if not self.settings.accept_runs or self.settings.backend != "r108":
             raise HostedError("ANALYSIS_DISABLED", 503)
         with self.transaction() as db:
@@ -1278,6 +1319,7 @@ class HostedStore:
                     )
                     if reused is not None:
                         return reused
+            self.guest.check_fresh_run(db, auth, now)
             user = self.user_hash(auth.user_sub)
             # Per-user slot pressure queues work; admission still reserves the
             # complete envelope and checks the global queue, count and USD caps.
@@ -2032,6 +2074,7 @@ class HostedStore:
                 (run,),
             )
             self._settle_envelope(db, run)
+            self.guest.audit(db, auth, "cancel", run, now)
             return self._project_run(self._run(db, auth.tenant_id, run), db)
 
     def budget_totals(self) -> dict:
@@ -2075,6 +2118,7 @@ class HostedStore:
                     "tenant_id=? AND document_id=?",
                     (auth.tenant_id, document),
                 )
+                self.guest.audit(db, auth, "delete", document, now)
         # Tombstone is durable before any filesystem deletion.
         return self._purge(auth.tenant_id, document, now)
 
@@ -2179,6 +2223,7 @@ class HostedStore:
             backups = db.execute("SELECT path FROM backups WHERE expires<=?", (now,)).fetchall()
             db.execute("DELETE FROM sessions WHERE expires<=? OR idle<=? OR revoked=1", (now, now))
             self.access.maintain(db, now, self.settings.audit_days)
+            self.guest.maintain(db, now)
             db.execute("DELETE FROM invitations WHERE expires<=? OR used=1", (now,))
             db.execute("DELETE FROM rate_limits WHERE bucket<?", (int(now // 60) - 2,))
             cutoff = now - self.settings.audit_days * 86400
@@ -2262,6 +2307,8 @@ class HostedStore:
                     "access_login_failures",
                     "access_login_locks",
                     "access_auth_audit",
+                    "guest_session_starts",
+                    "guest_audit",
                 ):
                     destination.execute(f"DELETE FROM {table}")
                 destination.commit()

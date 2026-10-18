@@ -37,6 +37,17 @@ test('shared result links with only a tab param still open the run; other querie
   assert.equal(runIdFromResultLink(`/analyze?tab=claims&tab=info#run-${runA}`), null);
 });
 
+test('inline demo report links restore the selected result tab without a hash', () => {
+  global.window={location:{pathname:'/demo',search:`?report=${runA}&tab=source`,hash:''}};
+  try {
+    const html=render(React.createElement(ResultView,{result:fixture,runId:runA,readOnly:true}));
+    assert.match(tabs(html)[2],/aria-selected="true"/);
+    const other=render(React.createElement(ResultView,{result:fixture,runId:runB,readOnly:true}));
+    assert.match(tabs(other)[0],/aria-selected="true"/);
+    assert.equal(resultTabUrl(window.location,runA,'info'),`/demo?report=${runA}&tab=info#run-${runA}`);
+  } finally {delete global.window;}
+});
+
 test('result renders an ARIA tablist; only the selected panel is visible and the rest stay hidden', () => {
   const html = render(React.createElement(ResultView, { result: fixture, runId: runA }));
   assert.match(html, /role="tablist" aria-label="결과 보기 방식"/);
