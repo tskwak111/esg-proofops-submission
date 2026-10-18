@@ -12,7 +12,7 @@ import { SourceSplitView, type SourceSelection } from "./SourceSplitView";
 import { MissingEvidenceCard } from "../claims/MissingEvidenceCard";
 import { ProvisionalHold } from "../claims/ProvisionalHold";
 import { HostedApiError, holdReasonText, newIdempotencyKey, completedRunPresentation, resultExecution, type HostedClient, type HostedResult, type ResultClaim, type ResultDecision, type ResultReview } from "./hostedClient";
-import { holdReasonLabel, claimSourceText, claimProcessingFailed, claimEvidenceLine, w18HoldReason, allowedChoices, buildResolveBody, candidateRefs, claimHoldReasons, decisionLine, elementStateText, gradeSummary, groupClaimOccurrences, holdEvidenceNoteText, matchesResultFilters, openReviewFor, pageLabel, refKey, resultBrowserItem, resultBrowserSummary, resultElementText, resultSourceFailures, reviewStatusText, tableObservationText, trackText, type ElementChoice, type ResultFilters } from "./resultModel";
+import { pageRanges, resultScope, holdReasonLabel, claimSourceText, claimProcessingFailed, claimEvidenceLine, w18HoldReason, allowedChoices, buildResolveBody, candidateRefs, claimHoldReasons, decisionLine, elementStateText, gradeSummary, groupClaimOccurrences, holdEvidenceNoteText, matchesResultFilters, openReviewFor, pageLabel, refKey, resultBrowserItem, resultBrowserSummary, resultElementText, resultSourceFailures, reviewStatusText, tableObservationText, trackText, type ElementChoice, type ResultFilters } from "./resultModel";
 
 export function canReview(role: string | null | undefined) { return role === "reviewer" || role === "admin"; }
 
@@ -86,6 +86,7 @@ export function ResultView({ result, reportName, companyName, pageCount, selecte
   const counts = useMemo(() => resultBrowserSummary(result), [result]);
   const execution = resultExecution(result, runStatus);
   const completion = completedRunPresentation(result, runStatus);
+  const scope = resultScope(result, pageCount ?? result.w16_source_document?.page_count, selectedPages);
   const failures = resultSourceFailures(result);
   const extraction = result.pipeline?.extraction_outcome;
   const holdCodes = [...new Set([...result.hold_reasons, ...(result.hold_reason_details ?? []).map(detail => detail.code),
@@ -124,7 +125,7 @@ export function ResultView({ result, reportName, companyName, pageCount, selecte
   return <section ref={root} className={`hosted-result ${detailOpen ? "is-detail-open" : ""}`} aria-label="분석 결과" data-testid="hosted-result">
     <header className="demo-heading result-heading"><div><p className="eyebrow">분석 결과{typeof result.pipeline?.reporting_scope?.report_year === "number" ? ` · ${result.pipeline.reporting_scope.report_year}` : ""}</p>
       <h2 tabIndex={-1} data-testid="result-heading">{reportName ?? (companyName ? `${companyName} · 분석 결과` : "보고서 분석 결과")}</h2>
-      {completion?.kind === "partial" && <p className="hosted-note" data-testid="result-completion-status">{completion.title}</p>}
+      {completion && <p className="hosted-note" data-testid="result-completion-status">{completion.title}</p>}
       <p>보고서의 주장을 원문 근거와 대조한 결과입니다. 문장을 선택하면 판정 근거를 확인할 수 있습니다.</p></div><div className="ux1-export"><label>보고서 구성 <select value={reportMode} onChange={event => setReportMode(event.target.value as "summary" | "full")}><option value="summary">요약본</option><option value="full">전체 상세</option></select></label><button type="button" className="hosted-primary result-export" onClick={() => downloadResultReport(result, { reportMode, reportName, companyName, pageCount, selectedPages, runStatus, runId })}>결과 보고서 내보내기</button></div></header>
     <div className="result-tabs-anchor" ref={tabsAnchor} aria-hidden="true" />
     <ResultTabs base={tabBase} tabs={resultTabs} selected={tab} onSelect={selectTab} />
@@ -143,6 +144,22 @@ export function ResultView({ result, reportName, companyName, pageCount, selecte
           : <>{execution.kind !== "completed" && <div className={`result-execution ${execution.kind}`} role="status"><h3>{execution.title}</h3><p>{execution.meaning}</p></div>}{notice}</>;
       })()}
       <ResultDashboard result={result} pageCount={pageCount} selectedPages={selectedPages} onHoldReason={openHoldReason} />
+      <details className="result-scope-details"><summary>분석 범위와 집계 기준</summary>
+      <details className="result-count-note"><summary>집계와 판정 기준</summary>
+        <p>확정 {counts.confirmed}{counts.provisional > 0 && <> + 추가 확인 필요 {counts.provisional}</>} + 보류 {counts.hold} = 추출 주장 {counts.total}건. 각 주장은 한 상태로만 집계합니다. 원문 확인 수는 이 합계에 더하지 않습니다.</p>
+        <p>원문 확인 {counts.verified} / {counts.total}건은 문구·위치 대조 결과이며 등급 확정과는 별개입니다.{counts.provisional > 0 && " 추가 확인 필요 등급은 이전 버전에서 확인된 최소 수준으로, 추가 근거에 따라 달라질 수 있습니다."}</p>
+        {counts.confirmed === 0 && <p>확정 조건을 충족한 주장은 0건입니다. E0 등급이나 보고서 전체의 근거 부재를 뜻하지 않습니다.</p>}
+      </details>
+      {counts.stageSeconds !== null && <p className="caption">처리 시간 <strong>{Math.round(counts.stageSeconds)}초</strong> · 단계 합계, 대기시간 제외</p>}
+      {result.pipeline?.reporting_scope?.period_start && result.pipeline.reporting_scope.period_end && <p className="hosted-note">보고 범위: {result.pipeline.reporting_scope.period_start} ~ {result.pipeline.reporting_scope.period_end}</p>}
+      {result.pipeline?.reporting_scope?.warning && <p className="hosted-note" role="status">{result.pipeline.reporting_scope.warning}</p>}
+      <section className="result-scope" aria-label="분석 범위"><h3>분석 범위 · 원본 PDF 쪽</h3>
+        <p><strong>선택 {scope.pages.length}쪽{scope.total !== null ? ` / 전체 ${scope.total}쪽` : ""}</strong> · {scope.total !== null && scope.pages.length === scope.total ? "전체 쪽 선택" : "선택 범위만 분석"}</p>
+        <p>분석에 포함한 쪽: {pageRanges(scope.pages) || "쪽 정보 미제공"}</p>
+        {scope.claims && <p>주장 추출 대상: {pageRanges(scope.claims) || "없음"} · 그 외 선택 쪽은 근거 탐색 범위입니다.</p>}
+        {scope.unselected ? <details><summary>미선택 {scope.unselected.length}쪽 · 주장 추출 대상에서 제외</summary><p>{pageRanges(scope.unselected) || "없음"}</p></details> : <p>전체 쪽 수가 없어 미선택 범위를 계산할 수 없습니다. 다른 쪽의 검증·연결된 근거는 주장 상세에 표시합니다.</p>}
+      </section>
+      </details>
       <ExecutiveSummary result={result} />
     </>)}
     {panel("claims", !result.claims.length ? <p className="empty">{execution.kind === "completed"

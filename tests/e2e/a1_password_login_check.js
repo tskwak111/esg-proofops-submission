@@ -25,7 +25,7 @@ async page => {
     else throw new Error('Unexpected fixture API route');
     await route.fulfill({status,contentType:'application/json',headers:status===429?{'Retry-After':'900'}:{},body:status===204?'':JSON.stringify(body)});
   });
-  await page.goto(`${base}/analyze`);
+  await page.goto(`${base}/analyze?operator=1`);
   const input = page.getByLabel('초대 코드 또는 접근 비밀번호', {exact:true});
   await input.waitFor();
   if (await input.getAttribute('type') !== 'password') throw new Error('Credential is visible');
@@ -38,14 +38,18 @@ async page => {
   lock=false;
   await input.fill('fixture-only-password');
   await page.getByRole('button',{name:'입장',exact:true}).click();
+  await page.getByRole('link',{name:'보관함으로 이동'}).click();
   await page.getByRole('region',{name:'이전 보고서 내역',exact:true}).waitFor();
   if (await input.count()) throw new Error('Credential field remained after login');
   await page.screenshot({path:`${output}/organizer-fixture.png`,fullPage:true});
-  await page.getByRole('button',{name:'로그아웃',exact:true}).click();
+  // Expire the intercepted session before checking the other login method.
+  loggedIn=false;
+  await page.goto(`${base}/analyze?operator=1`);
   await input.waitFor();
   await page.getByRole('combobox', {name:'로그인 방식',exact:true}).selectOption('invitation');
   await input.fill('fixture-invitation-code-01234567890123456789');
   await page.getByRole('button',{name:'입장',exact:true}).click();
+  await page.getByRole('link',{name:'보관함으로 이동'}).click();
   await page.getByRole('region',{name:'이전 보고서 내역',exact:true}).waitFor();
   if (failures.length || loginCalls!==2 || invitationCalls!==1) throw new Error('Login fixture failed');
   return {status:'passed',password_attempts:loginCalls,invitation_attempts:invitationCalls,lock_notice:true,credential_cleared:true,actual_requests:0};

@@ -73,47 +73,47 @@ const smoke = async (page, data) => {
   const goto=async(path,next='open',identity=null)=>{await page.goto('about:blank');mode=next;role=identity;calls.length=0;await page.goto(data.base+path);};
   const visible=selector=>page.locator(selector).waitFor({state:'visible'});
   const shot=async name=>page.screenshot({path:`${data.out}/${name}.png`,fullPage:true});
+  const adminLogin=async()=>{
+    if(await page.locator('.menu-toggle').isVisible()) {await page.locator('.menu-toggle').click();await page.locator('.nav-admin-login').click();}
+    else await page.locator('.site-header .admin-login').click();
+  };
   const noOverflow=async()=>check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Horizontal page overflow');
   for(const width of [1440,390]) {
     await page.setViewportSize({width,height:900});
     await goto('/analyze');
     await visible('input[type=file]');
     check(await page.locator('[data-testid=guest-banner]').isVisible(),'Guest banner shown');
-    check(await page.locator('input[type=password]').count()===1&&!await page.locator('input[type=password]').isVisible(),'Password form is folded');
+    check(await page.locator('input[type=password]').count()===0,'Password form stays behind header login');
     check(calls.filter(c=>c.path==='/v1/guest/session').length===1,'One guest session per entry');
     check(!calls.some(c=>c.path.startsWith('/v1/showcase/')),'Own inventory never reads showcase');
     await noOverflow();await shot(`guest-analyze-${width}`);
-    await page.getByText('관리자 로그인',{exact:true}).click();
+    await adminLogin();
     await visible('input[type=password]');
     await page.locator('input[type=password]').fill('fixture-operator-password');
     await page.getByRole('button',{name:'입장',exact:true}).click();
-    await page.getByText('로그인됨 · 관리자').waitFor();
+    await page.locator('input[type=password]').waitFor({state:'detached'});
+    await visible('input[type=file]');
     check(calls.some(c=>c.path==='/v1/auth/access-password'),'Operator login preserved');
     passed.push(`${width}px automatic entry, folded/operator login, own inventory`);
 
     await goto('/demo');
-    await page.locator('.example-chip').nth(11).waitFor();
-    check(await page.locator('.example-chip').count()===12,'All twelve showcase reports');
-    check(!calls.some(c=>['/v1/documents','/v1/runs'].includes(c.path)),'Showcase never reads private catalog');
+    await page.getByRole('heading',{name:'분석 사례 · NAVER 2025',exact:true}).waitFor();
     await page.getByTestId('result-heading').filter({hasText:'NAVER 2025 통합보고서'}).waitFor();
+    check(await page.getByRole('navigation',{name:'보고서 선택'}).count()===0,'No company selector');
+    check(!calls.some(c=>['/v1/documents','/v1/runs'].includes(c.path)),'Showcase never reads private catalog');
     check(new URL(page.url()).searchParams.get('report')===runs[1].run_id,'NAVER is default even when it is not the first report');
     check(new URL(page.url()).pathname==='/demo','Result opens inline without /analyze navigation');
-    check((await page.locator('.example-chip[aria-current=true]').innerText()).includes('확정 3 · 보류 0'),'Compact counts visible');
+    check(await page.getByTestId('example-metrics').locator(':scope > div').count()===4,'Four editorial metrics');
+    check((await page.getByTestId('example-metrics').innerText()).includes('확정'),'Editorial counts visible');
     check(!await page.getByText('로그인 후 분석 사례를 확인하세요').count(),'No guest login wall');
+    const resultReads=calls.filter(c=>c.path.endsWith('/result'));
+    check(resultReads.length===1&&resultReads[0].path.includes(runs[1].run_id),'Only NAVER result fetched');
+    check(await page.getByText('다른 보고서는 분석 페이지에서 PDF를 올리면 바로 확인할 수 있습니다').count()===1,'Other reports 안내');
     await noOverflow();await shot(`demo-after-${width}`);
-    const resultReads=calls.filter(c=>c.path.endsWith('/result')).length;
-    await page.locator('.example-chip').filter({hasText:'LG화학'}).click();
-    await page.getByTestId('result-heading').filter({hasText:'LG화학'}).waitFor();
-    check(new URL(page.url()).searchParams.get('report')===runs[0].run_id,'Company selector updates URL');
-    await page.goBack();await page.getByTestId('result-heading').filter({hasText:'NAVER'}).waitFor();
-    await page.goForward();await page.getByTestId('result-heading').filter({hasText:'LG화학'}).waitFor();
-    await page.locator('.example-chip').filter({hasText:'NAVER'}).click();
-    await page.getByTestId('result-heading').filter({hasText:'NAVER'}).waitFor();
-    check(calls.filter(c=>c.path.endsWith('/result')).length===resultReads,'Selection reuses loaded results without another API fetch');
     await visible('[data-testid=result-heading]');
     for(const label of ['업로드한 PDF 삭제','분석 시작','자동 범위 계획 생성','범위 수정 저장','검토 제출']) check(!await page.getByRole('button',{name:label,exact:true}).count(),`No showcase mutation: ${label}`);
-    check(await page.getByRole('tablist',{name:'결과 보기 방식'}).getByRole('tab').count()===4,'Four result tabs preserved');
-    check(!(await page.locator('body').innerText()).includes('잠정'),'No forbidden provisional wording');
+    check(await page.getByRole('tablist',{name:'결과 보기 방식'}).getByRole('tab').count()===3,'Three result tabs');
+    check(!/잠정|예비|체험/.test(await page.locator('body').innerText()),'No forbidden wording');
     await noOverflow();await shot(`guest-result-${width}`);
     await page.locator('.result-tabs [id$="-source"]').click();
     if(width===390) await page.getByRole('button',{name:'원본 PDF',exact:true}).click();
@@ -122,14 +122,16 @@ const smoke = async (page, data) => {
     check(calls.some(c=>c.path.endsWith('/original')),'Source PDF uses existing original endpoint');
     await noOverflow();await shot(`guest-source-${width}`);
     await page.locator('.result-tabs [id$="-overview"]').click();
-    const popupPromise=page.waitForEvent('popup');
-    await page.getByRole('button',{name:'PDF 리포트 저장',exact:true}).click();
-    const popup=await popupPromise;
-    await popup.waitForLoadState();
-    check((await popup.locator('body').innerText()).includes('NAVER 2025 통합보고서'),'Export contains selected report name');
-    await popup.close();
+    for (const mode of ['summary','full']) {
+      await page.getByRole('combobox',{name:'보고서 구성'}).selectOption(mode);
+      const downloadPromise=page.waitForEvent('download');
+      await page.getByRole('button',{name:'결과 보고서 내보내기',exact:true}).click();
+      const download=await downloadPromise;
+      check(download.suggestedFilename().includes('NAVER'),'Export names selected company');
+      await download.saveAs(`${data.out}/guest-${mode}-${width}.html`);
+    }
     check(!calls.some(c=>c.method!=='GET'&&c.path!=='/v1/guest/session'),'Showcase result sends no writes');
-    passed.push(`${width}px inline NAVER default, twelve company chips, URL/back/forward, result tabs, source PDF highlights, PDF export, read-only`);
+    passed.push(`${width}px inline NAVER default, single report fetch, three result tabs, source PDF highlights, summary/full export, read-only`);
   }
 
   for(const mode of ['closed','unsupported']) {
@@ -142,21 +144,21 @@ const smoke = async (page, data) => {
   passed.push('direct operator login');
   for(const [mode,text] of [['rate','접속 요청이 많습니다.'],['closed-race','공개 이용 기간이 종료되었거나 현재 닫혀 있습니다.']]) {
     await goto('/demo',mode);await page.getByRole('alert').filter({hasText:text}).waitFor();
-    await page.getByRole('link',{name:'관리자 로그인',exact:true}).click();await visible('input[type=password]');
+    await adminLogin();await visible('input[type=password]');
     passed.push(`${mode} Korean error and operator recovery`);
   }
-  await goto('/demo','fallback','guest');await page.locator('.example-chip').waitFor();
-  check(await page.locator('.example-chip').count()===1,'Unsupported showcase uses only own report');
+  await goto('/demo','fallback','guest');await page.getByTestId('result-heading').waitFor();
+  check(await page.getByTestId('result-heading').count()===1,'Unsupported showcase uses only own report');
   check(calls.some(c=>c.path==='/v1/documents')&&calls.some(c=>c.path==='/v1/runs'),'Tenant fallback loads both lists');
   passed.push('showcase 404 tenant fallback');
   await goto(`/demo?report=${runs[2].run_id}&tab=claims`,'operator','admin');
-  await page.getByTestId('result-heading').filter({hasText:'Kakao'}).waitFor();
+  await page.getByTestId('result-heading').filter({hasText:'NAVER'}).waitFor();
   await page.locator('.claim-item').first().click();
   check(await page.getByRole('form',{name:'사람 검토'}).count()===0,'Inline admin showcase cannot review');
   await page.locator('.result-tabs [id$="-source"]').click();
   await page.goBack();await page.locator('.result-tabs [id$="-claims"][aria-selected=true]').waitFor();
   await page.goForward();await page.locator('.result-tabs [id$="-source"][aria-selected=true]').waitFor();
-  check(new URL(page.url()).searchParams.get('report')===runs[2].run_id,'Result tab history preserves selected report');
+  check(new URL(page.url()).searchParams.get('report')===runs[1].run_id,'Other report URL cannot replace representative report');
   passed.push('inline shared report/tab URL and tab back/forward, admin read-only');
   await goto('/demo?report=missing');
   await page.getByTestId('result-heading').filter({hasText:'NAVER'}).waitFor();
@@ -169,9 +171,8 @@ const smoke = async (page, data) => {
   await page.locator('.claim-item').first().click();
   await visible('.claim-detail');
   check(await page.getByRole('form',{name:'사람 검토'}).count()===0,'Admin cannot review showcase');
-  await page.locator('.result-tabs [id$="-info"]').click();
-  await page.locator('.hosted-run-summary > summary').click();
-  await page.getByText('공개 분석 사례 · 읽기 전용').waitFor();
+  await page.locator('.result-tabs [id$="-overview"]').click();
+  check(await page.getByRole('button',{name:'업로드한 PDF 삭제',exact:true}).count()===0,'Direct showcase has no delete');
   check(await page.getByRole('button',{name:'자동 범위 계획 생성',exact:true}).count()===0,'Admin showcase has no scope write');
   passed.push('direct showcase links are read-only for admin');
   await goto(`/runs/${ownRun.run_id}/result?tab=claims`,'operator','admin');
