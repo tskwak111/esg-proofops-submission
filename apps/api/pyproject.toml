@@ -1,7 +1,7 @@
 [project]
 name = "proofops-api"
 version = "0.0.0"
-description = "ESG ProofOps FastAPI service (TASK-000 baseline)"
+description = "ESG ProofOps FastAPI service"
 requires-python = ">=3.12"
 dependencies = [
   "proofops[auth,verification,parsing]",

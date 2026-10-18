@@ -1,7 +1,7 @@
 [project]
 name = "proofops-worker"
 version = "0.0.0"
-description = "ESG ProofOps worker service (TASK-000 baseline)"
+description = "ESG ProofOps worker service"
 requires-python = ">=3.12"
 dependencies = [
   "proofops[parsing]",

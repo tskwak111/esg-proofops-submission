@@ -2,16 +2,18 @@
 
 **지속가능성 공시의 환경 주장을 원문 근거와 연결하는 발간 전 검토 도구입니다.** PDF에서 목표·성과·관리체계 주장을 추출하고, 규칙엔진으로 입증 등급(E0–E3), 부족한 요소, 보류 사유를 보여줍니다. 공시 작성자와 검토자는 주장별 결과에서 해당 PDF 쪽과 근거 하이라이트로 이동해 보완할 내용을 확인할 수 있습니다.
 
-**[서비스 데모](https://esg-proofops.vercel.app) · [분석 사례](https://esg-proofops.vercel.app/demo)** — 심사용 계정은 별도 전달합니다.
+**[서비스 데모](https://esg-proofops.vercel.app) · [분석 사례](https://esg-proofops.vercel.app/demo)** — 행사 기간에는 비밀번호 없이 공개 체험할 수 있습니다(2026-10-20 23:59 KST까지). 방문자별 자료는 분리되며 새 분석은 방문자당 하루 2건입니다. 우측 상단 **관리자 로그인**은 별도 계정으로 이용합니다.
+
+체험 기간이 끝나면 비밀번호 없는 접속은 종료되며, 서비스의 로그인·이용 안내를 확인해 주세요.
 
 ## 사용 흐름
 
-1. 보고서 PDF를 업로드하고 분석할 쪽과 보고기간을 확인합니다.
-2. 분석 진행 상태를 확인한 뒤, 주장별 등급·판정 이유·결손 요소를 살펴봅니다.
-3. 원문 보기에서 해당 쪽의 인용과 하이라이트를 대조합니다.
-4. 같은 PDF와 분석 조건에 맞는 게시 결과가 있으면 이전 분석 결과를 재사용합니다.
+1. **분석 사례**에서 NAVER 2025의 현재 결과를 살펴보거나, 보고서 PDF를 업로드하고 분석할 쪽과 보고기간을 확인합니다.
+2. 분석 진행 상태를 확인한 뒤 **요약 / 문장별 결과 / 원문 대조** 3개 탭에서 등급·판정 이유·결손 요소를 살펴봅니다.
+3. 원문 대조에서 해당 쪽의 인용과 하이라이트를 확인합니다. 원문 미확인 주장의 위치는 점선과 **추정 위치(원문 대조 전)**로 구분합니다.
+4. **보관함**(`/archive`)에서 내 보고서와 결과를 다시 엽니다. 같은 PDF와 분석 조건에 맞는 게시 결과가 있으면 이전 분석 결과를 재사용합니다.
 
-등급은 분석 범위에서 확인한 **문서 내 입증 수준**을 나타냅니다. E3는 입증 요소 충족, E1·E2는 일부 충족, E0는 입증 요소 부족을 뜻하며, 판정할 수 없는 주장은 사유와 함께 보류로 표시합니다.
+등급은 분석 범위에서 확인한 **문서 내 입증 수준**을 나타냅니다. E3는 입증 요소 충족, E1·E2는 일부 충족, E0는 **분석 범위 안에서 요구되는 입증 근거를 확인하지 못한 수준**을 뜻합니다. 보고서 전체에 근거가 없거나 주장이 허위라는 판정이 아닙니다. 판정할 수 없는 주장은 사유와 함께 보류로 표시합니다.
 
 ## 아키텍처
 
@@ -59,7 +61,7 @@ flowchart TD
 
 - **LLM은 추출·태깅만 수행합니다.** 등급과 라벨은 검증된 태깅을 입력으로 받는 순수 Python 규칙엔진이 계산합니다.
 - **모든 근거를 원문으로 추적합니다.** 문서 버전, 쪽, 좌표, 인용, 원문 해시를 보존하고 `present`는 원문 검증을 거친 근거에만 부여합니다. 다른 위치의 근거도 주장과 주체·지표·기간이 맞는지 확인합니다.
-- **합의와 결손 처리를 정책에 고정합니다.** 요소의 2/3 합의와 분석 범위 내 근거 부재 처리를 지원하며, 근거 충돌·원문 미검증·유형 미합의·규칙 미정·미처리는 보류 사유로 보존합니다. 적용 조건은 실행에 기록된 정책을 따릅니다.
+- **합의와 결손 처리를 정책에 고정합니다.** 유형 3/3·요소 2/3 합의와 분석 범위 내 근거 부재 처리를 지원하며, 근거 충돌·원문 미검증·유형 미합의·규칙 미정·미처리는 보류 사유로 보존합니다. 적용 조건은 실행에 기록된 정책을 따릅니다.
 - **게시 결과를 재현 가능한 형태로 보존합니다.** 모델·프롬프트·규칙·정책 해시와 독립 태깅 기록을 남기며, 재분석은 기존 결과를 덮어쓰지 않습니다.
 - **계정별 접근과 재사용을 함께 관리합니다.** 원본은 업로드한 계정에 귀속하고, 재사용 시 결과 식별자를 요청 계정에 맞게 다시 연결합니다.
 
@@ -149,8 +151,9 @@ fixtures/       테스트 입력
 |---|---|
 | 사용자가 보고서를 올리고 결과를 여는 흐름 | [HostedAnalysis.tsx](apps/web/src/features/hosted/HostedAnalysis.tsx) → [HostedResult.tsx](apps/web/src/features/hosted/HostedResult.tsx) |
 | API 요청부터 작업 접수까지 | [main.py](apps/api/src/proofops_api/main.py) → [hosted.py](apps/api/src/proofops_api/hosted.py) → [hosted_store.py](apps/api/src/proofops_api/hosted_store.py) |
-| 서버 워커에서 분석 단계 실행까지 | [hosted_control.py](scripts/hosted_control.py) → [hosted_analysis.py](apps/api/src/proofops_api/hosted_analysis.py) → [hosted_r108.py](evaluation/hosted_r108.py) → [worker/composition.py](apps/worker/src/proofops_worker/composition.py) |
-| 근거 묶음과 독립 태깅·합의 | [retrieval.py](packages/proofops/application/evidence/retrieval.py) → [service.py](packages/proofops/application/tagging/service.py) → [consensus.py](packages/proofops/application/tagging/consensus.py) |
+| 서버 워커에서 분석 단계 실행까지 | [hosted_control.py](scripts/hosted_control.py) → [hosted_analysis.py](apps/api/src/proofops_api/hosted_analysis.py) → [hosted 분석 실행](evaluation/hosted_r108.py) → [worker/composition.py](apps/worker/src/proofops_worker/composition.py) |
+| 근거 묶음과 독립 태깅·기초 합의 | [retrieval.py](packages/proofops/application/evidence/retrieval.py) → [service.py](packages/proofops/application/tagging/service.py) → [기초 합의 consensus.py](packages/proofops/application/tagging/consensus.py) |
+| 현재 유형 3/3·요소 2/3 확정 경로 | [worker/tag_runner.py](apps/worker/src/proofops_worker/tag_runner.py) → [cf6_confirmation.py](packages/proofops/application/tagging/cf6_confirmation.py) → [cf6_scope.py](packages/proofops/domain/rules/cf6_scope.py) |
 | 등급이 결정되는 규칙 | [engine.py](packages/proofops/domain/rules/engine.py) · [cf6_scope.py](packages/proofops/domain/rules/cf6_scope.py) · [규칙 설정](config/rubric/) |
 | 원문 검증에서 하이라이트까지 | [source_verification.py](packages/proofops/adapters/local/source_verification.py) → [hosted_source_view.py](apps/api/src/proofops_api/hosted_source_view.py) → [SourceSplitView.tsx](apps/web/src/features/hosted/SourceSplitView.tsx) |
 | 봉인 게시와 결과 재사용 | [hosted_publication.py](apps/api/src/proofops_api/hosted_publication.py) · [hosted_reuse.py](apps/api/src/proofops_api/hosted_reuse.py) |
