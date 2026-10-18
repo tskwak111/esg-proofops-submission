@@ -240,3 +240,17 @@ test('same PDF prefers a current fully completed result, otherwise its newest cu
   assert.equal(examples.length, 1);
   assert.equal(examples[0].run.run_id, 'full');
 });
+
+test('editorial showcase reuses live counts and keeps held claims outside confirmed grades', () => {
+  const { ExampleOverview } = require('./HostedExamples.tsx');
+  const { resultBrowserSummary } = require('./resultModel.ts');
+  for (const result of [fixture, { ...fixture, claims: [] }]) {
+    const counts = resultBrowserSummary(result);
+    const example = { result, counts, document: { page_count: 119 }, run: { selected_pages: [1, 2] } };
+    const html = render(React.createElement(ExampleOverview, { example }));
+    for (const text of ['PROCESS FUNNEL', 'DECISION DISTRIBUTION', '추출 주장', '원문 검증', '확정', '보류']) assert.ok(html.includes(text));
+    assert.match(html, new RegExp(`추출 주장 ${counts.total}건 = 확정 ${counts.confirmed}건 \\+ 보류 ${counts.total - counts.confirmed}건`));
+    assert.equal(Object.values(counts.confirmedGrades).reduce((a, b) => a + b, 0), counts.confirmed);
+    assert.doesNotMatch(html, /예비 등급|잠정|NaN|Infinity/);
+  }
+});

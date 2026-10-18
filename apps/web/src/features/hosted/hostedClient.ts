@@ -351,8 +351,8 @@ export function createHostedClient(options: ClientOptions = {}) {
     runtime: (signal?: AbortSignal) => request<Runtime>("GET", "/v1/runtime", { signal }),
     listDocuments: (cursor?: string | null, signal?: AbortSignal) => request<CollectionPage<ListedDocument>>("GET", `/v1/documents?${new URLSearchParams({ limit: "20", ...(cursor ? { cursor } : {}) })}`, { signal }),
     listRuns: (cursor?: string | null, signal?: AbortSignal) => request<CollectionPage<ListedRun>>("GET", `/v1/runs?${new URLSearchParams({ limit: "20", ...(cursor ? { cursor } : {}) })}`, { signal }),
-    listShowcaseDocuments: (cursor?: string | null, signal?: AbortSignal) => request<CollectionPage<ListedDocument>>("GET", `/v1/showcase/documents?${new URLSearchParams({ limit: "20", ...(cursor ? { cursor } : {}) })}`, { signal }),
-    listShowcaseRuns: (cursor?: string | null, signal?: AbortSignal) => request<CollectionPage<ListedRun>>("GET", `/v1/showcase/runs?${new URLSearchParams({ limit: "20", ...(cursor ? { cursor } : {}) })}`, { signal }),
+    listShowcaseDocuments: (cursor?: string | null, signal?: AbortSignal) => request<CollectionPage<ListedDocument>>("GET", `/v1/showcase/documents?${new URLSearchParams({ limit: "100", ...(cursor ? { cursor } : {}) })}`, { signal }),
+    listShowcaseRuns: (cursor?: string | null, signal?: AbortSignal) => request<CollectionPage<ListedRun>>("GET", `/v1/showcase/runs?${new URLSearchParams({ limit: "100", ...(cursor ? { cursor } : {}) })}`, { signal }),
     getSourceManifest: (runId: string, page: number, claimId: string, signal?: AbortSignal) =>
       request<SourcePageManifest>("GET", `/v1/runs/${encodeURIComponent(runId)}/source-pages/${page}/manifest?${new URLSearchParams({ claim_id: claimId })}`, { signal }),
     async getSourceImage(manifest: SourcePageManifest, signal?: AbortSignal): Promise<Blob> {

@@ -1,68 +1,104 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router";
-import { loadExamples, selectedExample, type Example } from "./exampleCatalog";
+import { loadExampleCatalog, loadExample, selectedExample, type Example, type ExampleCatalogEntry } from "./exampleCatalog";
 export { exampleRuns } from "./exampleCatalog";
 import { HostedApiError, type HostedClient, type Session } from "./hostedClient";
 import { enterHostedSession } from "./guestAccess";
-import { GuestBanner } from "./GuestBanner";
 import { ResultView } from "./HostedResult";
+import { resultScope } from "./resultModel";
 import { ux1CompanyName } from "./ux1Metadata";
 
-/** Public, read-only showcase with compatibility for older tenant-only servers. */
+const companyName = (example: Pick<Example, "document" | "name">) => {
+  const name = ux1CompanyName({ ...example.document, display_name: example.name }) ?? example.name;
+  return /^(?:N사|네이버|NAVER)$/i.test(name) ? "NAVER" : name;
+};
+
+/** Reuse the original editorial demo layout, with counts from the actual result. */
+export function ExampleOverview({ example }: { example: Example }) {
+  const { counts } = example;
+  const hold = counts.total - counts.confirmed;
+  const scope = resultScope(example.result, example.document.page_count, example.run.selected_pages);
+  const metrics = [["추출 주장", counts.total, "공시 문장"], ["원문 검증", counts.verified, "원문 대조 완료"], ["확정", counts.confirmed, "규칙 판정"], ["보류", hold, "근거·처리 상태 확인 필요"]] as const;
+  const percent = (count: number) => `${counts.total ? count / counts.total * 100 : 0}%`;
+  return <>
+    <section className="metrics" aria-label="분석 요약" data-testid="example-metrics">{metrics.map(([label, count, note]) => <div key={label}><span>{label}</span><strong>{count}<small>건</small></strong><p>{note}</p></div>)}</section>
+    <section className="overview-grid">
+      <div className="surface funnel-card"><div className="card-heading"><div><p className="eyebrow">PROCESS FUNNEL</p><h2>처리 흐름</h2></div><span>추출 → 원문 검증 → 확정·보류</span></div>
+        <div className="funnel-list">{metrics.map(([label, count], index) => <div className="funnel-row" key={label}><span className="step-name"><b>{String(index + 1).padStart(2, "0")}</b>{label}</span><div className="bar-track"><div style={{ width: percent(count) }} /></div><strong>{count}</strong></div>)}</div>
+        <p className="caption">선택한 {scope.pages.length}쪽의 추출 주장 {counts.total}건 = 확정 {counts.confirmed}건 + 보류 {hold}건. 원문 검증은 문구·위치 대조 결과입니다.</p>
+      </div>
+      <div className="surface grade-card"><p className="eyebrow">DECISION DISTRIBUTION</p><h2>등급과 보류</h2><div className="example-grade-bars">{[...Object.entries(counts.confirmedGrades), ["보류", hold] as const].map(([grade, count]) => <div className="example-grade-row" key={grade}><span>{grade}</span><div className={`grade-line ${grade === "보류" ? "pending" : grade.toLowerCase()}`}><i style={{ width: percent(count) }} /></div><strong>{count}</strong></div>)}</div><p className="caption">E3·E2·E1·E0 합계 {counts.confirmed}건 · 보류는 등급에 포함하지 않습니다.</p></div>
+    </section>
+  </>;
+}
+
+/** Catalog first, one selected report at a time. Other results load only on selection. */
 export function HostedExamples({ client }: { client: HostedClient }) {
-  const [examples, setExamples] = useState<Example[]>([]);
+  const [catalog, setCatalog] = useState<ExampleCatalogEntry[]>([]);
+  const [loaded, setLoaded] = useState<Record<string, Example | null>>({});
   const [params, setParams] = useSearchParams();
   const [refresh, setRefresh] = useState(0);
   const [busy, setBusy] = useState(true);
   const [login, setLogin] = useState(false);
   const [error, setError] = useState("");
+  const [resultError, setResultError] = useState("");
   const [session, setSession] = useState<Session | null>(null);
   const report = params.get("report");
-  const selected = selectedExample(examples, report);
+  const selected = catalog.find(entry => entry.runs.some(run => run.run_id === report)) ?? selectedExample(catalog, report);
+  const example = selected ? loaded[selected.identity] : undefined;
+  const year = selected?.name.match(/(?:19|20)\d{2}/)?.[0];
+  const scope = example ? resultScope(example.result, example.document.page_count, example.run.selected_pages) : null;
   useEffect(() => {
-    if (selected && report !== selected.run.run_id) {
-      setParams(current => { current.set("report", selected.run.run_id); return current; }, { replace: true });
-    }
-  }, [selected, report, setParams]);
+    const runId = example?.run.run_id;
+    if (runId && report !== runId) setParams(current => { current.set("report", runId); return current; }, { replace: true });
+  }, [example, report, setParams]);
   useEffect(() => {
     const controller = new AbortController();
-    setBusy(true); setError(""); setLogin(false);
+    setBusy(true); setError(""); setLogin(false); setCatalog([]); setLoaded({});
     void (async () => {
       try {
         const current = await enterHostedSession(client, controller.signal);
         if (controller.signal.aborted) return;
         setSession(current);
-        if (!current) { setLogin(true); setExamples([]); return; }
-        const next = await loadExamples(client, controller.signal);
-        if (!controller.signal.aborted) setExamples(next);
+        if (!current) { setLogin(true); return; }
+        const next = await loadExampleCatalog(client, controller.signal);
+        if (!controller.signal.aborted) setCatalog(next);
       } catch (reason) {
         if (controller.signal.aborted) return;
-        if (reason instanceof HostedApiError && [401, 403].includes(reason.status)) { setExamples([]); setSession(null); }
+        if (reason instanceof HostedApiError && [401, 403].includes(reason.status)) setSession(null);
         if (reason instanceof HostedApiError && reason.status === 401) setLogin(true);
         else setError(reason instanceof HostedApiError ? reason.userMessage : "분석 사례를 불러오지 못했습니다. 다시 시도해 주세요.");
       } finally { if (!controller.signal.aborted) setBusy(false); }
     })();
     return () => controller.abort();
   }, [client, refresh]);
-  const companyName = (example: Example) => ux1CompanyName({ ...example.document, display_name: example.name }) ?? example.name;
-  return <main className="static-main examples-main">
+  useEffect(() => {
+    setResultError("");
+    if (!selected || example !== undefined) return;
+    const controller = new AbortController();
+    void loadExample(client, selected, controller.signal).then(result => {
+      if (!controller.signal.aborted) setLoaded(current => ({ ...current, [selected.identity]: result }));
+    }).catch(reason => {
+      if (!controller.signal.aborted) setResultError(reason instanceof HostedApiError ? reason.userMessage : "보고서 결과를 불러오지 못했습니다. 목록을 새로고침해 주세요.");
+    });
+    return () => controller.abort();
+  }, [client, selected, example]);
+  return <main className="static-main demo-main examples-main">
     <div className="breadcrumb"><Link to="/">홈</Link><span>/</span>분석 사례</div>
-    <section className="surface">
-      <div className="example-heading"><div><p className="eyebrow">저장된 실제 분석 결과</p><h1>분석 사례</h1></div></div>
-      <GuestBanner session={session} />
-      <p className="hosted-note">보고서를 선택하면 저장된 결과와 원문을 바로 확인할 수 있습니다. 공개 사례는 읽기 전용이며 새 분석을 실행하지 않습니다.</p>
-      {busy && <p role="status">분석 사례 불러오는 중…</p>}
-      {login ? <div className="hosted-empty"><h2>로그인 후 분석 사례를 확인하세요</h2><p>보고서 접근 권한을 확인하기 위해 로그인이 필요합니다.</p><Link className="primary-link" to="/analyze?return_to=examples">로그인하고 사례 보기 →</Link></div> : <>
-        {error && <p role="alert">{error}</p>}
-        {!busy && !error && !examples.length && <div className="hosted-empty"><h2>아직 소개할 분석 사례가 없습니다</h2><p>이름과 완료 결과를 확인할 수 있는 보고서가 준비되면 표시됩니다.</p><Link to="/analyze">내 보고서로 이동 →</Link></div>}
-        {!!examples.length && <nav className="example-selector" aria-label="보고서 선택">{examples.map(example => <Link key={example.identity} className="example-chip" to={`/demo?report=${encodeURIComponent(example.run.run_id)}`} aria-current={selected?.run.run_id === example.run.run_id ? "true" : undefined} title={example.name}>
-          <strong>{companyName(example)}</strong><small>확정 {example.counts.confirmed} · 보류 {example.counts.hold}</small><span>{example.completion.kind === "partial" ? example.completion.title : example.counts.provisional ? "이전 버전 결과" : "분석 완료"}</span>
-        </Link>)}</nav>}
-        {selected && <section className="hosted-analysis example-result" aria-label="선택한 보고서 결과">
-          <ResultView key={selected.run.run_id} result={selected.result} reportName={selected.name} companyName={companyName(selected)} pageCount={selected.document.page_count} selectedPages={selected.run.selected_pages} runStatus={selected.run.status} client={client} runId={selected.run.run_id} role={session?.role} readOnly />
-        </section>}
-        <button type="button" className="hosted-secondary" disabled={busy} onClick={() => setRefresh(value => value + 1)}>목록 새로고침</button>
-      </>}
-    </section>
+    {!!catalog.length && <nav className="company-tabs example-company-tabs" aria-label="보고서 선택">{catalog.map(entry => {
+      const result = loaded[entry.identity];
+      return <Link key={entry.identity} to={`/demo?report=${encodeURIComponent(result?.run.run_id ?? entry.run.run_id)}`} aria-current={selected?.identity === entry.identity ? "page" : undefined} title={entry.name}><strong>{companyName(entry)}</strong>{result && <small>확정 {result.counts.confirmed} · 보류 {result.counts.total - result.counts.confirmed}</small>}{result && <span>{result.completion.title}</span>}</Link>;
+    })}</nav>}
+    <section className="demo-heading example-editorial-heading"><div><p className="eyebrow">ANALYSIS{year ? ` · ${year}` : ""}</p><h1>분석 사례{selected ? ` · ${companyName(selected)}${year ? ` ${year}` : ""}` : ""}</h1><p>실제 보고서에서 추출한 주장과 원문 근거, 규칙 판정을 탐색할 수 있습니다.</p>{scope && <div className="badges"><span className="badge amber">분석 범위: {scope.pages.length}/{scope.total ?? "전체 쪽 미제공"}쪽</span><span className="badge">{example?.completion.title} · 읽기 전용</span></div>}</div></section>
+    {busy && <p role="status">분석 사례 목록 불러오는 중…</p>}
+    {login ? <section className="surface hosted-empty"><h2>로그인 후 분석 사례를 확인하세요</h2><p>보고서 접근 권한을 확인하기 위해 로그인이 필요합니다.</p><Link className="primary-link" to="/analyze?return_to=examples">로그인하고 사례 보기 →</Link></section> : <>
+      {error && <p role="alert">{error}</p>}
+      {!busy && !error && !catalog.length && <section className="surface hosted-empty"><h2>아직 소개할 분석 사례가 없습니다</h2><p>이름과 완료 결과를 확인할 수 있는 보고서가 준비되면 표시됩니다.</p><Link to="/analyze">내 보고서로 이동 →</Link></section>}
+      {selected && example === undefined && !resultError && <p role="status">{companyName(selected)} 분석 결과 불러오는 중…</p>}
+      {resultError && <p role="alert">{resultError}</p>}
+      {example === null && <p role="status">현재 정책으로 완료된 분석 결과가 없습니다. 다른 보고서를 선택해 주세요.</p>}
+      {example && <><ExampleOverview example={example} /><section className="hosted-analysis example-result" aria-label="선택한 보고서 결과"><ResultView key={example.run.run_id} result={example.result} reportName={example.name} companyName={companyName(example)} pageCount={example.document.page_count} selectedPages={example.run.selected_pages} runStatus={example.run.status} client={client} runId={example.run.run_id} role={session?.role} readOnly /></section></>}
+      <button type="button" className="hosted-secondary" disabled={busy} onClick={() => setRefresh(value => value + 1)}>목록 새로고침</button>
+    </>}
   </main>;
 }

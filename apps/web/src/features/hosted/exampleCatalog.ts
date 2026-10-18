@@ -7,11 +7,12 @@ import { unsupportedGuestEndpoint } from "./guestAccess";
 // Coordinator-approved v29d default; compared with the result's actual analysis policy.
 // UI/UX policy hashes and the reuse wrapper policy are not analysis-policy identities.
 export const CURRENT_EXAMPLE_POLICY = "f29385d0c74d1520350deb06eaa9e11b72c5829dfaefeb2417c4e8ac0fed4ebd";
+export type ExampleCatalogEntry = { run: ListedRun; runs: ListedRun[]; document: HostedDocument; documents: HostedDocument[]; name: string; identity: string };
 export type Example = { run: ListedRun; document: HostedDocument; result: HostedResult; name: string; identity: string; counts: ReturnType<typeof resultBrowserSummary>; completion: NonNullable<ReturnType<typeof completedRunPresentation>> };
 
 /** Explicit report links win; otherwise open the original NAVER 2025 integrated report. */
-export function selectedExample(examples: Example[], runId: string | null): Example | undefined {
-  const naver = (example: Example) => /(?:\bNAVER\b|네이버|N사)/i.test(`${example.document.company_name ?? ""} ${example.name}`);
+export function selectedExample<T extends Pick<Example, "run" | "document" | "name">>(examples: T[], runId: string | null): T | undefined {
+  const naver = (example: T) => /(?:\bNAVER\b|네이버|N사)/i.test(`${example.document.company_name ?? ""} ${example.name}`);
   return examples.find(example => example.run.run_id === runId)
     ?? examples.find(example => naver(example) && /2025/.test(example.name) && /통합보고서|integrated/i.test(example.name))
     ?? examples.find(naver)
@@ -54,7 +55,7 @@ async function allPages<T>(read: (cursor: string | null) => Promise<CollectionPa
   return items;
 }
 
-export async function loadExamples(client: HostedClient, signal: AbortSignal): Promise<Example[]> {
+export async function loadExampleCatalog(client: HostedClient, signal: AbortSignal): Promise<ExampleCatalogEntry[]> {
   // Older injected clients and servers retain their tenant-only catalog. Never mix the two inventories.
   const ownInventory = () => Promise.all([
     allPages(cursor => client.listDocuments(cursor, signal), signal),
@@ -85,12 +86,34 @@ export async function loadExamples(client: HostedClient, signal: AbortSignal): P
     const group = groups.get(identity) ?? { name, runs: [] };
     group.runs.push(run); groups.set(identity, group);
   }
-  const examples = await Promise.all([...groups].map(async ([identity, group]) => {
-    const chosen = await chooseExample(group.runs, url => client.getResult(url, signal, UX1_HASH));
-    return chosen ? { run: chosen.run, document: docs.get(chosen.run.document_id)!, result: chosen.result, name: group.name, identity, completion: chosen.completion, counts: resultBrowserSummary(chosen.result) } : null;
-  }));
   signal.throwIfAborted();
-  return examples.filter((example): example is Example => example !== null).sort((a, b) => Date.parse(b.run.created_at) - Date.parse(a.run.created_at));
+  return [...groups].map(([identity, group]) => ({
+    identity, name: group.name, run: group.runs[0], runs: group.runs,
+    document: docs.get(group.runs[0].document_id)!,
+    documents: group.runs.map(run => docs.get(run.document_id)!),
+  }));
+}
+
+/** Resolve only the requested report; policy/completion precedence stays in chooseExample. */
+export async function loadExample(client: HostedClient, entry: ExampleCatalogEntry, signal: AbortSignal): Promise<Example | null> {
+  const chosen = await chooseExample(entry.runs, url => client.getResult(url, signal, UX1_HASH));
+  signal.throwIfAborted();
+  return chosen ? { ...chosen, document: entry.documents.find(doc => doc.document_id === chosen.run.document_id)!, name: entry.name, identity: entry.identity, counts: resultBrowserSummary(chosen.result) } : null;
+}
+
+/** Full collection for existing consumers; the showcase UI uses the lazy catalog above. */
+export async function loadExamples(client: HostedClient, signal: AbortSignal): Promise<Example[]> {
+  const catalog = await loadExampleCatalog(client, signal);
+  const examples: Example[] = [];
+  // Keep bulk callers from flooding the API too.
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(2, catalog.length) }, async () => {
+    while (next < catalog.length) {
+      const example = await loadExample(client, catalog[next++], signal);
+      if (example) examples.push(example);
+    }
+  }));
+  return examples.sort((a, b) => Date.parse(b.run.created_at) - Date.parse(a.run.created_at));
 }
 
 /** Run pagination may reference documents outside the visible document page. */

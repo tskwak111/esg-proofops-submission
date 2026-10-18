@@ -76,7 +76,7 @@ test('showcase collection contract encodes cursors and uses credentialed GETs wi
   for (const [index, collection] of [[1,'documents'],[2,'runs']]) {
     const call = calls[index], url = new URL(call.url, 'https://example.test');
     assert.equal(url.pathname, `/hosted-api/v1/showcase/${collection}`);
-    assert.equal(url.searchParams.get('limit'), '20');
+    assert.equal(url.searchParams.get('limit'), '100');
     assert.equal(url.searchParams.get('cursor'), 'opaque+/=cursor');
     assert.equal(call.method, 'GET');
     assert.equal(call.credentials, 'same-origin');
@@ -137,4 +137,24 @@ test('daily guest run refusal preserves the accepted upload and never requests f
   await assert.rejects(client.createRun('own-document',{selection:{selection_sha256:'scope'}}),err=>err.code==='GUEST_DAILY_LIMIT'&&/올린 보고서는 유지/.test(err.userMessage));
   assert.equal(request.headers['X-CSRF-Token'],'guest-csrf');
   assert.deepEqual(JSON.parse(request.body),{document_id:'own-document',scope_selection_sha256:'scope'});
+});
+
+test('lazy showcase publishes catalog without result reads, then resolves only the selected report', async () => {
+  const { loadExampleCatalog, loadExample } = require('./exampleCatalog.ts');
+  const fixture = JSON.parse(fs.readFileSync(`${__dirname}/../../../test/fixtures/w21/confirmed-majority.result.json`));
+  const reads = [];
+  const documents = ['Kakao', 'NAVER'].map((company, i) => ({ document_id: `doc-${i}`, sha256: `sha-${i}`, original_filename: `${company}_2025_통합보고서.pdf` }));
+  const runs = documents.map((doc, i) => ({ run_id: `run-${i}`, document_id: doc.document_id, status: 'completed', created_at: '2026-10-18', result_url: `/v1/runs/run-${i}/result` }));
+  const client = { listShowcaseDocuments: async () => ({ items: documents, next_cursor: null }), listShowcaseRuns: async () => ({ items: runs, next_cursor: null }), getResult: async url => { reads.push(url); return fixture; } };
+  const signal = new AbortController().signal;
+  const catalog = await loadExampleCatalog(client, signal);
+  assert.equal(catalog.length, 2);
+  assert.deepEqual(reads, []);
+  const selected = selectedExample(catalog, null);
+  assert.equal(selected.run.run_id, 'run-1');
+  const result = await loadExample(client, selected, signal);
+  assert.equal(result.run.run_id, 'run-1');
+  assert.deepEqual(reads, ['/v1/runs/run-1/result']);
+  const controller = new AbortController(); controller.abort();
+  await assert.rejects(loadExampleCatalog(client, controller.signal), err => err.name === 'AbortError');
 });

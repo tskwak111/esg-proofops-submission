@@ -485,3 +485,25 @@
 .split-claim-list{padding:0 16px 16px !important;scrollbar-gutter:stable;}
 .split-search input{width:100% !important;box-sizing:border-box !important;}
 .split-claim{width:100% !important;box-sizing:border-box !important;}
+
+/* Live showcase: the original editorial Demo layout, with wrapping company tabs. */
+.examples-main .example-company-tabs { flex-wrap: wrap; gap: 16px 28px; margin-top: 28px; }
+.examples-main .example-company-tabs a { display: grid; gap: 4px; min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.example-company-tabs strong { font-weight: 600; }
+.example-company-tabs small, .example-company-tabs a > span { font-size: 11px; font-weight: 400; color: var(--muted); }
+.examples-main .example-editorial-heading { padding: 48px 0 40px; }
+.examples-main .example-editorial-heading h1 { overflow-wrap: anywhere; }
+.examples-main .funnel-card .card-heading { flex-wrap: wrap; gap: 12px; }
+.examples-main .funnel-card .caption { margin-top: 22px; }
+.example-grade-bars { margin: 26px 0 20px; }
+.example-grade-row { display: grid; grid-template-columns: 38px 1fr 42px; align-items: center; gap: 16px; padding: 10px 0; font-size: 13.5px; }
+.example-grade-row strong { text-align: right; font: 600 13px var(--mono); }
+.example-grade-row .e2 i { background: var(--e2); }
+.example-grade-row .e1 i { background: var(--e1); }
+.example-grade-row .e0 i { background: var(--e0); }
+.examples-main > section { opacity: 1; transform: none; }
+@media (max-width: 600px) {
+  .examples-main .example-company-tabs { gap: 14px 20px; }
+  .examples-main .example-editorial-heading { padding: 36px 0 28px; }
+  .examples-main .overview-grid { gap: 20px; }
+}
