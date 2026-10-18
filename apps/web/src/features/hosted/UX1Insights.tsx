@@ -36,7 +36,7 @@ export function ResultDashboard({ result, pageCount, selectedPages, onHoldReason
   const { total, confirmed, provisional, hold } = counts, e0 = counts.confirmedGrades.E0 ?? 0;
   const status = [
     { label: "확정", n: confirmed, color: "var(--g3)" },
-    ...(provisional ? [{ label: "잠정", n: provisional, color: "var(--g1)" }] : []),
+    ...(provisional ? [{ label: "추가 확인 필요", n: provisional, color: "var(--g1)" }] : []),
     { label: "보류", n: hold, color: "var(--hold)" },
   ];
   return <section className="rd-overview" aria-label="보고서 요약">
@@ -47,7 +47,7 @@ export function ResultDashboard({ result, pageCount, selectedPages, onHoldReason
     <div className="rd-kpis">
       <div><span>추출 주장</span><strong>{total}<small>건</small></strong><em>분석 범위 {scope.pages.length}{scope.total !== null && ` / ${scope.total}`}쪽<br />원문 검증 {counts.verified}건</em></div>
       <div className="rd-key"><span>확정</span><strong>{confirmed}<small>건</small></strong><em>전체의 {pct(confirmed, total)}%<br />근거로 판정 완료</em></div>
-      <div><span>보류</span><strong>{hold}<small>건</small></strong><em>전체의 {pct(hold, total)}%<br />추가 확인 필요{provisional ? ` · 잠정 ${provisional}건` : ""}</em></div>
+      <div><span>보류</span><strong>{hold}<small>건</small></strong><em>전체의 {pct(hold, total)}%<br />추가 확인 필요{provisional ? ` · 이전 버전 ${provisional}건` : ""}</em></div>
       <div><span>근거 보강 필요</span><strong>{needsTotal}<small>건</small></strong><em>빠진 요소가 있는 확정 주장{needs.length > 0 && <><br />{needs.map(row => `${row.label} ${row.count}`).join(" · ")}</>}</em></div>
     </div>
     <div className="rd-panels">
@@ -62,7 +62,7 @@ export function ResultDashboard({ result, pageCount, selectedPages, onHoldReason
         <header><h3>근거 등급 분포</h3><span>확정 {confirmed}건 기준</span></header>
         {confirmed ? <>
           <div className="rd-bar" role="img" aria-label={gradeRows.map(g => `${g.key} ${counts.confirmedGrades[g.key] ?? 0}건`).join(", ")}>{gradeRows.map(g => (counts.confirmedGrades[g.key] ?? 0) > 0 && <i key={g.key} style={{ width: `${(counts.confirmedGrades[g.key] ?? 0) / confirmed * 100}%`, background: g.color }} />)}</div>
-          <div className="rd-rows">{gradeRows.map(g => <div className="rd-row" key={g.key}><b><i className="rd-sw" style={{ background: g.color }} />{g.key}</b><span>{g.label}</span><strong>{counts.confirmedGrades[g.key] ?? 0}건</strong><em>{pct(counts.confirmedGrades[g.key] ?? 0, confirmed)}%</em></div>)}</div>
+          <div className="rd-rows">{gradeRows.map(g => <div className="rd-row" key={g.key} role="group" aria-label={`${g.key} 확정 ${counts.confirmedGrades[g.key] ?? 0}건`}><b><i className="rd-sw" style={{ background: g.color }} />{g.key}</b><span>{g.label}</span><strong>{counts.confirmedGrades[g.key] ?? 0}건</strong><em>{pct(counts.confirmedGrades[g.key] ?? 0, confirmed)}%</em></div>)}</div>
         </> : <p className="caption">확정된 주장이 없습니다. 보류는 E0나 근거 부재가 아닙니다.</p>}
       </div>
     </div>

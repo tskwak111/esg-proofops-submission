@@ -265,5 +265,21 @@ assert.doesNotMatch(progressHtml, /앞선 구간|처리 구간|서버가 보고�
 const unknownProgressHtml = html(createElement(v.RunOutcomeView, { run: { ...run, status: "running", stage: "unknown_stage" } }));
 assert.match(unknownProgressHtml, /<progress max="1" aria-label="분석 진행률"/);
 assert.doesNotMatch(unknownProgressHtml, /unknown_stage|NaN|진행 0%/);
+// RV10: completed extraction gaps retain counted wording even when no claim is confirmed.
+for (const claims of [[], [{...result.claims[0]}]]) {
+  for (const extraction_outcome of [
+    {status:"partial",failed_sources:[{source_id:"unprocessed"}]},
+    {status:"partial",page_failures:[{physical_page:24},{physical_page:25}]},
+    {status:"partial",failed_sources:[{source_id:"unprocessed"}],page_failures:[{physical_page:24}]},
+  ]) {
+    const partialResult={...result,claims,pipeline:{status:"completed",extraction_outcome}};
+    const completedRun={...run,status:"completed",result:partialResult};
+    const expected=c.completedRunPresentation(partialResult,"completed").title;
+    assert.equal(v.runStateText(completedRun),expected);
+    assert.equal(v.runStateText({...completedRun,result:undefined},partialResult),expected);
+    assert.ok(html(createElement(v.RunOutcomeView,{run:completedRun})).includes(expected));
+  }
+}
+assert.equal(v.runStateText({...run,status:"partial_blocked",result:{...result,claims:[],pipeline:{status:"partial_blocked"}}}),"보류");
 await server.close();
 console.log("hosted tests passed");

@@ -150,7 +150,7 @@ export function ResultView({ result, reportName, companyName, pageCount, selecte
           {failure.sourceIds.length > 0 && <details><summary>해당 원문 식별자 보기</summary><ul>{failure.sourceIds.map((id, i) => <li key={i}><code>{id}</code></li>)}</ul></details>}</li>)}</ul> : (execution.kind === "partial" || execution.kind === "failed") && <p>누락·보류 쪽의 상세 위치가 기록되지 않았습니다. 원본 쪽이나 처리 기록을 확인해 주세요.</p>}
         {failures.length > 0 && <p>p.는 원본 PDF 쪽입니다. ‘선택본 p.’는 원본 쪽 연결 정보가 없는 경우입니다. 실패한 원문에서 빠진 주장 수는 알 수 없으며, 같은 쪽의 다른 주장은 표시될 수 있습니다.</p>}
         <p>보류·확인되지 않음은 ‘근거 없음’이 아닙니다. 시스템 처리 실패는 기업의 결손이 아닙니다.</p></details>;
-        return partial ? <div className="result-execution partial" role="status"><h3>부분 완료</h3><p>{execution.meaning}</p>{notice}</div>
+        return partial ? <div className="result-execution partial" role="status"><h3>{execution.title}</h3><p>{execution.meaning}</p>{notice}</div>
           : <><div className={`result-execution ${execution.kind}`} role="status"><h3>{execution.title}</h3><p>{execution.meaning}</p></div>{notice}</>;
       })()}
       <ResultDashboard result={result} pageCount={pageCount} selectedPages={selectedPages} onHoldReason={openHoldReason} />

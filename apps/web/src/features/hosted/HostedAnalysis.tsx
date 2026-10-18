@@ -5,7 +5,7 @@ import { UX1Comparison } from "./UX1Comparison";
 import { documentName, reportTitle } from "./documentName";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
-import { budgetNotice, createHostedClient, holdReasonText, HostedApiError, parsePageSelection, providerLimitCodes, providerLimitMessage, resultExecution, runOutcome, terminalStatuses, type HostedClient, type HostedDocument, type HostedResult, type HostedRun, type Runtime, type Session, type ScopePlan } from "./hostedClient";
+import { budgetNotice, completedRunPresentation, createHostedClient, holdReasonText, HostedApiError, parsePageSelection, providerLimitCodes, providerLimitMessage, resultExecution, runOutcome, terminalStatuses, type HostedClient, type HostedDocument, type HostedResult, type HostedRun, type Runtime, type Session, type ScopePlan } from "./hostedClient";
 import { resultBrowserSummary, w18HoldBreakdown } from "./resultModel";
 import { MyReports } from "./MyReports";
 import { ResultView } from "./HostedResult";
@@ -35,9 +35,11 @@ export function RuntimeOff({ runtime }: { runtime: Runtime }) {
   </div>;
 }
 
-/** Run-level wording: a run with confirmed claims and unprocessed parts is 부분 완료; 보류 is kept for runs with nothing confirmed. */
-function runStateText(run: HostedRun, result?: HostedResult | null) {
+/** Keep counted extraction gaps consistent with the result header and example cards. */
+export function runStateText(run: HostedRun, result?: HostedResult | null) {
   const current = result ?? run.result;
+  const completion = current && completedRunPresentation(current, run.status);
+  if (completion?.kind === "partial") return completion.title;
   if (current && (run.status === "partial_blocked" || run.status === "completed") && resultExecution(current, run.status).kind === "partial")
     return resultBrowserSummary(current).confirmed > 0 ? "부분 완료" : "보류";
   return statusLabel[run.status] ?? "상태 확인 중";

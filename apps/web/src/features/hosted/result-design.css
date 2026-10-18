@@ -129,7 +129,7 @@
 .result-execution.partial{display:flex !important;flex-wrap:wrap;align-items:baseline;gap:4px 12px;
   margin:0 !important;padding:0 !important;border:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important;}
 .result-execution.partial::before, .result-execution.partial::after{display:none !important;}
-.result-execution.partial h3{display:flex;align-items:center;gap:8px;margin:0 !important;white-space:nowrap;
+.result-execution.partial h3{display:flex;align-items:center;gap:8px;margin:0 !important;white-space:normal;
   font-size:13.5px !important;font-weight:650 !important;line-height:1.5 !important;letter-spacing:-0.01em !important;color:var(--rd-ink) !important;}
 .result-execution.partial h3::before{content:'';width:7px;height:7px;border-radius:50%;background:#B9A57A;display:inline-block;}
 .result-execution.partial > p{margin:0 !important;font-size:13px !important;color:var(--rd-mute) !important;}
@@ -429,6 +429,10 @@
   .ux1-data-grid > div{padding-left:0 !important;border-right:0 !important;}
 }
 
+/* Long verified/total values need a full row on narrow phones. */
+@media (max-width:420px){
+  .ux1-data-grid{grid-template-columns:1fr !important;}
+}
 
 /* =====================================================================
  * [부록 A] 탭 위 영역 — '요약본 · PDF 저장' 높이 맞춤

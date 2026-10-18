@@ -104,3 +104,22 @@ test('long hold reasons get short display names; short ones stay', () => {
   assert.equal(holdReasonLabel('추가 확인이 필요한 항목입니다. 상세 사유는 제공되지 않았습니다.'), '상세 사유 미제공');
   assert.equal(holdReasonLabel('주장 유형 미합의'), '주장 유형 미합의');
 });
+
+test('completed extraction gaps keep the same counted status in the heading and overview', () => {
+  const { completedRunPresentation } = require('./hostedClient.ts');
+  for (const claims of [fixture.claims, []]) {
+    for (const extraction_outcome of [
+      { status: 'partial', failed_sources: [{source_id:'unprocessed-1'}] },
+      { status: 'partial', page_failures: [{physical_page:24}, {physical_page:25}] },
+      { status: 'partial', failed_sources: [{source_id:'unprocessed-1'}], page_failures: [{physical_page:24}] },
+    ]) {
+      const result = {...fixture, claims, pipeline:{...fixture.pipeline, status:'completed', extraction_outcome}};
+      const run = {run_id:runA, document_id:runB, status:'completed', selected_pages:[24,25], result};
+      const expected = completedRunPresentation(result,run.status).title;
+      const html=render(React.createElement(ResultView,{result,runId:runA,runStatus:run.status}));
+      assert.ok(html.includes(`data-testid="result-completion-status">${expected}</p>`));
+      assert.ok(html.includes(`<h3>${expected}</h3>`));
+      assert.doesNotMatch(html,/부분 완료/);
+    }
+  }
+});
