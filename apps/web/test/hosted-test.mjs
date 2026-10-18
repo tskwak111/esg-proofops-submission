@@ -157,7 +157,7 @@ assert.match(rHtml, /합성 주장 문장 하나/); assert.match(rHtml, /p\.22/)
 assert.match(rHtml, /주장 원문 · 확인 필요/);
 assert.match(rHtml, /R108_NEEDS_REVIEW|일부 주장이 사람 검토/); assert.match(rHtml, /일부 주장이 사람 검토를 기다리고/);
 assert.match(rHtml, /분류 미합의/);
-assert.match(rHtml, /mini-status good">E3 · 입증 요건 충족/);
+assert.match(rHtml, /mini-status good">E3 \(입증 요건 충족\)/);
 const aHtml = html(createElement(rv.ResultView, { result: { ...result, claims: [claimA], reviews: [] } }));
 assert.match(aHtml, /인정된 근거 미연결\(확인 필요\)/);
 assert.match(aHtml, /판정 보류/); assert.match(aHtml, /가능 범위 E1–E3/); assert.match(aHtml, /범위는 등급이 아니며/);
@@ -165,7 +165,7 @@ assert.doesNotMatch(aHtml, /확정 등급 E/); assert.doesNotMatch(aHtml, /근�
 assert.match(aHtml, /합성 주장 문장 하나/);
 // confirmed + provenance after resolve
 const bHtml = html(createElement(rv.ResultView, { result: { ...result, claims: [claimB], reviews: [] } }));
-assert.match(bHtml, /확정 등급 E3 · 입증 요건 충족/); assert.match(bHtml, /사람 확인/);
+assert.match(bHtml, /E3 \(입증 요건 충족\)/); assert.doesNotMatch(bHtml, /확정 등급 E3/); assert.match(bHtml, /사람 확인/);
 assert.equal(m.gradeSummary(claimC).headline, "판정 보류");
 assert.equal(m.elementStateText("unknown", "verified"), "인정된 근거 미연결(확인 필요)");
 assert.equal(m.elementStateText("present", "unverified"), "원문 대조 필요");
@@ -217,7 +217,7 @@ const last = rc.at(-1);
 assert.equal(last.url, "/hosted-api/v1/runs/r1/reviews/rv1/resolve"); assert.equal(last.method, "POST");
 assert.equal(last.headers["If-Match"], '"3"'); assert.equal(last.headers["X-CSRF-Token"], "CSRF9"); assert.equal(last.headers["Idempotency-Key"], "pk-fixed");
 assert.equal(resolved.decision.evidence_grade, "E3");
-assert.equal(m.decisionLine(resolved.decision), "E3 · 입증 요건 충족"); assert.equal(m.reviewStatusText(resolved.decision.review_status), "사람 확인");
+assert.equal(m.decisionLine(resolved.decision), "E3 (입증 요건 충족)"); assert.equal(m.reviewStatusText(resolved.decision.review_status), "사람 확인");
 for (const status of ["409", "412"]) {
   mode = status;
   await assert.rejects(reviewClient.resolveReview("r1", "rv1", 3, body), e => e.isConflict === true && /새로고침/.test(e.userMessage), status);

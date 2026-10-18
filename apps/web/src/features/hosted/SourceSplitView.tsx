@@ -13,7 +13,7 @@ export function SourceSplitView({ result, client, selection, onSelectClaim }: Pr
   useEffect(() => { if (selection) setOpened(true); }, [selection]);
   return <section className="source-split" aria-label="원문 나란히 보기">
     <div className="split-heading"><div><h3>원문 보기</h3><p>주장과 요소 근거를 원본 PDF에서 함께 확인하세요.</p></div>
-      <button type="button" aria-expanded={opened} onClick={() => setOpened(value => !value)}>{opened ? "나란히 보기 닫기" : "원문 나란히 보기"}</button></div>
+      <button type="button" aria-expanded={opened} aria-label={opened ? "나란히 보기 닫기" : undefined} title={opened ? "나란히 보기 닫기" : undefined} onClick={() => setOpened(value => !value)}>{opened ? "×" : "원문 나란히 보기"}</button></div>
     {opened && (result.w16_source_document ? <SplitContent result={result} client={client} selection={selection} onSelectClaim={onSelectClaim} /> : <p role="status">원본을 사용할 수 없습니다. 이 저장 결과에는 PDF 연결 정보가 없습니다. 위치 정보 없음.</p>)}
   </section>;
 }
@@ -85,32 +85,30 @@ function SplitContent({ result, client, selection, onSelectClaim }: Props) {
       <div ref={documentPane} className="split-document" aria-label="선택한 주장 원본 PDF">
         <div className="split-toolbar">
           <button type="button" aria-label="원문 이전 쪽" disabled={page <= 1} onClick={() => setPage(value => value - 1)}>←</button>
-          <label>물리 쪽 <input aria-label="원문 물리 쪽" type="number" min={1} max={pageCount} value={page} onChange={event => { const value = Number(event.target.value); if (Number.isInteger(value) && value >= 1 && value <= pageCount) setPage(value); }} /> / {pageCount}</label>
+          <label><input aria-label="원문 물리 쪽" type="number" min={1} max={pageCount} value={page} onChange={event => { const value = Number(event.target.value); if (Number.isInteger(value) && value >= 1 && value <= pageCount) setPage(value); }} /> / {pageCount}</label>
           <button type="button" aria-label="원문 다음 쪽" disabled={page >= pageCount} onClick={() => setPage(value => value + 1)}>→</button>
           <button type="button" aria-label="PDF 축소" disabled={zoom <= 1} onClick={() => setZoom(value => Math.max(1, value - .5))}>−</button>
           <output>{Math.round(zoom * 100)}%</output><button type="button" aria-label="PDF 확대" disabled={zoom >= 3} onClick={() => setZoom(value => Math.min(3, value + .5))}>＋</button>
-          <button type="button" onClick={() => setZoom(1)}>너비에 맞추기</button>
           <button type="button" onClick={() => setZoom(3)}>표 글자 크게 보기</button>
         </div>
         {returnPage !== null && <button type="button" className="split-back" onClick={() => { setPage(returnPage); setEvidenceId(null); setReturnPage(null); }}>← 이전 p.{returnPage}로 돌아가기</button>}
-        <details className="split-evidence-picker" key={claim?.claim_id}><summary>요소 근거 {evidence.length}개 · 펼쳐서 선택{activeEvidence ? ` · ${activeEvidence.element_id} p.${activeEvidence.physical_page} 선택됨` : ""}</summary><div className="split-jump-chips" aria-label="요소 근거 쪽 바로가기">{evidence.map(ref => <button type="button" key={ref.ref_id} disabled={!ref.physical_page} onClick={() => openEvidence(ref)}>{ref.element_id} · {ref.physical_page ? `p.${ref.physical_page}${ref.physical_page !== page ? " ↗" : ""}` : "위치 정보 없음"}</button>)}</div></details>
+        <details className="split-evidence-picker" key={claim?.claim_id}><summary>요소 근거 {evidence.length}개</summary>
+          <div className="split-citations" aria-label="선택한 주장과 요소 인용">
+            <h4>선택한 주장</h4><blockquote>{claim?.w16_source_view?.quote ?? claim?.quote}</blockquote>
+            {!refs.some(ref => ref.kind === "claim" && sourceHighlight(ref).boxes.length) && <p>위치 미확인</p>}
+            <h4>요소별 원문 인용</h4>
+            {!evidence.length && <p>연결된 요소 인용이 없습니다.</p>}
+            {evidence.map(ref => <div className={`split-citation ${activeEvidence?.ref_id === ref.ref_id ? "active" : ""}`} key={ref.ref_id}>
+              <strong>{ref.element_id}</strong><blockquote>{ref.quote}</blockquote>
+              <button type="button" disabled={!ref.physical_page} aria-pressed={ref.ref_id === evidenceId} onClick={() => openEvidence(ref)}>{ref.physical_page ? `p.${ref.physical_page}${ref.physical_page !== page ? "로 이동" : " 근거 표시"}` : "쪽 정보 없음"}</button>
+              {!sourceHighlight(ref).boxes.length && <span>위치 미확인</span>}
+            </div>)}
+          </div>
+        </details>
         <div className="split-legend"><span className="claim">주장</span><span className="evidence">선택한 요소 근거</span><span className="exact">정확 인용·표 셀</span><span className="region">영역 표시(정확 위치 아님)</span></div>
         {cells.length > 0 && <p className="split-note">표의 저장된 셀 위치 · {cells.map(ref => `${({ value: "값", unit: "단위", year: "연도" } as Record<string, string>)[ref.ref_id.split("/").at(-1)!] ?? "셀"}: ${ref.quote}`).join(" · ")}</p>}
-        {activeEvidence && <p className="split-active-label" role="status">{activeEvidence.element_id} 근거 · p.{activeEvidence.physical_page}</p>}
         <Suspense fallback={<p role="status">PDF 뷰어 준비 중…</p>}><OriginalPdfPage key={attempt} sourceSha={result.w16_source_document!.sha256} url={url} pageNumber={page} refs={highlights} zoom={zoom} onPageCount={setPageCount} /></Suspense>
         <button type="button" className="split-retry" onClick={() => setAttempt(value => value + 1)}>PDF 다시 불러오기</button>
-        <p className="split-note">물리 쪽은 PDF의 첫 장부터 센 번호입니다. 위치 확인만으로 요소나 등급이 확정되지는 않습니다.</p>
-        <div className="split-citations" aria-label="선택한 주장과 요소 인용">
-          <h4>선택한 주장</h4><blockquote>{claim?.w16_source_view?.quote ?? claim?.quote}</blockquote>
-          {!refs.some(ref => ref.kind === "claim" && sourceHighlight(ref).boxes.length) && <p>위치 미확인</p>}
-          <h4>요소별 원문 인용</h4>
-          {!evidence.length && <p>연결된 요소 인용이 없습니다.</p>}
-          {evidence.map(ref => <div className={`split-citation ${activeEvidence?.ref_id === ref.ref_id ? "active" : ""}`} key={ref.ref_id}>
-            <strong>{ref.element_id}</strong><blockquote>{ref.quote}</blockquote>
-            <button type="button" disabled={!ref.physical_page} aria-pressed={ref.ref_id === evidenceId} onClick={() => openEvidence(ref)}>{ref.physical_page ? `p.${ref.physical_page}${ref.physical_page !== page ? "로 이동" : " 근거 표시"}` : "쪽 정보 없음"}</button>
-            {!sourceHighlight(ref).boxes.length && <span>위치 미확인</span>}
-          </div>)}
-        </div>
       </div>
     </div>
   </div>;

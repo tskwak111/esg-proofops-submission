@@ -3,7 +3,7 @@ import { elementLabels } from "../labels";
 import { holdReasonText, isProcessingFailure } from "./hostedClient";
 import type { ElementState, HostedResult, MissingEvidence, ResolveBody, ResultClaim, ResultDecision, ResultElement, ResultReview, SourceRefDto, TableObservation } from "./hostedClient";
 
-export const trackText: Record<string, string> = { management: "관리체계", goal: "목표", performance: "성과" };
+export const trackText: Record<string, string> = { management: "관리체계형", goal: "목표형", performance: "성과형" };
 
 /** unknown is never shown as absence of evidence. */
 export function elementStateText(state: string, sourceQuality: string): string {
@@ -46,7 +46,7 @@ export function reviewStatusText(status: string | undefined): string {
 export function decisionLine(decision: ResultDecision | null): string | null {
   if (!decision?.evidence_grade) return null;
   const label = decision.label ? ({ SUBSTANTIATED: "입증 요건 충족", INCOMPLETE: "일부 요건 충족", UNSUBSTANTIATED: "근거 부족" } as Record<string, string>)[decision.label] ?? (/[가-힣]/.test(decision.label) ? decision.label : "판정 상세 확인") : "";
-  return `${decision.evidence_grade}${label ? ` · ${label}` : ""}`;
+  return `${decision.evidence_grade}${label ? ` (${label})` : ""}`;
 }
 
 export function claimHoldReasons(claim: ResultClaim): string[] {
@@ -166,14 +166,14 @@ export function gradeSummary(claim: ResultClaim): { confirmed: boolean; headline
     if (decision === claim.sc1_confirmation) {
       const scope = claim.sc1_confirmation.confirmation_scope;
       const pages = scope?.inspected_pages;
-      return { confirmed: true, headline: `확정 ${decisionLine(decision)}`,
+      return { confirmed: true, headline: decisionLine(decision)!,
         note: [pages?.length ? `검사한 원본 쪽: ${pageRanges(pages)}` : "분석 범위 내 규칙엔진 판정",
           scope?.document_total_pages ? `전체 ${scope.document_total_pages}쪽` : ""].filter(Boolean).join(" · ") };
     }
     const direct = claim.confirmation_source === "auto_direct_certification_c3_v1";
     const automatic = direct || claim.confirmation_source === "auto_unanimous_v1";
     const prov = reviewStatusText(decision.review_status);
-    return { confirmed: true, headline: `${automatic ? "자동 확정" : "확정 등급"} ${decisionLine(decision)}`, note: direct ? claim.confirmation_basis! : automatic ? "3/3 반복 판독 · 주장과 근거 원문 검증" : prov };
+    return { confirmed: true, headline: decisionLine(decision)!, note: direct ? claim.confirmation_basis! : automatic ? "3/3 반복 판독 · 주장과 근거 원문 검증" : prov };
   }
   if (claim.cf6_status === "held") return { confirmed: false, headline: "판정 보류", note: "원문 근거와 판정 보류 사유를 확인해 주세요." };
   if (claim.provisional_grade) {
@@ -220,7 +220,7 @@ export function resultBrowserItem(result: Pick<HostedResult, "page_map">, claim:
     claim, confirmed, bucket, grade, track: claim.track ?? (cf6 ? claim.cf6_track : null) ?? claim.provisional_track ?? "unknown",
     page: result.page_map?.[claim.page_num - 1] != null ? pageLabel(result, claim.page_num)
       : Number.isInteger(claim.original_page_num) && claim.original_page_num > 0 ? `p.${claim.original_page_num}` : pageLabel(result, claim.page_num),
-    badge: confirmed ? `${scoped ? "확정 · " : claim.confirmation_source === "auto_unanimous_v1" || claim.confirmation_source === "auto_direct_certification_c3_v1" ? "자동 확정 · " : ""}${decisionLine(decision)}` : grade ? `추가 확인 필요 · ${grade}` : "판정 보류",
+    badge: confirmed ? `${decisionLine(decision)}` : grade ? `추가 확인 필요 · ${grade}` : "판정 보류",
     elements: cf6 && claim.cf6_elements?.length ? claim.cf6_elements : scoped && claim.sc1_elements?.length ? claim.sc1_elements.map(element => ({
       element_id: element.element_id, state: element.state,
       evidence_refs: element.state === "present"

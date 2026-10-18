@@ -16,8 +16,8 @@ import { focusClaimDetail, focusClaimRegion } from "./features/claims/claimFocus
 import { HostedResultRoute, hostedResultPaths } from "./features/hosted/HostedResultRoute";
 import { runIdFromResultPath } from "./features/hosted/hostedHistory";
 import { HostedAnalysis } from "./features/hosted/HostedAnalysis";
-import { HostedExamples } from "./features/hosted/HostedExamples";
-import { createHostedClient, resolveBackend } from "./features/hosted/hostedClient";
+import { HostedArchive } from "./features/hosted/HostedArchive";
+import { resolveBackend } from "./features/hosted/hostedClient";
 import "./features/hosted/hosted.css";
 import "./static-demo.css";
 import "./features/hosted/result-design.css";
@@ -46,14 +46,13 @@ type Snapshot = {
   claims: Claim[];
 };
 
-const trackText: Record<string, string> = { management: "관리체계", goal: "목표", performance: "성과" };
+const trackText: Record<string, string> = { management: "관리체계형", goal: "목표형", performance: "성과형" };
 const stateText: Record<string, string> = { present: "근거 확인", absent: "근거 없음", unknown: "미확인", conflict: "근거 충돌", unreadable: "판독 불가", not_applicable: "비적용" };
 const statusText: Record<string, string> = { decided: "규칙 판정", blocked_evidence: "근거 보류", blocked_rule_gap: "규칙 보류", not_run: "미판정", unclassified: "미분류", source_unverified: "원문 대조 필요", tagged: "태깅 완료" };
 
 export function StaticDemo() {
   const location = useLocation();
-  const examplesClient = useMemo(() => createHostedClient({ base: import.meta.env.VITE_HOSTED_API_BASE || "/hosted-api" }), []);
-  const standalone = location.pathname === "/" ? <Landing /> : analysisBackend === "hosted" && location.pathname === "/demo" ? <HostedExamples client={examplesClient} /> : location.pathname === "/guide" ? <Guide /> : null;
+  const standalone = location.pathname === "/" ? <Landing /> : location.pathname === "/guide" ? <Guide /> : analysisBackend === "hosted" && location.pathname === "/archive" ? <main className="static-main analyze-main archive-main"><h1>보관함</h1><HostedArchive /></main> : null;
   const needsSnapshot = !standalone && !runIdFromResultPath(location.pathname) && location.pathname !== "/live" && !(analysisBackend === "hosted" && location.pathname === "/analyze");
   const isLive = location.pathname === "/live";
   const [data, setData] = useState<Snapshot | null>(null);
@@ -93,13 +92,13 @@ export function StaticDemo() {
     <header className="site-header" ref={siteHeader}><div className="site-header-inner">
       <Link className="brand" to="/" aria-label="ProofOps 홈"><span className="brand-dot" aria-hidden="true" />ProofOps</Link>
       <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="site-menu" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? "닫기" : "메뉴"}<span aria-hidden="true">{menuOpen ? "×" : "☰"}</span></button>
-      <nav id="site-menu" className={menuOpen ? "open" : ""} aria-label="주요 메뉴" onClick={() => setMenuOpen(false)}><Link to="/">서비스</Link><Link to="/analyze">분석</Link><Link to="/demo">분석 사례</Link><Link to="/guide">서비스 가이드라인</Link><Link className="nav-admin-login" to="/analyze?operator=1">관리자 로그인</Link></nav>
+      <nav id="site-menu" className={menuOpen ? "open" : ""} aria-label="주요 메뉴" onClick={() => setMenuOpen(false)}><Link to="/">서비스</Link><Link to="/analyze">분석</Link><Link to="/archive">보관함</Link><Link to="/demo">분석 사례</Link><Link to="/guide">서비스 가이드라인</Link><Link className="nav-admin-login" to="/analyze?operator=1">관리자 로그인</Link></nav>
       <Link className="admin-login" to="/analyze?operator=1">관리자 로그인</Link>
     </div></header>
     {standalone ?? (runIdFromResultPath(location.pathname) ? <HostedResultRoute /> : analysisBackend === "hosted" && location.pathname === "/analyze" ? <main className="static-main analyze-main"><h1>보고서 분석 시작</h1><HostedAnalysis /></main> : isLive ? <LiveClaim /> : error ? <main className="static-main"><section className="surface"><h1>분석 결과를 불러오지 못했습니다</h1><p>잠시 후 새로고침해 주세요.</p></section></main> :
       !data ? <main className="static-main loading-main" role="status" aria-label="검토 결과 불러오는 중"><div className="skeleton skeleton-title" /><div className="skeleton skeleton-card" /><div className="skeleton skeleton-card" /></main> :
       <Routes>{hostedResultPaths.map(path => <Route key={path} path={path} element={<HostedResultRoute />} />)}<Route path="/" element={<Landing />} /><Route path="/analyze" element={<Analyze data={data} />} /><Route path="/guide" element={<Guide />} /><Route path={replayPath} element={<ReplayPage snapshot={data} />} /><Route path="/demo" element={<Demo data={data} />} /><Route path="/demo/:claimId" element={<Demo data={data} />} /><Route path={kiaRoute.path} element={<><div className="kia-route-toolbar"><CompanyTabs selected="kia" /><Link to="/report/kia">기아 검토 보고서 ↗</Link></div><kiaRoute.Component /></>} /><Route path={reviewRoutePath} element={<ReviewPage claims={data.claims} />} /><Route path={auditReportRoute.path} element={<AuditReportPage />} /><Route path="*" element={<NotFound />} /></Routes>)}
-    <footer className="site-footer"><div className="wrap footer-inner"><div><strong>ProofOps</strong><p>본 서비스는 공시 발간 전 근거 점검을 돕는 도구이며, 제3자 보증, 기업 성과 진위, 법률·회계 판단을 대신하지 않습니다.</p></div><nav aria-label="바닥글"><Link to="/analyze">분석</Link><Link to="/demo">분석 사례</Link><Link to="/guide">서비스 가이드라인</Link><a href="https://github.com/tskwak111/esg-proofops-submission" target="_blank" rel="noopener noreferrer">GitHub</a></nav><span>© 2026 ProofOps</span></div></footer>
+    <footer className="site-footer"><div className="wrap footer-inner"><div><strong>ProofOps</strong><p>본 서비스는 공시 발간 전 근거 점검을 돕는 도구이며, 제3자 보증, 기업 성과 진위, 법률·회계 판단을 대신하지 않습니다.</p></div><nav aria-label="바닥글"><Link to="/analyze">분석</Link><Link to="/archive">보관함</Link><Link to="/demo">분석 사례</Link><Link to="/guide">서비스 가이드라인</Link><a href="https://github.com/tskwak111/esg-proofops-submission" target="_blank" rel="noopener noreferrer">GitHub</a></nav><span>© 2026 ProofOps</span></div></footer>
   </div>;
 }
 
@@ -222,10 +221,9 @@ function Guide() {
     </section>
     <section className="sec sec-beige">
       <p className="eyebrow-c center">활용 사례</p><h2 className="serif center">검토에서 공유까지</h2>
-      <div className="features">
+      <div className="features features-2">
         <article className="card"><h3>문장마다 원문 근거 확인</h3><p>주장과 요소별 인용을 PDF 원문과 나란히 확인합니다. 확정 등급과 보류 사유를 구분해 보완할 문장을 찾으세요.</p><Link to="/demo">저장된 분석 사례 보기 →</Link></article>
-        <article className="card"><h3>보고서 두 개 비교</h3><p>분석 화면에서 두 결과의 범위·주장 수·확정 등급 분포를 비교합니다. 선택 범위가 다른 결과는 기업 순위로 해석하지 않습니다.</p><Link to="/analyze">내 보고서에서 비교하기 →</Link></article>
-        <article className="card"><h3>검토 결과를 PDF로 공유</h3><p>결과 화면의 ‘PDF 리포트 저장’으로 요약·등급 분포·확정 주장·주요 보류 사유를 저장합니다. 전체 상세 보고서도 별도로 받을 수 있습니다.</p><Link to="/demo">분석 결과에서 보고서 열기 →</Link></article>
+        <article className="card"><h3>검토 결과를 PDF로 공유</h3><p>결과 화면의 ‘결과 보고서 내보내기’에서 요약본 또는 전체 상세 보고서를 골라 저장합니다.</p><Link to="/demo">분석 결과에서 보고서 열기 →</Link></article>
       </div>
     </section>
     <section className="sec sec-cream faq">
@@ -237,7 +235,6 @@ function Guide() {
           <li>확인하지 못한 근거를 “근거 없음”으로 처리하지 않습니다.</li>
           <li>결과는 보고서 안의 주장과 근거의 연결을 보여 줄 뿐, 기업의 실제 환경 성과나 법 위반 여부를 판단하지 않습니다.</li>
         </ul>
-        <p className="guide-cta"><Link className="pill pill-dark" to="/analyze">보고서 분석 시작 <span aria-hidden="true">→</span></Link></p>
       </div>
     </section>
   </main>;
@@ -346,7 +343,7 @@ function Demo({ data }: { data: Snapshot }) {
       <div className="surface grade-card"><p className="eyebrow">DECISION DISTRIBUTION</p><h2>등급과 보류 <GuideHelp topic="grade" /><GuideHelp topic="range" /></h2><div className="grade-bars"><div><span><b>확정</b> 규칙 판정</span><strong>{counts.decided}</strong></div><div className="grade-line e3"><i style={{ width: `${counts.decided / data.claims.length * 100}%` }} /></div><div><span><b>예비 등급</b> <GuideHelp topic="estimated" /></span><strong>{counts.range}</strong></div><div className="grade-line range"><i style={{ width: `${counts.range / data.claims.length * 100}%` }} /></div><div><span><b>나머지</b> 확인 대기</span><strong>{counts.pending}</strong></div><div className="grade-line pending"><i style={{ width: `${counts.pending / data.claims.length * 100}%` }} /></div></div><p className="caption">전체 {data.claims.length}건 중 확정 판정과 예비 등급을 구분해 표시합니다.</p></div></section>
     <section className="claims-section" id="claims"><div className="card-heading"><div><p className="eyebrow">CLAIM REVIEW</p><h2>문장별 결과</h2><p>상태를 선택하고 문장을 열어 원문과 요소별 근거를 확인하세요.</p></div><span>{filtered.length} / {data.claims.length}건</span></div>
       <ClaimBrowserControls tabs={queues.map(name => ({ value: name, label: queueLabels[name], count: queueCounts[name] }))} queue={queue} onQueueChange={value => selectQueue(value as Queue)} panelId="case-claims-panel" search={search} onSearchChange={value => { setSearch(value); setLimit(25); }}
-        track={{ value: track, onChange: value => { setTrack(value); setLimit(25); }, help: <GuideHelp topic="track" />, options: [{ value: "all", label: "전체 트랙" }, { value: "management", label: "관리체계" }, { value: "goal", label: "목표" }, { value: "performance", label: "성과" }, { value: "unknown", label: "분류 미합의" }] }}
+        track={{ value: track, onChange: value => { setTrack(value); setLimit(25); }, help: <GuideHelp topic="track" />, options: [{ value: "all", label: "전체 트랙" }, { value: "management", label: "관리체계형" }, { value: "goal", label: "목표형" }, { value: "performance", label: "성과형" }, { value: "unknown", label: "분류 미합의" }] }}
         grade={{ value: grade, onChange: value => { setGrade(value); setLimit(25); }, help: <GuideHelp topic="grade" />, options: [{ value: "all", label: "전체 등급" }, ...["E3", "E2", "E1", "E0"].map(value => ({ value, label: value })), { value: "range", label: "추정" }, { value: "none", label: "미판정" }] }}
         status={{ value: status, onChange: value => { setStatus(value); setLimit(25); }, help: <GuideHelp topic="state" />, options: [{ value: "all", label: "전체 상태" }, { value: "decided", label: "규칙 판정" }, { value: "blocked_evidence", label: "근거 보류" }, { value: "not_run", label: "미판정" }] }} />
       <div className="claims-layout" role="tabpanel" id="case-claims-panel" aria-labelledby={`case-claims-panel-tab-${queue}`}><div className="claim-list" ref={listRef} tabIndex={-1} aria-label="주장 목록">{filtered.slice(0, limit).map(claim => <Link className={`claim-item ${selected?.id === claim.id ? "selected" : ""}`} to={`/demo/${claim.id}?queue=${queue}#claims`} key={claim.id}><div className="claim-item-top"><span>p.{claim.page ?? "?"} · {claim.track ? trackText[claim.track] : <span title="트랙 태깅 합의 전">분류 미합의 ⓘ</span>}</span><span className={`mini-status ${queueFor(claim) === "decided" ? "good" : queueFor(claim) === "estimated" || queueFor(claim) === "unverified" ? "warn" : "muted"}`}>{gradeText(claim)}</span></div><p>{claim.quote}</p><small>{(!claim.source_verified ? "원문 대조 필요" : claim.decision.estimated ? "예비 등급" : statusText[claim.decision.status] || claim.decision.status) }{claim.review.audit === "uncertain" ? " · 사용자 확인 완료" : ""}</small></Link>)}{filtered.length === 0 ? <p className="empty">조건에 맞는 주장이 없습니다.</p> : null}{filtered.length > limit ? <button className="more-button" onClick={() => setLimit(limit + 25)}>더 보기 ({filtered.length - limit}건 남음)</button> : null}</div><ClaimDetail key={selected?.id || "empty"} detailRef={detailRef} onBack={() => focusClaimRegion(listRef.current)} claim={selected} queue={queue} /></div>
@@ -391,7 +388,7 @@ function ClaimDetail({ claim, queue, embedded = false, detailRef, onBack }: { cl
   const [reviewMode, setReviewMode] = useState(false);
   if (!claim) return <aside className="claim-detail"><div className="detail-empty"><span>↖</span><h3>주장을 선택하세요</h3><p>왼쪽 목록에서 문장을 선택하면 근거와 판정 경로를 볼 수 있습니다.</p></div></aside>;
   const d = claim.decision;
-  return <aside className="claim-detail" ref={detailRef} tabIndex={-1} aria-label="주장 상세"><div className="detail-top"><div><p className="eyebrow">CLAIM DETAIL · p.{claim.page ?? "?"}</p><h3>주장과 판정 근거</h3></div>{!embedded && <Link to={`/demo?queue=${queue}#claims`} aria-label="상세 닫기">×</Link>}</div><div className="source-quote"><span>{claim.source_verified ? "보고서 원문" : "추출 문장"} · p.{claim.page ?? "?"}</span><blockquote>“{claim.quote}”</blockquote><small>{claim.source_verified ? "원문 인용 검증 기록 있음" : "원문 대조 필요"}</small></div>
+  return <aside className="claim-detail" ref={detailRef} tabIndex={-1} aria-label="주장 상세"><div className="source-quote"><span>{claim.source_verified ? "보고서 원문" : "추출 문장"} · p.{claim.page ?? "?"}</span><blockquote>“{claim.quote}”</blockquote><small>{claim.source_verified ? "원문 인용 검증 기록 있음" : "원문 대조 필요"}</small></div>
     {onBack && <Link to={`/demo?queue=${queue}#claims`} onClick={() => requestAnimationFrame(onBack)}>목록으로 돌아가기</Link>}
     {!embedded && <div className="detail-actions"><button type="button" aria-pressed={reviewMode} onClick={() => setReviewMode(!reviewMode)}>검토 모드 {reviewMode ? "닫기" : "열기"}</button><Link to={`/report/naver`}>보고서 ↗</Link></div>}
     {reviewMode && <ReviewSimulator claim={claim} />}

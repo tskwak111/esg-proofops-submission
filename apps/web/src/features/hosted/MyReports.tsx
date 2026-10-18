@@ -58,20 +58,19 @@ export function MyReports({ client, onOpenRun, onOpenDocument, onUnavailable, on
     } catch (err) { if (!abort.current?.signal.aborted) { setError(err instanceof HostedApiError ? err.userMessage : "목록을 불러오지 못했습니다."); onFailure(err); } }
     finally { if (!abort.current?.signal.aborted) setBusy(false); }
   }
-  return <section className="hosted-inventory" aria-label="내 보고서·실행">
-    <div className="hosted-section-heading"><div><p className="eyebrow">보관함</p><h3>내 보고서·실행</h3></div><button className="hosted-secondary" type="button" disabled={busy} onClick={() => setRefresh(value => value + 1)}>목록 새로고침</button></div>
+  return <section className="hosted-inventory" aria-label="이전 보고서 내역">
+    <div className="hosted-section-heading"><div><h3>이전 보고서 내역</h3></div><button className="hosted-secondary" type="button" disabled={busy} onClick={() => setRefresh(value => value + 1)}>목록 새로고침</button></div>
     {busy && <p role="status">보고서·실행 목록 불러오는 중…</p>}
     {error && <p role="alert">{error}</p>}
     {(unavailable.documents || unavailable.runs) && <p className="hosted-note" role="status">현재 서버는 {unavailable.documents && unavailable.runs ? "보고서·실행" : unavailable.documents ? "보고서" : "실행"} 목록 조회를 지원하지 않습니다. 지원되는 목록과 현재 탭의 기록, 기존 결과 링크를 사용할 수 있습니다.</p>}
     <>
-      <p className="hosted-note">현재 로그인한 작업 공간에서 접근할 수 있는 보고서와 실행입니다.</p>
-      <div className="hosted-inventory-group"><h4>보고서 <span>{documents.length}</span></h4>
+        <div className="hosted-inventory-group"><h4>보고서 <span>{documents.length}</span></h4>
       <ul className="hosted-inventory-list">{documents.map(doc => <li key={doc.document_id}>
         <div className="hosted-inventory-info"><b>{names[doc.document_id] ?? doc.display_name}</b><p className="hosted-note">{doc.page_count}쪽 · 업로드 <InventoryTime value={doc.uploaded_at} /></p></div>
         <span className="hosted-state">업로드 완료</span>
         <button className="hosted-secondary" type="button" onClick={() => onOpenDocument(doc)}>범위 열기</button>
       </li>)}</ul>
-      {!busy && !error && !unavailable.documents && !documents.length && <div className="hosted-empty"><p>보관 중인 보고서가 없습니다.</p><p className="hosted-note">위에서 PDF를 업로드하면 분석 범위를 확인할 수 있습니다.</p></div>}
+      {!busy && !error && !unavailable.documents && !documents.length && <div className="hosted-empty"><p>보관 중인 보고서가 없습니다.</p><p className="hosted-note">분석 화면에서 PDF를 업로드하면 분석 범위를 확인할 수 있습니다.</p></div>}
       {docCursor && <button className="hosted-text-button" type="button" disabled={busy} onClick={() => void more("documents")}>보고서 더 보기</button>}
       </div>
       <div className="hosted-inventory-group"><h4>실행 <span>{runs.length}</span></h4>

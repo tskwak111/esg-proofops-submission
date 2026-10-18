@@ -15,16 +15,6 @@ export type Runtime = {
   provider_limits?: Record<string, { status: "unknown" | "blocked"; remaining_usd: string | null }>;
   limits: { max_upload_bytes: number; selected_pages: number; max_pdf_pages: number; original_days: number; [key: string]: unknown };
 };
-/** Display the server's current limits without inventing missing amounts. */
-export function budgetNotice(limits: Record<string, unknown> = {}): string {
-  const rows = [["run_usd", "실행당"], ["day_usd", "하루"], ["event_usd", "행사 전체"]]
-    .flatMap(([key, label]) => {
-      const value = limits[key];
-      return (typeof value === "string" || typeof value === "number") && /^\d+(?:\.\d+)?$/.test(String(value))
-        ? [`${label} USD ${value}`] : [];
-    });
-  return rows.length ? `분석 비용 한도: ${rows.join(" · ")}` : "분석 비용 한도는 현재 서비스 설정을 따릅니다.";
-}
 export type GuestAccess = { available: boolean; until: string | null; fresh_runs_per_day: number; showcase: boolean };
 export type GuestSession = { until: string | null; fresh_runs_today: number; fresh_runs_limit: number };
 export type Session = { user_id: string; tenant_id: string | null; role: string | null; csrf_token: string; expires_at: string; guest?: GuestSession | null };

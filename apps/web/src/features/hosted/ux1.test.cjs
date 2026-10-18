@@ -19,7 +19,7 @@ test('UX1 renders by default with legacy and additive API fields without mutatin
   for (const result of [fixture, {...fixture,pipeline:{...fixture.pipeline,ux1_data:{table_count:12,model_judgment_calls:42}}}]) {
     const before=JSON.stringify(result);
     const screen=render(React.createElement(ResultView,{result}));
-    for (const text of ['등급 의미','왜 이 등급인가요','분석한 데이터','PDF 리포트 저장','그린워싱 위험 신호','입증요소 부재']) assert.ok(screen.includes(text),text);
+    for (const text of ['왜 이 등급인가요','결과 보고서 내보내기']) assert.ok(screen.includes(text),text);
     assert.equal(JSON.stringify(result),before);
   }
 });
@@ -97,7 +97,7 @@ test('full printable report includes all claims and explanations, escapes metada
   assert.doesNotMatch(html,/<script>/);assert.match(html,/&lt;script&gt;/);
 });
 
-const { AnalyzedData, ExecutiveSummary } = require('./UX1Insights.tsx');
+const { AnalysisInfo, ExecutiveSummary } = require('./UX1Insights.tsx');
 const { UX1Progress } = require('./UX1Progress.tsx');
 test('raw table rows and unclassified metrics merge into the track, clean names remain separate', () => {
   for (const name of [undefined, '', '지표 미분류', 'unknown', '에너지 총 소비량 2) / 글로벌 / 136,504 / 146,591', '소비량 | 글로벌 | 32', '소비량 136,504', '소비량\n32']) assert.equal(cleanMetricName(name),'');
@@ -118,11 +118,11 @@ test('raw table rows and unclassified metrics merge into the track, clean names 
 });
 test('optional data is hidden individually and existing table claims remain useful', () => {
   const result={...fixture,pipeline:{},w16_source_document:undefined};
-  const html=render(React.createElement(AnalyzedData,{result}));
-  assert.match(html,/표에서 추출한 주장/);assert.match(html,/주장 원문 검증/);
-  assert.doesNotMatch(html,/미제공|미집계|<dt>모델 판정 호출|<div><\/div>/);
-  const zero=render(React.createElement(AnalyzedData,{result:{...result,pipeline:{ux1_data:{table_count:0,model_judgment_calls:0}}}}));
-  assert.match(zero,/<dt>표 수<\/dt><dd>0/);assert.match(zero,/<dt>모델 판정 호출<\/dt><dd>0/);
+  const html=render(React.createElement(AnalysisInfo,{result}));
+  assert.match(html,/<dt>표 주장<\/dt>/);assert.match(html,/<dt>원문 검증<\/dt>/);
+  assert.doesNotMatch(html,/미제공|미집계|모델 판정 호출|<div><\/div>/);
+  const zero=render(React.createElement(AnalysisInfo,{result:{...result,pipeline:{ux1_data:{table_count:0,model_judgment_calls:0}}}}));
+  assert.match(zero,/<dt>표<\/dt><dd>0/);assert.doesNotMatch(zero,/호출/);
 });
 test('progress uses concise completion labels and one estimate line', () => {
   const html=render(React.createElement(UX1Progress,{run:{status:'running',stage:'tag',progress:.55}}));
@@ -143,14 +143,6 @@ test('analysis examples admit only completed runs and preserve source records', 
   assert.equal(rows[2].status,'partial_blocked');
   assert.equal(JSON.stringify(rows),before);
 });
-
-test('budget notice reads runtime amounts and does not reuse an obsolete event cap', () => {
-  const { budgetNotice } = require('./hostedClient.ts');
-  assert.equal(budgetNotice({run_usd:'1.0',day_usd:'7',event_usd:'30'}),'분석 비용 한도: 실행당 USD 1.0 · 하루 USD 7 · 행사 전체 USD 30');
-  assert.equal(budgetNotice({}), '분석 비용 한도는 현재 서비스 설정을 따릅니다.');
-  assert.doesNotMatch(budgetNotice({run_usd:'internal_code',day_usd:-1}), /internal_code|-1/);
-});
-
 
 test('curated examples deduplicate file SHA across pages and select current policy, never old partials', async () => {
   const { loadExamples, CURRENT_EXAMPLE_POLICY } = require('./exampleCatalog.ts');

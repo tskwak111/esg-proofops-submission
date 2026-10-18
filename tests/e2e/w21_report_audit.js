@@ -50,7 +50,7 @@ async page => {
   for(const width of [1440,390]) {
     await page.setViewportSize({width,height:1000}); sample='lg'; status='completed'; uploaded=false;
     await page.goto(origin+'/analyze'); await page.getByRole('heading',{name:'보고서 업로드',exact:true}).waitFor();
-    await capture(`upload-${width}`,page.locator('.hosted-heading')); await noOverflow('upload-'+width);
+    await capture(`upload-${width}`,page.locator('.hosted-upload-panel')); await noOverflow('upload-'+width);
     await page.locator('input[type=file]').setInputFiles({name:'W21-local-replay.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.7\n%W21 local mock only')});
     await page.getByRole('button',{name:'업로드',exact:true}).click();
     await page.getByRole('button',{name:'분석 시작',exact:true}).waitFor();
@@ -75,7 +75,7 @@ async page => {
     check(await page.getByTestId('pdf-claim-highlight').count()>0,'Claim highlight missing');
     const secondCitation=detail.getByRole('button',{name:'이 인용의 원문 보기'}).nth(1);
     await secondCitation.click();
-    await page.waitForFunction(()=>document.querySelector('.split-active-label')?.textContent?.includes('M5'));
+    await page.waitForFunction(()=>document.querySelector('.split-citation.active strong')?.textContent?.includes('M5'));
     check((await page.getByTestId('pdf-evidence-highlight').first().locator('title').textContent()).includes('M5'),'Identical quote jumped to wrong element');
     await detail.getByRole('button',{name:'주장 원문 보기',exact:true}).click();
     await page.getByTestId('pdf-claim-highlight').first().waitFor();

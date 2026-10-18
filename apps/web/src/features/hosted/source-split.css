@@ -59,9 +59,6 @@
 .source-split .split-claim.on-page { border-left:4px solid #88b7a0; }
 .source-split .split-claim.selected { border-left-color:#24694e; }
 .split-back { margin:12px 0 0; }
-.split-jump-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
-.source-split .split-jump-chips button { padding:6px 9px; font-size:12px; color:#155c9f; border-color:#b4cde7; background:#f2f8ff; }
-.split-active-label { background:#e7f2ff; padding:8px 12px; color:#155c9f; font-size:13px; border-left:3px solid #287ac9; }
 .source-split .split-retry { font-size:12px; margin-top:8px; }
 @media(max-width:760px) { .split-pdf-scroll { max-height:65vh; } }
 
@@ -83,10 +80,8 @@
 /* Keep evidence navigation bounded so the PDF remains directly reachable. */
 .split-evidence-picker { margin-top:12px; border:1px solid #d5dfda; border-radius:8px; padding:10px; }
 .split-evidence-picker summary { cursor:pointer; font-size:14px; font-weight:600; }
-.split-evidence-picker .split-jump-chips { max-height:150px; overflow:auto; padding:3px; }
+.split-evidence-picker .split-citations { border-top:1px solid #dde4df; margin-top:10px; max-height:360px; overflow:auto; }
 @media(max-width:760px) {
-  .source-split .split-jump-chips button { font-size:14px; min-height:44px; flex:none; }
-  .split-evidence-picker .split-jump-chips { flex-wrap:nowrap; max-width:100%; }
   .split-legend { gap:6px 12px; margin:10px 0; }
   .split-note { overflow-wrap:anywhere; }
 }

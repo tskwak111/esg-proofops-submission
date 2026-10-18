@@ -74,7 +74,7 @@
 .card p { font-size: 14.5px; line-height: 1.75; color: var(--ink-2) }
 a.card:hover, .features .card:hover, .steps .card:hover { transform: translateY(-3px); box-shadow: 0 18px 36px -24px rgba(22, 22, 22, .3) }
 .steps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px }
-.num { width: 40px; height: 40px; border-radius: 50%; background: var(--coral-soft); color: var(--coral); display: grid; place-items: center; font: 400 17px var(--serif); margin-bottom: 22px }
+.num { width: 40px; height: 40px; border-radius: 50%; background: var(--beige); color: var(--coral); display: grid; place-items: center; font: 400 17px var(--serif); margin-bottom: 22px }
 .proof { margin-top: 110px; text-align: center }
 .proof-kicker { font-size: 12.5px; color: var(--muted); letter-spacing: .08em }
 .proof h3.serif { margin: 12px 0 44px; font-size: clamp(22px, 2.4vw, 30px); font-weight: 400 }
@@ -83,6 +83,7 @@ a.card:hover, .features .card:hover, .steps .card:hover { transform: translateY(
 .proof dt { font-size: 13px; color: var(--muted) }
 .proof dd { margin: 10px 0 0; font: 400 clamp(38px, 4vw, 54px)/1 var(--serif); letter-spacing: -.02em; color: var(--ink) }
 .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px }
+.features-2 { grid-template-columns: repeat(2, 1fr) }
 .features .card { min-height: 190px }
 .uses .use { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; align-items: center; padding: 64px 0; border-bottom: 1px solid var(--line-2) }
 .uses .use:first-child { padding-top: 8px } .uses .use:last-child { border-bottom: 0 }
@@ -410,7 +411,8 @@ main.landing > section.hero { padding: 96px 40px 110px }
 .live-report-sections small { color: var(--muted) }
 .live-report-sections p, .live-report-selection { color: var(--muted) !important; font-size: 12px !important; line-height: 1.7; overflow-wrap: anywhere }
 .live-report-selection { margin-top: 12px !important }
-.hero h1.hero-brand { font-size: clamp(70px, 10vw, 140px); line-height: 1.02; letter-spacing: -.035em; margin-top: 8px }
+.hero h1.hero-brand { font-size: clamp(76px, 11.5vw, 176px); line-height: 1.02; letter-spacing: -.035em; margin-top: 0 }
+.hero > .eyebrow-c { margin-bottom: 4px !important }
 /* Element glossary: three aligned columns instead of one long list */
 .decision-guide > h3 { font-size: 17px; margin: 44px 0 16px; padding-top: 18px; border-top: 1px solid var(--line-2) }
 .guide-elements { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 40px; margin-top: 0 }
@@ -435,12 +437,11 @@ main.landing > section.hero { padding: 96px 40px 110px }
 .criteria-card dl { margin: 0 }
 .criteria-card dl > div { display: grid; grid-template-columns: 150px 1fr; gap: 14px; padding: 12px 0; border-top: 1px solid var(--line) }
 .criteria-card dt { font-weight: 600; color: var(--ink); display: grid; gap: 2px }
-.criteria-card dt small { font: 600 11px var(--mono); color: var(--green); letter-spacing: .02em }
+.criteria-card dt small { font-family: inherit; font-size: 11px; font-weight: 600; line-height: 1.4; color: var(--green); letter-spacing: .06em }
 .criteria-card dd { margin: 0; font-size: 14px; color: var(--ink-2); line-height: 1.6 }
 .criteria-note { max-width: 1060px; margin: 22px auto 0 !important; font-size: 14px; color: var(--ink-2); line-height: 1.7; text-align: left }
 @media (max-width: 860px) { .criteria { grid-template-columns: 1fr } .criteria-card dl > div { grid-template-columns: 1fr } }
 .guide-main > section.faq:last-child { padding-bottom: 8px !important }
-.guide-cta { margin: 48px 0 0 !important }
 .analyze-heading p.analyze-lead { max-width: none; font-size: 14.5px; line-height: 1.85; letter-spacing: -.025em; white-space: normal }
 /* Landing hero fills the first screen; the next section starts below the fold */
 main.landing:not(.guide-main) > section.hero { min-height: calc(100vh - var(--header-h, 69px)); min-height: calc(100svh - var(--header-h, 69px)); display: flex; flex-direction: column; justify-content: center; align-items: center; padding-top: 48px; padding-bottom: 56px }

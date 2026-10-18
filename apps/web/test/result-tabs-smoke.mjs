@@ -50,7 +50,7 @@ try {
   // Tabs, ARIA and per-tab height.
   const heights = await page(`${helpers}
     const out = {};
-    for (const key of ['overview', 'claims', 'source', 'info']) { tab(key).click(); await wait(key === 'source' ? 4000 : 600); out[key] = { height: document.documentElement.scrollHeight, search: location.search }; }
+    for (const key of ['overview', 'claims', 'source']) { tab(key).click(); await wait(key === 'source' ? 4000 : 600); out[key] = { height: document.documentElement.scrollHeight, search: location.search }; }
     tab('overview').click(); await wait(300);
     return out;`);
   for (const [key, { height, search }] of Object.entries(heights)) {
@@ -61,10 +61,10 @@ try {
 
   // Back/forward follow the tab history without reopening the run.
   const history = await page(`${helpers}
-    tab('claims').click(); await wait(200); tab('info').click(); await wait(200);
+    tab('claims').click(); await wait(200); tab('source').click(); await wait(200);
     const out = [selected()]; history.back(); await wait(400); out.push(selected()); history.forward(); await wait(400); out.push(selected());
     return out;`);
-  assert.deepEqual(history, ["info", "claims", "info"]);
+  assert.deepEqual(history, ["source", "claims", "source"]);
 
   // Summary → claims → source keeps one selected claim.
   const flow = await page(`${helpers}
@@ -90,7 +90,7 @@ try {
     tab('claims').click(); await wait(300);
     typeInto(document.querySelector('.result-browser-controls input'), 'p.'); await wait(300);
     const list = document.querySelector('.claim-list'); list.scrollTop = 120; const scroll = list.scrollTop;
-    tab('info').click(); await wait(300); tab('source').click(); await wait(800);
+    tab('overview').click(); await wait(300); tab('source').click(); await wait(800);
     const source = { zoom: document.querySelector('.split-toolbar output').innerText, page: document.querySelector('[aria-label="원문 물리 쪽"]').value, sameCanvas: !canvas || document.querySelector('.split-document canvas')?.dataset.smoke === 'kept' };
     tab('claims').click(); await wait(300);
     const claims = { search: document.querySelector('.result-browser-controls input').value, scroll: document.querySelector('.claim-list').scrollTop };
@@ -133,10 +133,10 @@ try {
   await page(`${helpers} tab('overview').click(); await wait(200); tab('overview').focus();`);
   const focus = async () => page(`return { focus: document.activeElement.id.split('-').pop(), selected: document.querySelector('.result-tabs [aria-selected=true]').id.split('-').pop() };`);
   await key("ArrowRight"); assert.deepEqual(await focus(), { focus: "claims", selected: "overview" });
-  await key("End"); assert.deepEqual(await focus(), { focus: "info", selected: "overview" });
+  await key("End"); assert.deepEqual(await focus(), { focus: "source", selected: "overview" });
   await key("ArrowRight"); assert.deepEqual(await focus(), { focus: "overview", selected: "overview" });
   await key("ArrowLeft"); await key("Enter"); await sleep(300);
-  assert.deepEqual(await focus(), { focus: "info", selected: "info" });
+  assert.deepEqual(await focus(), { focus: "source", selected: "source" });
 
   // Sticky bar rests under the site header after scrolling, and switching tabs lands at the bar.
   const sticky = await page(`${helpers}

@@ -7,7 +7,7 @@ export function runIdFromHash(hash: string): string | null {
 }
 export function validResourceId(id: string) { return uuid.test(id); }
 // Result tabs live in ?tab= so switching tabs never fires hashchange (which reopens and scrolls the run).
-export const resultTabs = ["overview", "claims", "source", "info"] as const;
+export const resultTabs = ["overview", "claims", "source"] as const;
 export type ResultTab = typeof resultTabs[number];
 export function resultTabFromSearch(search: string): ResultTab {
   const value = new URLSearchParams(search).get("tab");

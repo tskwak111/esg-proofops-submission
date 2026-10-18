@@ -1,9 +1,9 @@
-import { GradeGuide, WhyGrade, ExecutiveSummary, AnalyzedData, ResultDashboard } from "./UX1Insights";
+import { WhyGrade, ExecutiveSummary, ResultDashboard } from "./UX1Insights";
 import { metadataText, reportTitle } from "./documentName";
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { resultTabFromSearch, resultTabUrl, runIdFromHash, validResourceId, type ResultTab } from "./hostedHistory";
 import { ResultTabs, resultPanelId, resultTabId, type ResultTabItem } from "./ResultTabs";
-import { downloadResultReport, printResultReport } from "./ResultReport";
+import { downloadResultReport } from "./ResultReport";
 import { focusClaimDetail, focusClaimRegion } from "../claims/claimFocus";
 import { ClaimBrowserControls } from "../claims/ClaimBrowserControls";
 import { elementLabels } from "../labels";
@@ -12,7 +12,7 @@ import { SourceSplitView, type SourceSelection } from "./SourceSplitView";
 import { MissingEvidenceCard } from "../claims/MissingEvidenceCard";
 import { ProvisionalHold } from "../claims/ProvisionalHold";
 import { HostedApiError, holdReasonText, newIdempotencyKey, completedRunPresentation, resultExecution, type HostedClient, type HostedResult, type ResultClaim, type ResultDecision, type ResultReview } from "./hostedClient";
-import { holdReasonLabel, claimSourceText, claimProcessingFailed, claimEvidenceLine, w18HoldReason, w18HoldBreakdown, allowedChoices, buildResolveBody, candidateRefs, claimHoldReasons, decisionLine, elementStateText, gradeSummary, groupClaimOccurrences, holdEvidenceNoteText, matchesResultFilters, openReviewFor, pageLabel, pageRanges, refKey, resultBrowserItem, resultBrowserSummary, resultElementText, resultScope, resultSourceFailures, reviewStatusText, tableObservationText, trackText, type ElementChoice, type ResultFilters } from "./resultModel";
+import { holdReasonLabel, claimSourceText, claimProcessingFailed, claimEvidenceLine, w18HoldReason, allowedChoices, buildResolveBody, candidateRefs, claimHoldReasons, decisionLine, elementStateText, gradeSummary, groupClaimOccurrences, holdEvidenceNoteText, matchesResultFilters, openReviewFor, pageLabel, refKey, resultBrowserItem, resultBrowserSummary, resultElementText, resultSourceFailures, reviewStatusText, tableObservationText, trackText, type ElementChoice, type ResultFilters } from "./resultModel";
 
 export function canReview(role: string | null | undefined) { return role === "reviewer" || role === "admin"; }
 
@@ -36,11 +36,10 @@ function initialTab(runId?: string): ResultTab {
 }
 
 type ResultViewProps = { result: HostedResult; reportName?: string; companyName?: string; pageCount?: number; selectedPages?: number[]; runStatus?: string; role?: string | null; readOnly?: boolean; client?: HostedClient; runId?: string; onReload?: () => Promise<void>; runSummary?: ReactNode };
-export function ResultView({ result, reportName, companyName, pageCount, selectedPages, runStatus, role, readOnly = false, client, runId, onReload, runSummary }: ResultViewProps) {
+export function ResultView({ result, reportName, companyName, pageCount, selectedPages, runStatus, role, readOnly = false, client, runId, onReload }: ResultViewProps) {
   if (readOnly) role = null;
   companyName = metadataText(companyName);
   reportName = reportTitle(reportName);
-  const [printError, setPrintError] = useState("");
   const [reportMode, setReportMode] = useState<"summary" | "full">("summary");
   const panelId = useId();
   const detailRef = useRef<HTMLElement | null>(null);
@@ -85,10 +84,8 @@ export function ResultView({ result, reportName, companyName, pageCount, selecte
   const openSource = (selection: SourceSelection) => { setSourceSelection(selection); selectTab("source"); };
   const groups = useMemo(() => groupClaimOccurrences(result.claims), [result.claims]);
   const counts = useMemo(() => resultBrowserSummary(result), [result]);
-  const holdBreakdown = useMemo(() => w18HoldBreakdown(result), [result]);
   const execution = resultExecution(result, runStatus);
   const completion = completedRunPresentation(result, runStatus);
-  const scope = resultScope(result, pageCount, selectedPages);
   const failures = resultSourceFailures(result);
   const extraction = result.pipeline?.extraction_outcome;
   const holdCodes = [...new Set([...result.hold_reasons, ...(result.hold_reason_details ?? []).map(detail => detail.code),
@@ -105,14 +102,6 @@ export function ResultView({ result, reportName, companyName, pageCount, selecte
     setLimit(25); setDetailOpen(false); setSelectedId(null);
   };
   const selectClaim = (id: string) => { setSourceSelection({ claimId: id, nonce: Date.now(), scroll: false }); setSelectedId(id); setDetailOpen(true); requestAnimationFrame(() => focusClaimDetail(detailRef.current)); };
-  const openTopClaim = (id: string) => {
-    setFilters(allFilters); setHoldReason(null);
-    // Unfiltered list order is group order; page far enough that the selected row is in the list.
-    const index = groups.findIndex(group => group.claims.some(claim => claim.claim_id === id));
-    setLimit(Math.max(25, Math.ceil((index + 1) / 25) * 25));
-    selectClaim(id); selectTab("claims");
-    revealLater(scope => window.innerWidth <= 1024 ? scope.querySelector(".claim-detail") : scope.querySelector(".claim-item.selected") ?? scope.querySelector(".claims-layout"));
-  };
   const openHoldReason = (reason: string) => {
     setFilters({ ...allFilters, queue: "hold" }); setHoldReason(reason); setLimit(25); setDetailOpen(false); setSelectedId(null); selectTab("claims");
     revealLater(scope => scope.querySelector(".result-filter-chip") ?? scope.querySelector(".claim-list"));
@@ -122,12 +111,10 @@ export function ResultView({ result, reportName, companyName, pageCount, selecte
     ...(counts.confirmed ? [{ value: "confirmed", label: "확정", count: counts.confirmed }] : []),
     ...(counts.provisional ? [{ value: "provisional", label: "추가 확인 필요", count: counts.provisional }] : []), { value: "hold", label: "보류", count: counts.hold }, { value: "all", label: "전체", count: counts.total },
   ];
-  const warning = result.pipeline?.reporting_scope?.warning;
   const resultTabs: ResultTabItem[] = [
     { key: "overview", label: "요약", hint: "핵심 수치 · 보강할 곳" },
     { key: "claims", label: "문장별 결과", hint: "주장 판정과 근거", badge: counts.total },
     { key: "source", label: "원문 대조", hint: "PDF에서 근거 위치 확인" },
-    { key: "info", label: "분석 정보", hint: "등급 기준 · 범위 · 데이터" },
   ];
   // In the browser, panels mount on first visit and then stay mounted (hidden) so filters and the PDF viewer survive.
   // Without a DOM (static render) every panel is emitted, still marked hidden, so the markup stays complete.
@@ -138,9 +125,7 @@ export function ResultView({ result, reportName, companyName, pageCount, selecte
     <header className="demo-heading result-heading"><div><p className="eyebrow">분석 결과{typeof result.pipeline?.reporting_scope?.report_year === "number" ? ` · ${result.pipeline.reporting_scope.report_year}` : ""}</p>
       <h2 tabIndex={-1} data-testid="result-heading">{reportName ?? (companyName ? `${companyName} · 분석 결과` : "보고서 분석 결과")}</h2>
       {completion?.kind === "partial" && <p className="hosted-note" data-testid="result-completion-status">{completion.title}</p>}
-      <p>보고서의 주장을 원문 근거와 대조한 결과입니다. 문장을 선택하면 판정 근거를 확인할 수 있습니다.</p>
-      {warning && <button type="button" className="result-warning-badge" data-testid="result-warning-badge" aria-label={`경고: ${warning} · 분석 정보 탭에서 보기`} onClick={() => selectTab("info")}><span aria-hidden="true">⚠</span> {warning}</button>}</div><button type="button" className="hosted-secondary result-export" onClick={() => downloadResultReport(result, { reportName, companyName, pageCount, selectedPages, runStatus, runId })}>결과 보고서 내보내기</button></header>
-    <div className="ux1-export"><label>PDF 구성 <select value={reportMode} onChange={event => setReportMode(event.target.value as "summary" | "full")}><option value="summary">요약본</option><option value="full">전체 상세</option></select></label><button type="button" className="hosted-primary" onClick={() => { setPrintError(""); if (!printResultReport(result, { reportMode, reportName, companyName, pageCount, selectedPages, runStatus, runId })) setPrintError("인쇄 창이 차단되었습니다. 팝업을 허용한 뒤 다시 시도해 주세요."); }}>PDF 리포트 저장</button><span className="caption">인쇄 창에서 ‘PDF로 저장’ 선택 · {reportMode === "summary" ? "요약·등급 분포·확정 주장 목록·주요 보류 사유" : "전체 주장·요소별 근거 포함"}</span>{printError && <p role="alert">{printError}</p>}</div>
+      <p>보고서의 주장을 원문 근거와 대조한 결과입니다. 문장을 선택하면 판정 근거를 확인할 수 있습니다.</p></div><div className="ux1-export"><label>보고서 구성 <select value={reportMode} onChange={event => setReportMode(event.target.value as "summary" | "full")}><option value="summary">요약본</option><option value="full">전체 상세</option></select></label><button type="button" className="hosted-primary result-export" onClick={() => downloadResultReport(result, { reportMode, reportName, companyName, pageCount, selectedPages, runStatus, runId })}>결과 보고서 내보내기</button></div></header>
     <div className="result-tabs-anchor" ref={tabsAnchor} aria-hidden="true" />
     <ResultTabs base={tabBase} tabs={resultTabs} selected={tab} onSelect={selectTab} />
     {panel("overview", <>
@@ -155,17 +140,17 @@ export function ResultView({ result, reportName, companyName, pageCount, selecte
         {failures.length > 0 && <p>p.는 원본 PDF 쪽입니다. ‘선택본 p.’는 원본 쪽 연결 정보가 없는 경우입니다. 실패한 원문에서 빠진 주장 수는 알 수 없으며, 같은 쪽의 다른 주장은 표시될 수 있습니다.</p>}
         <p>보류·확인되지 않음은 ‘근거 없음’이 아닙니다. 시스템 처리 실패는 기업의 결손이 아닙니다.</p></details>;
         return partial ? <div className="result-execution partial" role="status"><h3>{execution.title}</h3><p>{execution.meaning}</p>{notice}</div>
-          : <><div className={`result-execution ${execution.kind}`} role="status"><h3>{execution.title}</h3><p>{execution.meaning}</p></div>{notice}</>;
+          : <>{execution.kind !== "completed" && <div className={`result-execution ${execution.kind}`} role="status"><h3>{execution.title}</h3><p>{execution.meaning}</p></div>}{notice}</>;
       })()}
       <ResultDashboard result={result} pageCount={pageCount} selectedPages={selectedPages} onHoldReason={openHoldReason} />
-      <ExecutiveSummary result={result} holds={false} onSelect={openTopClaim} />
+      <ExecutiveSummary result={result} />
     </>)}
     {panel("claims", !result.claims.length ? <p className="empty">{execution.kind === "completed"
       ? "선택한 범위에서 표시할 추출 주장이 없습니다. 추출 안내를 확인해 주세요. 보고서 전체에 주장이 없다는 뜻은 아닙니다."
       : "분석이 보류되어 표시할 주장이 없습니다. 처리 단계와 보류 사유를 확인해 주세요. 근거 없음으로 판정한 결과가 아닙니다."}</p> :
       <section className="claims-section result-claims"><div className="card-heading"><div><p className="eyebrow">문장별 근거 점검</p><h2>문장별 결과</h2><p>상태를 선택하고 문장을 열어 원문과 요소별 근거를 확인하세요.</p></div><span>{filtered.reduce((sum, row) => sum + row.items.length, 0)} / {counts.total}건</span></div>
         <div className="result-browser-controls"><ClaimBrowserControls tabs={tabs} queue={filters.queue} onQueueChange={value => changeFilter("queue", value)} panelId={panelId} search={filters.search} onSearchChange={value => changeFilter("search", value)}
-          track={{ value: filters.track, onChange: value => changeFilter("track", value), options: [{ value: "all", label: "전체 트랙" }, { value: "goal", label: "목표" }, { value: "performance", label: "성과" }, { value: "management", label: "관리체계" }, { value: "unknown", label: "분류 미합의" }] }}
+          track={{ value: filters.track, onChange: value => changeFilter("track", value), options: [{ value: "all", label: "전체 트랙" }, { value: "goal", label: "목표형" }, { value: "performance", label: "성과형" }, { value: "management", label: "관리체계형" }, { value: "unknown", label: "분류 미합의" }] }}
           grade={{ value: filters.grade, onChange: value => changeFilter("grade", value), options: [{ value: "all", label: "전체 등급" }, ...["E3", "E2", "E1", "E0"].map(value => ({ value, label: value })), { value: "none", label: "등급 보류" }] }}
           status={{ value: filters.status, onChange: value => changeFilter("status", value), options: [{ value: "all", label: "전체 상태" }, ...(counts.confirmed ? [{ value: "confirmed", label: "확정" }] : []), ...(counts.provisional ? [{ value: "provisional", label: "추가 확인 필요" }] : []), { value: "hold", label: "판정 보류" }, { value: "source_unverified", label: "원문 대조 필요" }] }} /></div>
         {holdReason && <p className="result-filter-chip" role="status">보류 사유: <strong title={holdReason}>{holdReasonLabel(holdReason)}</strong> <button type="button" className="hosted-text-button" aria-label="사유 필터 해제" onClick={() => { setHoldReason(null); setLimit(25); }}>사유 필터 해제</button></p>}
@@ -189,26 +174,6 @@ export function ResultView({ result, reportName, companyName, pageCount, selecte
       </section>)}
     {panel("source", client && runId && result.claims.length > 0 ? <SourceSplitView key={runId} result={result} client={client} selection={sourceSelection} onSelectClaim={setSelectedId} />
       : <p className="empty">{result.claims.length ? "원문 보기를 사용할 수 없습니다. 저장된 결과에 원본 PDF 연결 정보가 없습니다." : "원문과 대조할 추출 주장이 없습니다."}</p>)}
-    {panel("info", <>
-      {runSummary}
-      <GradeGuide />
-      <AnalyzedData result={result} pageCount={pageCount} selectedPages={selectedPages} />
-      {holdBreakdown.length > 0 && <details className="w18-hold-summary"><summary>보류 {counts.hold}건 · 보류 사유별 집계</summary><ul>{holdBreakdown.map(({ reason, count }) => <li key={reason} title={reason}>{holdReasonLabel(reason)} <strong>{count}건</strong></li>)}</ul><p className="caption">주장마다 대표 사유 하나를 집계합니다. 전체 사유는 주장 상세에서 확인하세요.</p></details>}
-      <details className="result-count-note"><summary>집계와 판정 기준</summary>
-        <p>확정 {counts.confirmed}{counts.provisional > 0 && <> + 추가 확인 필요 {counts.provisional}</>} + 보류 {counts.hold} = 추출 주장 {counts.total}건. 각 주장은 한 상태로만 집계합니다. 원문 확인 수는 이 합계에 더하지 않습니다.</p>
-        <p>원문 확인 {counts.verified} / {counts.total}건은 문구·위치 대조 결과이며 등급 확정과는 별개입니다.{counts.provisional > 0 && " 추가 확인 필요 등급은 이전 버전에서 확인된 최소 수준으로, 추가 근거에 따라 달라질 수 있습니다."}</p>
-        {counts.confirmed === 0 && <p>확정 조건을 충족한 주장은 0건입니다. E0 등급이나 보고서 전체의 근거 부재를 뜻하지 않습니다.</p>}
-      </details>
-      {counts.stageSeconds !== null && <p className="caption">처리 시간 <strong>{Math.round(counts.stageSeconds)}초</strong> · 단계 합계, 대기시간 제외</p>}
-      {result.pipeline?.reporting_scope?.period_start && result.pipeline.reporting_scope.period_end && <p className="hosted-note">보고 범위: {result.pipeline.reporting_scope.period_start} ~ {result.pipeline.reporting_scope.period_end}</p>}
-      {warning && <p className="hosted-note" role="status">{warning}</p>}
-      <section className="result-scope" aria-label="분석 범위"><h3>분석 범위 · 원본 PDF 쪽</h3>
-        <p><strong>선택 {scope.pages.length}쪽{scope.total !== null ? ` / 전체 ${scope.total}쪽` : ""}</strong> · {scope.total !== null && scope.pages.length === scope.total ? "전체 쪽 선택" : "선택 범위만 분석"}</p>
-        <p>분석에 포함한 쪽: {pageRanges(scope.pages) || "쪽 정보 미제공"}</p>
-        {scope.claims && <p>주장 추출 대상: {pageRanges(scope.claims) || "없음"} · 그 외 선택 쪽은 근거 탐색 범위입니다.</p>}
-        {scope.unselected ? <details><summary>미선택 {scope.unselected.length}쪽 · 주장 추출 대상에서 제외</summary><p>{pageRanges(scope.unselected) || "없음"}</p></details> : <p>전체 쪽 수가 없어 미선택 범위를 계산할 수 없습니다. 다른 쪽의 검증·연결된 근거는 주장 상세에 표시합니다.</p>}
-      </section>
-    </>)}
   </section>;
 }
 
@@ -228,14 +193,13 @@ function ClaimPanel({ claim, occurrences, occurrenceCount, onSelectOccurrence, o
   const processingFailed = claimProcessingFailed(claim);
   const needed = processingFailed ? [] : claim.provisional_grade?.needed_evidence ?? [];
   return <aside className="claim-detail" ref={detailRef} tabIndex={-1} aria-label="주장 상세">
-    <div className="detail-top"><div><p className="eyebrow">주장 상세 · {item.page}</p><h3>주장과 판정 근거</h3></div><button type="button" className="result-detail-close" onClick={onBack} aria-label="상세 닫기">×</button></div>
     <button type="button" className="result-back" onClick={onBack}>← 목록으로 돌아가기</button>
     <div className="source-quote"><span>{claim.source_quality === "verified" ? "보고서 원문" : "추출 문장"} · {item.page}</span><blockquote>“{claim.quote}”</blockquote><small>{claimSourceText(claim)}</small>{client && runId && <button type="button" className="claim-source-button" disabled={!Number.isInteger(claimPage) || claimPage < 1} onClick={() => onOpenSource({ claimId: claim.claim_id, page: claimPage, nonce: Date.now() })}>주장 원문 보기</button>}</div>
     <WhyGrade result={result} claim={claim} />
     {tableContext && <div className="table-observation-detail"><h4>표 문맥</h4><p>{tableContext}</p></div>}
     {occurrenceCount > 1 && <details className="detail-block duplicate-detail"><summary>같은 문장 {occurrenceCount}곳</summary><ul>{occurrences.map(occurrence => <li key={occurrence.claim_id}><button type="button" aria-pressed={occurrence.claim_id === claim.claim_id} onClick={() => onSelectOccurrence(occurrence.claim_id)}><strong>{pageLabel(result, occurrence.page_num)}{occurrence.claim_id === claim.claim_id ? " · 현재 선택" : ""}</strong><span>{tableObservationText(occurrence.table_observation) ?? "추가 표 문맥 없음"}</span></button></li>)}</ul>{occurrences.length < occurrenceCount && <p>나머지 {occurrenceCount - occurrences.length}곳의 상세는 이 결과에 포함되지 않았습니다.</p>}</details>}
     <div className={`decision-panel ${grade.confirmed ? "is-confirmed" : "is-provisional"}`} data-testid="grade-panel">
-      <span>{grade.confirmed && item.track !== "unknown" ? `${trackText[item.track] ?? item.track} 트랙` : claim.track ? `${trackText[claim.track] ?? claim.track} 트랙` : claim.provisional_track ? (grade.confirmed ? `${trackText[claim.provisional_track] ?? claim.provisional_track} 트랙` : `${trackText[claim.provisional_track] ?? claim.provisional_track} 트랙 · 분류 확인 중`) : processingFailed ? "유형 처리 미완료" : "트랙 합의 전"}</span>{" "}
+      <span>{grade.confirmed && item.track !== "unknown" ? `${trackText[item.track] ?? item.track}` : claim.track ? `${trackText[claim.track] ?? claim.track}` : claim.provisional_track ? (grade.confirmed ? `${trackText[claim.provisional_track] ?? claim.provisional_track}` : `${trackText[claim.provisional_track] ?? claim.provisional_track} · 분류 확인 중`) : processingFailed ? "유형 처리 미완료" : "트랙 합의 전"}</span>{" "}
       <strong>{grade.headline}</strong><p>{grade.confirmed ? grade.note : item.bucket === "provisional" ? "이전 버전 결과 · 추가 확인 필요. 당시 연결된 근거를 기준으로 표시한 등급이며 확정 판정이 아닙니다." : "판정에 필요한 확인 사항을 아래에서 안내합니다."}</p>
       {!grade.confirmed && range && <details className="result-range"><summary>가능한 등급 범위와 미해결 요소</summary><span>가능한 등급 범위</span><b>{range.floor}–{range.ceiling}</b><p>범위는 등급이 아니며 하한·상한만 알려 줍니다.{range.open_elements?.length ? ` 미해결 요소: ${range.open_elements.map(id => elementLabels[id] ?? id).join(" · ")}` : ""}</p></details>}
     </div>

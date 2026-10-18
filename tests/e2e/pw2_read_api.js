@@ -5,7 +5,7 @@ async page => {
   await page.context().addCookies([{ name: '__Host-proofops_session', value: session.cookie, domain: '127.0.0.1', path: '/', httpOnly: true, secure: true, sameSite: 'Lax' }]);
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto(`${base}/analyze`);
-  const list = page.getByRole('region', { name: '내 보고서·실행', exact: true });
+  const list = page.getByRole('region', { name: '이전 보고서 내역', exact: true });
   await list.getByRole('button', { name: '결과 열기', exact: true }).waitFor();
   if (!(await list.innerText()).includes('진행 100%') || !(await list.innerText()).includes('대기 중')) throw new Error('Status/progress missing');
   await list.getByRole('button', { name: '보고서 더 보기' }).click();

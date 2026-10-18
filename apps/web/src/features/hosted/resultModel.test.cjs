@@ -28,7 +28,7 @@ const auto = { ...claim, hold_reason: null, source_quality: "verified", confirme
 test("C3 direct certification renders the server basis and applies automatic guards", () => {
   const c3 = { ...auto, confirmation_source: "auto_direct_certification_c3_v1",
     confirmation_basis: "프로젝트 루브릭상 공시 내 입증요소 충족. EMS의 ISO 14001 직접 인증과 적용범위(국내 전 생산 사업장, 글로벌 17개 중 15개)를 p36에서 확인. 보고서 문맥: 2025; 인증 유효기간: 미기재." };
-  assert.match(gradeSummary(c3).headline, /^자동 확정 E3 · 입증 요건 충족/);
+  assert.equal(gradeSummary(c3).headline, 'E3 (입증 요건 충족)');
   assert.equal(gradeSummary(c3).note, c3.confirmation_basis);
   assert.equal(gradeSummary({ ...c3, confirmation_policy_sha256: undefined }).confirmed, false);
   assert.equal(gradeSummary({ ...c3, confirmation_basis: undefined }).confirmed, false);
@@ -43,17 +43,19 @@ test("DEC-43 lower bound is supplementary and never confirmed", () => {
 test("unanimous confirmation displays its grade, label and distinct source", () => {
   const summary = gradeSummary(auto);
   assert.equal(summary.confirmed, true);
-  assert.match(summary.headline, /자동 확정 E3 · 입증 요건 충족/);
+  assert.equal(summary.headline, 'E3 (입증 요건 충족)');
   const html = renderToStaticMarkup(React.createElement(ResultView, { result: { ...result, claims: [auto] } }));
-  assert.match(html, /자동 확정/);
+  // The automatic source shows in the panel note, not as a headline prefix.
+  assert.ok(html.includes(summary.note), summary.note);
+  assert.doesNotMatch(html, /확정 등급|자동 확정 E/);
   assert.doesNotMatch(html.match(/data-testid="grade-panel"[^]*?<\/div>/)[0], /잠정 등급|잠정 요소/);
   const human = { ...auto, confirmation_source: "human_review", decision: { ...auto.decision, review_status: "human_confirmed" } };
-  assert.match(gradeSummary(human).headline, /확정 등급 E3/);
+  assert.match(gradeSummary(human).headline, /^E3/);
   assert.equal(gradeSummary(human).note, "사람 확인");
 });
 test("confirmation source remains hidden when the optional API field is absent", () => {
   const olderApi = { ...auto, confirmation_source: undefined, confirmation_display: undefined };
-  assert.match(gradeSummary(olderApi).headline, /확정 등급 E3/);
+  assert.match(gradeSummary(olderApi).headline, /^E3/);
   assert.doesNotMatch(gradeSummary(olderApi).headline, /자동 확정/);
 });
 test("automatic source cannot bypass held, gap, inconsistent grade or missing policy guards", () => {
@@ -137,14 +139,15 @@ test("optional hold detail uses Korean text and never leaks known machine codes"
 });
 test("detail uses provisional track without confirming it", () => {
   const html = renderToStaticMarkup(React.createElement(ResultView, { result }));
-  assert.match(html, /성과 트랙 · 분류 확인 중/);
+  assert.match(html, /성과형 · 분류 확인 중/);
   assert.doesNotMatch(html, /트랙 합의 전/);
 });
 test("completed empty scope differs from a blocked empty result", () => {
   const render = (pipeline, holds) => renderToStaticMarkup(React.createElement(ResultView, {
     result: { ...result, claims: [], pipeline, hold_reasons: holds },
   }));
-  assert.match(render({ status: "completed" }, []), /분석 완료 · 선택 범위/);
+  // A finished run no longer shows a completion card; the empty-state line carries the difference.
+  assert.doesNotMatch(render({ status: "completed" }, []), /class="result-execution completed"/);
   assert.match(render({ status: "completed" }, []), /선택한 범위에서 표시할 추출 주장이 없습니다/);
   assert.doesNotMatch(render({ status: "completed", extraction_outcome: { status: "partial" } }, []), /분석 완료 ·|실행 완료 ·|정상 완료/);
   assert.match(render({ status: "partial_blocked" }, ["BUDGET_EXHAUSTED"]), /분석이 보류되어 표시할 주장이 없습니다/);
@@ -182,7 +185,7 @@ test('W18 hold labels preserve cause distinctions and count each held claim once
   assert.equal(w18HoldReason(fixture,auto),null);assert.equal(w18HoldReason(fixture,claim),null);
   assert.equal(JSON.stringify(fixture),before);
   const html=renderToStaticMarkup(React.createElement(ResultView,{result:fixture}));
-  assert.match(html,/보류 사유별 집계/);assert.match(html,/보류 · 반복 판독 미완료/);
+  assert.match(html,/주요 보류 사유/);assert.match(html,/보류 · 반복 판독 미완료/);
 });
 test('W18 missing reason stays unknown and uses server detail for unmapped codes',()=>{
   const held={...claim,source_quality:'verified',hold_reason:null,provisional_grade:null};
@@ -194,7 +197,7 @@ const w20 = require('../../../test/fixtures/w20/scope-confirmation.result.json')
 test('DEC-123: server scope confirmation uses the confirmed label and keeps inspected pages', () => {
   const scoped = w20.claims[0];
   assert.equal(gradeSummary(scoped).confirmed, true);
-  assert.equal(gradeSummary(scoped).headline, '확정 E1 · 일부 요건 충족');
+  assert.equal(gradeSummary(scoped).headline, 'E1 (일부 요건 충족)');
   assert.match(gradeSummary(scoped).note, /검사한 원본 쪽: 24–26/);
   assert.equal(elementStateText('absent_in_scope', 'verified'), '근거 없음(분석 범위 내)');
   for (const change of [

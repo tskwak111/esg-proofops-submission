@@ -124,14 +124,14 @@ test('DEC-123: confirmed union counts each claim once and drives cards, filters 
   const item = model.resultBrowserItem(w20, w20.claims[0]);
   assert.equal(item.bucket, 'confirmed');
   assert.equal(item.grade, 'E1');
-  assert.equal(item.badge, '확정 · E1 · 일부 요건 충족');
+  assert.equal(item.badge, 'E1 (일부 요건 충족)');
   assert.equal(item.elements.find(el => el.element_id === 'M2').state, 'absent_in_scope');
   assert.deepEqual(item.elements[0].evidence_refs, w20.claims[0].elements[0].evidence_refs);
   assert.equal(model.matchesResultFilters(item, { queue: 'confirmed', search: '', track: 'all', grade: 'E1', status: 'confirmed' }), true);
   assert.equal(model.w18HoldReason(w20, w20.claims[0]), null);
   const html = renderToStaticMarkup(React.createElement(ResultView, { result: w20 }));
   assert.match(html, /확정<\/span><strong>3<small>건/);
-  assert.match(html, /확정 E1 · 일부 요건 충족/);
+  assert.match(html, /E1 \(일부 요건 충족\)/);
   assert.match(html, /검사한 원본 쪽: 24–26/);
   assert.match(html, /근거 없음\(분석 범위 내\)/);
   assert.doesNotMatch(html, /범위 기준 확정|범위 확정|확정 0건 — 이유|M2 · 원인과 다음 확인/);

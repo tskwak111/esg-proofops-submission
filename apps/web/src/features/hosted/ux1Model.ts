@@ -15,18 +15,18 @@ export const gradeMeanings = [
 const ruleText: Record<string, string> = {
   GOAL_NO_YEAR: "목표연도 근거가 없어 E0 규칙이 적용되었습니다.",
   GOAL_NO_YEAR_EXCEPTION: "목표연도는 없지만 목표수치와 전환계획이 있어 E1 상한 예외가 적용되었습니다.",
-  GOAL_E1: "목표연도와 목표수치가 확인되어 목표 트랙 E1 규칙이 적용되었습니다.",
-  GOAL_E2: "목표연도·수치, 기준연도·기준값, 적용범위가 확인되어 목표 트랙 E2 규칙이 적용되었습니다.",
-  GOAL_E3: "목표·기준·범위에 현재 진척과 전환계획까지 확인되어 목표 트랙 E3 규칙이 적용되었습니다.",
-  PERF_NO_VALUE: "정량수치 또는 인정 가능한 인증등급 근거가 없어 성과 트랙 E0 규칙이 적용되었습니다.",
-  PERF_E1: "수치와 단위 또는 인정 가능한 인증등급이 확인되어 성과 트랙 E1 규칙이 적용되었습니다.",
-  PERF_E2: "수치·단위에 비교기준과 산정범위가 확인되어 성과 트랙 E2 규칙이 적용되었습니다.",
-  PERF_E3: "수치·단위·비교기준·범위에 산정방법과 보증 연결까지 확인되어 성과 트랙 E3 규칙이 적용되었습니다.",
-  MGMT_WILLINGNESS: "의지 표현만 확인되어 관리체계 트랙 E0 규칙이 적용되었습니다.",
+  GOAL_E1: "목표연도와 목표수치가 확인되어 목표형 E1 규칙이 적용되었습니다.",
+  GOAL_E2: "목표연도·수치, 기준연도·기준값, 적용범위가 확인되어 목표형 E2 규칙이 적용되었습니다.",
+  GOAL_E3: "목표·기준·범위에 현재 진척과 전환계획까지 확인되어 목표형 E3 규칙이 적용되었습니다.",
+  PERF_NO_VALUE: "정량수치 또는 인정 가능한 인증등급 근거가 없어 성과형 E0 규칙이 적용되었습니다.",
+  PERF_E1: "수치와 단위 또는 인정 가능한 인증등급이 확인되어 성과형 E1 규칙이 적용되었습니다.",
+  PERF_E2: "수치·단위에 비교기준과 산정범위가 확인되어 성과형 E2 규칙이 적용되었습니다.",
+  PERF_E3: "수치·단위·비교기준·범위에 산정방법과 보증 연결까지 확인되어 성과형 E3 규칙이 적용되었습니다.",
+  MGMT_WILLINGNESS: "의지 표현만 확인되어 관리체계형 E0 규칙이 적용되었습니다.",
   MGMT_NO_MEANS_IN_SCOPE_E0: "분석 범위에서 명명된 수단이나 구체적인 시행 상태의 근거를 연결하지 못해 E0 규칙이 적용되었습니다.",
-  MGMT_E1: "명명된 수단 또는 구체적 시행 상태가 확인되어 관리체계 트랙 E1 규칙이 적용되었습니다.",
-  MGMT_E2: "수단·시행 상태와 적용범위가 확인되어 관리체계 트랙 E2 규칙이 적용되었습니다.",
-  MGMT_E3: "수단·시행 상태, 적용범위, 외부검증이 확인되어 관리체계 트랙 E3 규칙이 적용되었습니다.",
+  MGMT_E1: "명명된 수단 또는 구체적 시행 상태가 확인되어 관리체계형 E1 규칙이 적용되었습니다.",
+  MGMT_E2: "수단·시행 상태와 적용범위가 확인되어 관리체계형 E2 규칙이 적용되었습니다.",
+  MGMT_E3: "수단·시행 상태, 적용범위, 외부검증이 확인되어 관리체계형 E3 규칙이 적용되었습니다.",
   PRODUCT_NAMES_CAP: "제품·소재의 직접적인 비율·목표 근거가 없어 제품명·소재명만으로는 E1이 상한입니다.",
   SUPERLATIVE_E0: "최상급 표현의 비교기준과 외부검증이 모두 없어 트랙에 우선하는 E0 규칙이 적용되었습니다.",
   CATEGORICAL_ORDINAL: "인증기관이 명시된 범주형 인증등급의 인정 조건을 적용했습니다.",
@@ -36,7 +36,7 @@ export function claimExplanation(result: HostedResult, claim: ResultClaim) {
   if (item.bucket === "hold") return { text: `판정 보류 · ${w18HoldReason(result, claim) ?? "원문·유형·규칙 확인 필요"}. 보류는 E0이나 근거 부재 판정이 아닙니다.`, rules: [] };
   const decision = confirmedDecision(claim);
   const rules = decision?.rule_ids ?? [];
-  const lead = item.confirmed ? `${trackText[item.track] ?? "해당"} 트랙의 확정 ${item.grade}입니다.` : `이전 버전 결과 · ${item.grade}는 당시 연결된 근거에 따른 등급이며 추가 확인이 필요합니다. 확정 판정이 아닙니다.`;
+  const lead = item.confirmed ? `${trackText[item.track] ?? "해당"} 주장의 등급은 ${item.grade}입니다.` : `이전 버전 결과 · ${item.grade}는 당시 연결된 근거에 따른 등급이며 추가 확인이 필요합니다. 확정 판정이 아닙니다.`;
   const applied = rules.map(id => ruleText[id] ?? `기록된 규칙 ${id}가 적용되었습니다.`).join(" ");
   const present = item.elements.filter(e => e.state === "present" && e.evidence_refs.some(r => r.verification_state === "verified"));
   const absent = item.elements.filter(e => ["absent", "absent_in_scope"].includes(e.state) && !decision?.excluded_elements?.includes(e.element_id));

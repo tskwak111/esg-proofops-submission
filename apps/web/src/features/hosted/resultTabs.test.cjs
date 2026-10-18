@@ -53,9 +53,9 @@ test('result renders an ARIA tablist; only the selected panel is visible and the
   assert.match(html, /role="tablist" aria-label="결과 보기 방식"/);
   assert.match(html, /role="tablist" aria-label="검토 상태"/, 'inner review-state tabs keep a distinct label');
   const buttons = tabs(html);
-  assert.equal(buttons.length, 4);
-  assert.deepEqual(buttons.map(button => /aria-selected="true"/.test(button)), [true, false, false, false]);
-  assert.deepEqual(buttons.map(button => /tabindex="0"/.test(button)), [true, false, false, false]);
+  assert.equal(buttons.length, 3);
+  assert.deepEqual(buttons.map(button => /aria-selected="true"/.test(button)), [true, false, false]);
+  assert.deepEqual(buttons.map(button => /tabindex="0"/.test(button)), [true, false, false]);
   for (const button of buttons) {
     const controls = /aria-controls="([^"]+)"/.exec(button)[1];
     const id = /id="([^"]+)"/.exec(button)[1];
@@ -64,7 +64,7 @@ test('result renders an ARIA tablist; only the selected panel is visible and the
   assert.match(html, />문장별 결과<span class="result-tab-badge">\d+<\/span>/);
   assert.doesNotMatch(panel(html, 'overview'), /hidden/);
   // Static render emits every panel (hidden); lazy mounting is browser-only and covered by test/result-tabs-smoke.mjs.
-  for (const key of ['claims', 'source', 'info']) assert.match(panel(html, key), /hidden=""/);
+  for (const key of ['claims', 'source']) assert.match(panel(html, key), /hidden=""/);
   assert.match(panelBody(html, 'claims'), /claims-section/);
   assert.match(panelBody(html, 'overview'), /rd-overview/);
   assert.doesNotMatch(panelBody(html, 'overview'), /result-report-summary/);
@@ -80,16 +80,18 @@ test('initial tab comes from ?tab= only for the run named in the anchor, so each
   assert.doesNotMatch(panel(b, 'overview'), /hidden/);
 });
 
-test('info tab carries the run summary, guide, scope and period notes; the heading repeats the period warning', () => {
+test('the info tab and its card are gone; old ?tab=info links land on overview', () => {
   const warning = '보고기간 추정 실패(기본값 사용)';
   const result = { ...fixture, pipeline: { ...fixture.pipeline, reporting_scope: { ...fixture.pipeline?.reporting_scope, warning } } };
-  const html = withLocation('?tab=info', `#run-${runA}`, () => render(React.createElement(ResultView, { result, runId: runA, runSummary: React.createElement('details', { className: 'hosted-run-summary' }) })));
-  const heading = html.split('<div class="ux1-export">')[0];
-  assert.match(heading, /data-testid="result-warning-badge"/);
-  assert.ok(heading.includes(warning));
-  const info = panelBody(html, 'info');
-  for (const part of ['hosted-run-summary', 'ux1-grade-guide', 'result-scope', warning]) assert.ok(info.includes(part), part);
-  assert.ok(!html.split(panel(html, 'info'))[0].includes('hosted-run-summary'), 'run summary no longer sits above the heading');
+  const html = withLocation('?tab=info', `#run-${runA}`, () => render(React.createElement(ResultView, { result, runId: runA })));
+  const heading = html.split('role="tablist"')[0];
+  assert.doesNotMatch(heading, /result-warning-badge/);
+  assert.doesNotMatch(panel(html, 'overview'), /hidden/);
+  const overview = panelBody(html, 'overview');
+  assert.ok(overview.includes('rd-overview'));
+  assert.ok(!html.includes('aria-label="분석 정보"'), 'analysis info card removed');
+  assert.doesNotMatch(html, /모델 판정 호출|분석 정보<\/span>/);
+  assert.ok(!html.includes('hosted-run-summary'), 'run summary is not rendered with a result');
 });
 
 test('hold reasons live in the overview dashboard; buttons only when the result view can route them', () => {

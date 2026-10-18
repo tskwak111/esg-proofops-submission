@@ -33,7 +33,7 @@ export function App() {
 function SessionApp() {
   const navigate = useNavigate();
   const location = useLocation();
-  const publicPage = !!runIdFromResultPath(location.pathname) || location.pathname === "/" || ["/demo", "/analyze", "/guide", "/review", "/report", "/live"].some(path => location.pathname === path || location.pathname.startsWith(`${path}/`));
+  const publicPage = !!runIdFromResultPath(location.pathname) || location.pathname === "/" || ["/demo", "/analyze", "/archive", "/guide", "/review", "/report", "/live"].some(path => location.pathname === path || location.pathname.startsWith(`${path}/`));
   const [staticMode, setStaticMode] = useState(import.meta.env.VITE_DEMO_STATIC === "true");
   const [session, setSession] = useState<Session | null>(null);
   const [sessionStatus, setSessionStatus] = useState<"loading" | "ready" | "missing" | "error">("loading");

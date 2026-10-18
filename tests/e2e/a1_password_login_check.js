@@ -38,7 +38,7 @@ async page => {
   lock=false;
   await input.fill('fixture-only-password');
   await page.getByRole('button',{name:'입장',exact:true}).click();
-  await page.getByRole('region',{name:'내 보고서·실행',exact:true}).waitFor();
+  await page.getByRole('region',{name:'이전 보고서 내역',exact:true}).waitFor();
   if (await input.count()) throw new Error('Credential field remained after login');
   await page.screenshot({path:`${output}/organizer-fixture.png`,fullPage:true});
   await page.getByRole('button',{name:'로그아웃',exact:true}).click();
@@ -46,7 +46,7 @@ async page => {
   await page.getByRole('combobox', {name:'로그인 방식',exact:true}).selectOption('invitation');
   await input.fill('fixture-invitation-code-01234567890123456789');
   await page.getByRole('button',{name:'입장',exact:true}).click();
-  await page.getByRole('region',{name:'내 보고서·실행',exact:true}).waitFor();
+  await page.getByRole('region',{name:'이전 보고서 내역',exact:true}).waitFor();
   if (failures.length || loginCalls!==2 || invitationCalls!==1) throw new Error('Login fixture failed');
   return {status:'passed',password_attempts:loginCalls,invitation_attempts:invitationCalls,lock_notice:true,credential_cleared:true,actual_requests:0};
 }
